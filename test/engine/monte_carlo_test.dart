@@ -2,122 +2,152 @@ import 'package:firedom/engine/engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('몬테카를로 — 재현성', () {
-    test('같은 시드는 같은 결과를 낸다', () {
-      const input = MonteCarloInput(
+  group('G7: 몬테카를로 통계 검증 (엔진명세 A10)', () {
+    // G1 입력 + 변동성 1200bp, 5,000경로, 은퇴 tF=231 고정, 수명 90
+    const request = MonteCarloRequest(
+      plan: PlanInput(
+        age0: 35,
         currentAssets: 100000000,
         monthlySaving: 2000000,
-        accumulationMonths: 120,
-        monthlyWithdrawal: 3000000,
-        retirementMonths: 360,
-        annualExpectedReturn: 0.035,
-        annualVolatility: 0.15,
-        runs: 500,
-        seed: 42,
-      );
+        realReturnBp: 400,
+        monthlySpendRetire: 3000000,
+        swrBp: 400,
+        lifeExpectancy: 90,
+        volatilityBp: 1200,
+      ),
+      retirementMonth: 231,
+      runs: 5000,
+    );
 
-      final a = runMonteCarlo(input);
-      final b = runMonteCarlo(input);
+    test('성공 확률 ∈ (0.5, 1.0)', () {
+      final result = runMonteCarlo(request);
+      expect(result.successRate, greaterThan(0.5));
+      expect(result.successRate, lessThan(1.0));
+    });
 
+    test('동일 시드(입력 해시) 2회 실행 결과 완전 일치', () {
+      final a = runMonteCarlo(request);
+      final b = runMonteCarlo(request);
       expect(a.successes, b.successes);
       expect(a.endingAssets, b.endingAssets);
       expect(a.depletionMonths, b.depletionMonths);
     });
+
+    test('p10 ≤ p50 ≤ p90', () {
+      final r = runMonteCarlo(request);
+      final p10 = r.endingAssetsPercentile(0.1);
+      final p50 = r.endingAssetsPercentile(0.5);
+      final p90 = r.endingAssetsPercentile(0.9);
+      expect(p10, lessThanOrEqualTo(p50));
+      expect(p50, lessThanOrEqualTo(p90));
+    });
+
+    test('성공 + 고갈 = 전체 경로, 고갈 월은 은퇴 이후', () {
+      final r = runMonteCarlo(request);
+      expect(r.successes + r.depletionMonths.length, request.runs);
+      expect(r.endingAssets.length, request.runs);
+      for (final month in r.depletionMonths.take(5)) {
+        expect(month, greaterThan(request.retirementMonth));
+      }
+    });
   });
 
-  group('몬테카를로 — 변동성 0이면 결정론 엔진과 일치', () {
-    test('생존 케이스: 성공률 1.0, 최종 자산이 결정론 결과와 같다', () {
-      // 결정론 골든 케이스와 동일 입력: 12억, 월 300만 인출, 실질 3.5%, 720개월
-      const input = MonteCarloInput(
-        currentAssets: 1200000000,
-        monthlySaving: 0,
-        accumulationMonths: 0,
-        monthlyWithdrawal: 3000000,
-        retirementMonths: 720,
-        annualExpectedReturn: 0.035,
-        annualVolatility: 0.0,
-        runs: 50,
-        seed: 1,
+  group('시드 규약 (A6)', () {
+    test('seed 미지정 시 입력 직렬화 FNV-1a 해시 사용', () {
+      const a = MonteCarloRequest(
+        plan: PlanInput(
+          age0: 60, currentAssets: 500000000, monthlySaving: 0,
+          realReturnBp: 400, monthlySpendRetire: 2000000,
+        ),
+        retirementMonth: 0,
+        runs: 200,
       );
-
-      final result = runMonteCarlo(input);
-
-      expect(result.successRate, 1.0);
-      // 결정론 골든 기대값과 동일해야 한다
-      expect(result.endingAssets.first, 2266317754);
-      expect(result.endingAssets.last, 2266317754);
+      expect(a.effectiveSeed, a.effectiveSeed); // 결정적
+      // 입력이 다르면 시드도 다르다
+      const b = MonteCarloRequest(
+        plan: PlanInput(
+          age0: 60, currentAssets: 500000001, monthlySaving: 0,
+          realReturnBp: 400, monthlySpendRetire: 2000000,
+        ),
+        retirementMonth: 0,
+        runs: 200,
+      );
+      expect(a.effectiveSeed, isNot(b.effectiveSeed));
     });
 
-    test('고갈 케이스: 성공률 0.0, 고갈 월이 결정론 결과와 같다', () {
-      // 결정론 골든 케이스와 동일 입력: 6억, 월 300만 인출, 실질 2%, 600개월
-      const input = MonteCarloInput(
-        currentAssets: 600000000,
-        monthlySaving: 0,
-        accumulationMonths: 0,
-        monthlyWithdrawal: 3000000,
-        retirementMonths: 600,
-        annualExpectedReturn: 0.02,
-        annualVolatility: 0.0,
-        runs: 50,
-        seed: 1,
+    test('seed+1 ("다시 계산")은 다른 경로를 만든다', () {
+      const plan = PlanInput(
+        age0: 60, currentAssets: 500000000, monthlySaving: 0,
+        realReturnBp: 400, monthlySpendRetire: 2500000, volatilityBp: 1500,
       );
-
-      final result = runMonteCarlo(input);
-
-      expect(result.successRate, 0.0);
-      expect(result.depletionMonths, everyElement(243));
+      const a = MonteCarloRequest(
+          plan: plan, retirementMonth: 0, runs: 200, seed: 1000);
+      const b = MonteCarloRequest(
+          plan: plan, retirementMonth: 0, runs: 200, seed: 1001);
+      expect(runMonteCarlo(a).endingAssets,
+          isNot(runMonteCarlo(b).endingAssets));
     });
 
-    test('적립 구간: 최종 자산이 결정론 결과와 같다', () {
-      // 결정론 골든 케이스와 동일 입력: 1억, 월 200만 저축, 실질 3.5%, 243개월
-      const input = MonteCarloInput(
-        currentAssets: 100000000,
-        monthlySaving: 2000000,
-        accumulationMonths: 243,
-        monthlyWithdrawal: 0,
-        retirementMonths: 0,
-        annualExpectedReturn: 0.035,
-        annualVolatility: 0.0,
+    test('FNV-1a 알려진 벡터', () {
+      expect(fnv1a(''), 0x811c9dc5);
+      expect(fnv1a('a'), 0xe40c292c);
+    });
+  });
+
+  group('변동성 0 ↔ 결정론 엔진 교차 검증', () {
+    test('인출 생존: 결정론 최종 잔액과 일치', () {
+      // 인출 골든 케이스와 동일: 12억, 월 300만, 실질 3.5%, 720개월
+      const request = MonteCarloRequest(
+        plan: PlanInput(
+          age0: 30, currentAssets: 1200000000, monthlySaving: 0,
+          realReturnBp: 350, monthlySpendRetire: 3000000,
+          lifeExpectancy: 90, volatilityBp: 0,
+        ),
+        retirementMonth: 0,
+        runs: 20,
+        seed: 1,
+      );
+      final r = runMonteCarlo(request);
+      expect(r.successRate, 1.0);
+      // pow와 exp/log 경로의 부동소수점 차이를 허용 (±100원)
+      expect(r.endingAssets.first, closeTo(2266317754, 100));
+      expect(r.endingAssets.last, closeTo(2266317754, 100));
+    });
+
+    test('인출 고갈: 결정론 고갈 월과 일치', () {
+      // 인출 골든 케이스와 동일: 6억, 월 300만, 실질 2% → 243개월째 실패
+      const request = MonteCarloRequest(
+        plan: PlanInput(
+          age0: 40, currentAssets: 600000000, monthlySaving: 0,
+          realReturnBp: 200, monthlySpendRetire: 3000000,
+          lifeExpectancy: 90, volatilityBp: 0,
+        ),
+        retirementMonth: 0,
+        runs: 20,
+        seed: 1,
+      );
+      final r = runMonteCarlo(request);
+      expect(r.successRate, 0.0);
+      expect(r.depletionMonths, everyElement(243));
+    });
+
+    test('축적 구간: 결정론 궤적과 일치', () {
+      const plan = PlanInput(
+        age0: 35, currentAssets: 100000000, monthlySaving: 2000000,
+        realReturnBp: 400, monthlySpendRetire: 3000000,
+        lifeExpectancy: 55, volatilityBp: 0,
+      );
+      const request = MonteCarloRequest(
+        plan: plan,
+        retirementMonth: 240, // lifeMonths와 동일 — 인출 구간 없음
         runs: 10,
         seed: 1,
       );
-
-      final result = runMonteCarlo(input);
-
-      expect(result.successRate, 1.0);
-      expect(result.endingAssets.first, 902203013);
-    });
-  });
-
-  group('몬테카를로 — 분포 특성', () {
-    test('변동성이 있으면 성공/실패가 섞이고 백분위수는 단조 증가한다', () {
-      const input = MonteCarloInput(
-        currentAssets: 900000000,
-        monthlySaving: 0,
-        accumulationMonths: 0,
-        monthlyWithdrawal: 3000000,
-        retirementMonths: 480,
-        annualExpectedReturn: 0.035,
-        annualVolatility: 0.15,
-        runs: 1000,
-        seed: 7,
-      );
-
-      final result = runMonteCarlo(input);
-
-      expect(result.successes, greaterThan(0));
-      expect(result.successes, lessThan(input.runs));
-      expect(result.endingAssets.length, input.runs);
-      expect(
-        result.successes + result.depletionMonths.length,
-        input.runs,
-      );
-
-      final p10 = result.endingAssetsPercentile(0.1);
-      final p50 = result.endingAssetsPercentile(0.5);
-      final p90 = result.endingAssetsPercentile(0.9);
-      expect(p10, lessThanOrEqualTo(p50));
-      expect(p50, lessThanOrEqualTo(p90));
+      final deterministic =
+          accumulationTrajectory(plan, months: 240).last;
+      final r = runMonteCarlo(request);
+      expect(r.successRate, 1.0);
+      expect(r.endingAssets.first, closeTo(deterministic, 100));
     });
   });
 }

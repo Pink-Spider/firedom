@@ -1,61 +1,69 @@
 import 'dart:math' as math;
 
-/// 몬테카를로 시뮬레이션 입력. 금액은 모두 정수 원, 수익률은 실질 기준.
+import 'models.dart';
+
+/// FNV-1a 32비트 해시 — 몬테카를로 시드 규약 (엔진명세 A6)
+int fnv1a(String input) {
+  var hash = 0x811c9dc5;
+  for (final code in input.codeUnits) {
+    hash ^= code;
+    hash = (hash * 0x01000193) & 0xFFFFFFFF;
+  }
+  return hash;
+}
+
+/// 몬테카를로 요청 (엔진명세 A6).
 ///
-/// 월수익률을 정규분포 N(월기대수익률, 월변동성)에서 샘플링한다 (PRD §7).
-/// - 월기대수익률 = (1+연기대수익률)^(1/12) − 1
-/// - 월변동성 = 연변동성 / √12
-class MonteCarloInput {
-  /// 현재 순자산 (원)
-  final int currentAssets;
+/// 톱레벨 [runMonteCarlo]에 단일 인자로 전달 — `compute()`로 isolate 실행 가능.
+class MonteCarloRequest {
+  final PlanInput plan;
 
-  /// 적립 구간 월 저축액 (원)
-  final int monthlySaving;
+  /// 은퇴 월 (결정론 풀이의 tF를 고정해서 전달)
+  final int retirementMonth;
 
-  /// 적립(은퇴까지) 월 수. 0이면 즉시 은퇴.
-  final int accumulationMonths;
-
-  /// 은퇴 후 월 인출액 (원, 실질)
-  final int monthlyWithdrawal;
-
-  /// 은퇴 후 기대수명까지 월 수
-  final int retirementMonths;
-
-  /// 연 기대수익률 (실질)
-  final double annualExpectedReturn;
-
-  /// 연 변동성 (표준편차, 예: 0.15)
-  final double annualVolatility;
-
-  /// 시뮬레이션 횟수 (기본 5,000회)
+  /// 경로 수 (기본 5,000)
   final int runs;
 
-  /// 시드. 지정하면 동일 입력 → 동일 결과 (재현성).
+  /// 시드. null이면 입력 직렬화의 FNV-1a 해시 — 동일 입력 → 동일 결과.
+  /// "다시 계산"은 앱 레이어에서 seed+1.
   final int? seed;
 
-  const MonteCarloInput({
-    required this.currentAssets,
-    required this.monthlySaving,
-    required this.accumulationMonths,
-    required this.monthlyWithdrawal,
-    required this.retirementMonths,
-    required this.annualExpectedReturn,
-    required this.annualVolatility,
+  const MonteCarloRequest({
+    required this.plan,
+    required this.retirementMonth,
     this.runs = 5000,
     this.seed,
   });
+
+  int get effectiveSeed => seed ?? fnv1a(_canonicalString);
+
+  String get _canonicalString => [
+        plan.age0,
+        plan.currentAssets,
+        plan.monthlySaving,
+        plan.realReturnBp,
+        plan.monthlySpendRetire,
+        plan.swrBp,
+        plan.lifeExpectancy,
+        plan.nps?.monthlyAmount ?? '',
+        plan.nps?.startAge ?? '',
+        plan.volatilityBp,
+        retirementMonth,
+        runs,
+      ].join('|');
 }
 
 class MonteCarloResult {
   final int runs;
 
-  /// 성공 횟수. 성공 = 기대수명까지 자산 > 0 유지.
+  /// 성공 경로 수. 성공 = 기대수명까지 잔액 ≥ 0 유지 (A6).
   final int successes;
 
-  /// 런별 기대수명 시점 자산 (원, 실질). 오름차순 정렬. 고갈 런은 0.
+  /// 경로별 기대수명 시점 잔액 (원, 실질). 오름차순. 실패 경로는 0.
   final List<int> endingAssets;
 
-  /// 실패 런의 고갈 월 (은퇴 시점부터). 오름차순 정렬.
+  /// 실패 경로의 고갈 절대 월 t (t=0 기준). 오름차순.
+  /// 고갈 나이 = age0 + t ~/ 12 (R2).
   final List<int> depletionMonths;
 
   const MonteCarloResult({
@@ -67,7 +75,7 @@ class MonteCarloResult {
 
   double get successRate => successes / runs;
 
-  /// 기대수명 시점 자산의 백분위수 (p: 0.0~1.0)
+  /// 기대수명 시점 잔액의 백분위수 (p: 0.0~1.0) — p10/p50/p90 밴드용
   int endingAssetsPercentile(double p) {
     assert(p >= 0 && p <= 1);
     final index = ((endingAssets.length - 1) * p).round();
@@ -75,51 +83,63 @@ class MonteCarloResult {
   }
 }
 
-/// 몬테카를로 시뮬레이션 실행.
+/// 몬테카를로 실행 (엔진명세 A6).
 ///
-/// 순수 함수(톱레벨)이므로 `compute()`로 isolate에서 실행할 수 있다.
-MonteCarloResult runMonteCarlo(MonteCarloInput input) {
-  final rng =
-      input.seed == null ? math.Random() : math.Random(input.seed);
+/// 월 수익률은 로그정규 샘플링:
+/// σ_m = σ_annual/√12, μ_m = ln(1+r_real)/12 − σ_m²/2, r_t = exp(N(μ_m, σ_m)) − 1
+MonteCarloResult runMonteCarlo(MonteCarloRequest request) {
+  final plan = request.plan;
+  final rng = math.Random(request.effectiveSeed);
   final gaussian = _Gaussian(rng);
 
-  final monthlyMean =
-      math.pow(1 + input.annualExpectedReturn, 1 / 12).toDouble() - 1.0;
-  final monthlySigma = input.annualVolatility / math.sqrt(12);
+  final sigmaM = bpToRate(plan.volatilityBp) / math.sqrt(12);
+  final muM =
+      math.log(1 + bpToRate(plan.realReturnBp)) / 12 - sigmaM * sigmaM / 2;
+
+  final lifeMonths = plan.lifeMonths;
+  final retirementMonth = math.min(request.retirementMonth, lifeMonths);
+  final npsStartMonth = plan.npsStartMonth;
 
   var successes = 0;
   final endingAssets = <int>[];
   final depletionMonths = <int>[];
 
-  for (var run = 0; run < input.runs; run++) {
-    var assets = input.currentAssets;
+  for (var run = 0; run < request.runs; run++) {
+    var assets = plan.currentAssets;
+    var failedAt = -1;
 
-    for (var month = 0; month < input.accumulationMonths; month++) {
-      final rate = monthlyMean + gaussian.next() * monthlySigma;
-      assets = (assets * (1 + rate)).round() + input.monthlySaving;
-    }
-
-    var depleted = false;
-    for (var month = 1; month <= input.retirementMonths; month++) {
-      final rate = monthlyMean + gaussian.next() * monthlySigma;
-      assets = (assets * (1 + rate)).round() - input.monthlyWithdrawal;
-      if (assets <= 0) {
-        depleted = true;
-        depletionMonths.add(month);
-        assets = 0;
+    for (var t = 0; t < lifeMonths; t++) {
+      final rate = math.exp(muM + gaussian.next() * sigmaM) - 1.0;
+      final int cashflow;
+      if (t < retirementMonth) {
+        cashflow = plan.monthlySaving;
+      } else {
+        final income = (npsStartMonth != null && t >= npsStartMonth)
+            ? plan.nps!.monthlyAmount
+            : 0;
+        cashflow = income - plan.monthlySpendRetire;
+      }
+      assets = (assets * (1 + rate)).round() + cashflow;
+      if (assets < 0) {
+        failedAt = t + 1;
         break;
       }
     }
 
-    if (!depleted) successes++;
-    endingAssets.add(assets);
+    if (failedAt < 0) {
+      successes++;
+      endingAssets.add(assets);
+    } else {
+      depletionMonths.add(failedAt);
+      endingAssets.add(0);
+    }
   }
 
   endingAssets.sort();
   depletionMonths.sort();
 
   return MonteCarloResult(
-    runs: input.runs,
+    runs: request.runs,
     successes: successes,
     endingAssets: endingAssets,
     depletionMonths: depletionMonths,

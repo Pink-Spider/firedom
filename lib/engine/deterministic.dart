@@ -1,49 +1,95 @@
+import 'dart:math' as math;
+
 import 'models.dart';
 
-/// FIRE Number = 은퇴 후 연 지출 / 안전인출률 (원 단위 반올림)
-int fireNumberOf({
-  required int monthlyExpenseInRetirement,
-  required double safeWithdrawalRate,
-}) {
-  return (monthlyExpenseInRetirement * 12 / safeWithdrawalRate).round();
+/// 시뮬 상한: 1,200개월 = 100년. 미도달 시 unreachable (엔진명세 R7)
+const int maxSimulationMonths = 1200;
+
+/// 모드 1 FIRE Number = round(은퇴 후 월 생활비 × 12 / SWR) (엔진명세 A2)
+int fireNumberOf({required int monthlySpendRetire, required int swrBp}) {
+  return (monthlySpendRetire * 12 / bpToRate(swrBp)).round();
 }
 
-/// 적립(은퇴 준비) 구간 시뮬레이션 입력. 금액은 모두 정수 원.
-class AccumulationInput {
-  /// 현재 순자산 (원)
-  final int currentAssets;
-
-  /// 월 저축액 (원) = 세후 월소득 − 월 지출. 음수 허용(자산 감소 시나리오).
-  final int monthlySaving;
-
-  /// 은퇴 후 월 생활비 (원, 실질)
-  final int monthlyExpenseInRetirement;
-
-  final SimulationAssumptions assumptions;
-
-  /// 시뮬레이션 상한 (기본 100년). 이 안에 도달하지 못하면 도달 불가로 본다.
-  final int maxMonths;
-
-  const AccumulationInput({
-    required this.currentAssets,
-    required this.monthlySaving,
-    required this.monthlyExpenseInRetirement,
-    required this.assumptions,
-    this.maxMonths = 1200,
-  });
+/// 축적 궤적 (엔진명세 A3): asset[t+1] = round(asset[t] × (1+r_m)) + 월저축
+///
+/// 반환 리스트 길이는 months+1, [0] = 현재 순자산.
+List<int> accumulationTrajectory(PlanInput input, {required int months}) {
+  final monthlyRate = input.monthlyRealReturn;
+  var assets = input.currentAssets;
+  final trajectory = <int>[assets];
+  for (var t = 0; t < months; t++) {
+    assets = (assets * (1 + monthlyRate)).round() + input.monthlySaving;
+    trajectory.add(assets);
+  }
+  return trajectory;
 }
 
-class AccumulationResult {
-  /// 목표 자산 (FIRE Number, 원)
-  final int fireNumber;
-
-  /// FIRE Number 도달까지 월 수. 0 = 이미 도달, null = maxMonths 내 도달 불가.
-  final int? monthsToFire;
-
-  /// 월별 자산 궤적. [0] = 현재. 도달 시 도달 월까지, 미도달 시 maxMonths까지.
+/// 인출 시뮬 결과 (엔진명세 A4)
+class DrawdownResult {
+  /// 월별 잔액. [0] = 은퇴 시점(월 R). 실패 시 마지막 원소가 음수.
   final List<int> assetsByMonth;
 
-  const AccumulationResult({
+  /// 잔액이 처음 음수가 되는 절대 월 t (t=0 기준). null = 기대수명까지 생존.
+  final int? failureMonth;
+
+  const DrawdownResult({
+    required this.assetsByMonth,
+    required this.failureMonth,
+  });
+
+  bool get survives => failureMonth == null;
+}
+
+/// 인출 시뮬 (엔진명세 A4). [retirementMonth]부터 기대수명까지.
+///
+/// asset[t+1] = round(asset[t] × (1+r_m)) + income[t] − 은퇴 후 생활비
+/// income[t] = (t ≥ 연금 개시 월) ? 연금 월액 : 0
+/// 실패 조건: asset[t+1] < 0
+DrawdownResult drawdown(
+  PlanInput input, {
+  required int retirementMonth,
+  required int assetsAtRetirement,
+}) {
+  final monthlyRate = input.monthlyRealReturn;
+  final npsStartMonth = input.npsStartMonth;
+
+  var assets = assetsAtRetirement;
+  final trajectory = <int>[assets];
+  int? failureMonth;
+
+  for (var t = retirementMonth; t < input.lifeMonths; t++) {
+    final income = (npsStartMonth != null && t >= npsStartMonth)
+        ? input.nps!.monthlyAmount
+        : 0;
+    assets = (assets * (1 + monthlyRate)).round() +
+        income -
+        input.monthlySpendRetire;
+    trajectory.add(assets);
+    if (assets < 0) {
+      failureMonth = t + 1;
+      break;
+    }
+  }
+
+  return DrawdownResult(
+    assetsByMonth: trajectory,
+    failureMonth: failureMonth,
+  );
+}
+
+/// FIRE 풀이 결과 (엔진명세 A2)
+class FireResult {
+  /// 표시용 FIRE Number.
+  /// 모드 1: 공식값(월 생활비×12/SWR). 모드 2: 도달 시 asset[tF], 미도달 시 모드 1 공식값.
+  final int fireNumber;
+
+  /// FIRE 시점 tF (월). 0 = 이미 달성, null = unreachable (R7·A9).
+  final int? monthsToFire;
+
+  /// 계획 궤도(축적 곡선). 도달 시 0..tF, 미도달 시 0..탐색 상한.
+  final List<int> assetsByMonth;
+
+  const FireResult({
     required this.fireNumber,
     required this.monthsToFire,
     required this.assetsByMonth,
@@ -52,96 +98,83 @@ class AccumulationResult {
   bool get isReachable => monthsToFire != null;
 }
 
-/// 결정론 적립 시뮬레이션 (PRD §7).
-///
-/// 매월: 자산(t+1) = round(자산(t) × (1+월실질수익률)) + 월저축
-AccumulationResult projectAccumulation(AccumulationInput input) {
+/// 계획 풀이 (엔진명세 A2).
+/// 연금 입력 시 모드 2(인출 판정 — 정본), 아니면 모드 1(SWR 공식).
+FireResult solvePlan(PlanInput input) {
+  return input.nps == null
+      ? solveFireBySwr(input)
+      : solveFireByFeasibility(input);
+}
+
+/// 모드 1 (A2): FIRE 시점 = min{ t : asset[t] ≥ FIRE_number }
+FireResult solveFireBySwr(PlanInput input) {
   final fireNumber = fireNumberOf(
-    monthlyExpenseInRetirement: input.monthlyExpenseInRetirement,
-    safeWithdrawalRate: input.assumptions.safeWithdrawalRate,
+    monthlySpendRetire: input.monthlySpendRetire,
+    swrBp: input.swrBp,
   );
-  final monthlyRate = input.assumptions.monthlyRealReturn;
+  final monthlyRate = input.monthlyRealReturn;
 
   var assets = input.currentAssets;
   final trajectory = <int>[assets];
   int? monthsToFire = assets >= fireNumber ? 0 : null;
 
   if (monthsToFire == null) {
-    for (var month = 1; month <= input.maxMonths; month++) {
+    for (var t = 1; t <= maxSimulationMonths; t++) {
       assets = (assets * (1 + monthlyRate)).round() + input.monthlySaving;
       trajectory.add(assets);
       if (assets >= fireNumber) {
-        monthsToFire = month;
+        monthsToFire = t;
         break;
       }
     }
   }
 
-  return AccumulationResult(
+  return FireResult(
     fireNumber: fireNumber,
     monthsToFire: monthsToFire,
     assetsByMonth: trajectory,
   );
 }
 
-/// 인출(은퇴 후) 구간 시뮬레이션 입력. 금액은 모두 정수 원.
-class RetirementInput {
-  /// 은퇴 시점 자산 (원)
-  final int startAssets;
+/// 모드 2 (A2): feasible(R) = R개월 후 은퇴 가정 시 기대수명까지 인출 생존.
+/// tF = min{ R : feasible(R) } — R에 대한 단조성 가정 하에 이분 탐색.
+FireResult solveFireByFeasibility(PlanInput input) {
+  final rMax = math.min(maxSimulationMonths, input.lifeMonths);
+  final accumulation = accumulationTrajectory(input, months: rMax);
 
-  /// 월 인출액 (원, 실질 — 인플레이션 연동 명목 인출과 동일)
-  final int monthlyWithdrawal;
+  bool feasible(int r) => drawdown(
+        input,
+        retirementMonth: r,
+        assetsAtRetirement: accumulation[r],
+      ).survives;
 
-  final SimulationAssumptions assumptions;
+  final fallbackFireNumber = fireNumberOf(
+    monthlySpendRetire: input.monthlySpendRetire,
+    swrBp: input.swrBp,
+  );
 
-  /// 기대수명까지 월 수
-  final int months;
-
-  const RetirementInput({
-    required this.startAssets,
-    required this.monthlyWithdrawal,
-    required this.assumptions,
-    required this.months,
-  });
-}
-
-class RetirementResult {
-  /// 월별 자산 궤적. [0] = 은퇴 시점. 고갈 시 0으로 끝난다.
-  final List<int> assetsByMonth;
-
-  /// 자산이 처음 0 이하가 되는 월 (은퇴 시점부터). null = 기간 내 고갈 없음.
-  final int? depletionMonth;
-
-  const RetirementResult({
-    required this.assetsByMonth,
-    required this.depletionMonth,
-  });
-
-  bool get survives => depletionMonth == null;
-}
-
-/// 결정론 인출 시뮬레이션 (PRD §7).
-///
-/// 매월: 자산(t+1) = round(자산(t) × (1+월실질수익률)) − 월인출
-RetirementResult projectRetirement(RetirementInput input) {
-  final monthlyRate = input.assumptions.monthlyRealReturn;
-
-  var assets = input.startAssets;
-  final trajectory = <int>[assets];
-  int? depletionMonth;
-
-  for (var month = 1; month <= input.months; month++) {
-    assets = (assets * (1 + monthlyRate)).round() - input.monthlyWithdrawal;
-    if (assets <= 0) {
-      depletionMonth = month;
-      trajectory.add(0);
-      break;
-    }
-    trajectory.add(assets);
+  if (!feasible(rMax)) {
+    return FireResult(
+      fireNumber: fallbackFireNumber,
+      monthsToFire: null,
+      assetsByMonth: accumulation,
+    );
   }
 
-  return RetirementResult(
-    assetsByMonth: trajectory,
-    depletionMonth: depletionMonth,
+  var lo = 0;
+  var hi = rMax;
+  while (lo < hi) {
+    final mid = (lo + hi) ~/ 2;
+    if (feasible(mid)) {
+      hi = mid;
+    } else {
+      lo = mid + 1;
+    }
+  }
+
+  return FireResult(
+    fireNumber: accumulation[lo],
+    monthsToFire: lo,
+    assetsByMonth: accumulation.sublist(0, lo + 1),
   );
 }
