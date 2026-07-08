@@ -4,7 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/money_format.dart';
-import '../../data/active_plan_store.dart';
+import '../../core/ym.dart';
+import '../../data/db/providers.dart';
 import '../../engine/engine.dart';
 import '../home/home_screen.dart';
 import 'onboarding_draft.dart';
@@ -116,9 +117,13 @@ class _OnboardingResultScreenState
   }
 
   Future<void> _startPlan(PlanInput plan) async {
-    await ref.read(activePlanStoreProvider).save(plan);
+    final ym = nowYm();
+    await ref.read(planRepositoryProvider).createPlan(
+          input: plan,
+          birthYm: birthYmFromAge(plan.age0, ym),
+          startedYm: ym,
+        );
     await ref.read(onboardingDraftProvider.notifier).clear();
-    ref.invalidate(activePlanProvider);
     if (mounted) context.go(HomeScreen.path);
   }
 

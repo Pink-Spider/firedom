@@ -10,6 +10,12 @@ final databaseProvider = Provider<AppDatabase>(
   (ref) => throw UnimplementedError('databaseProvider는 main()에서 override'),
 );
 
+/// 기동 시점의 활성 계획 존재 여부 — 라우터 시작 위치 결정용 (main()에서 override).
+final hasActivePlanAtLaunchProvider = Provider<bool>(
+  (ref) => throw UnimplementedError(
+      'hasActivePlanAtLaunchProvider는 main()에서 override'),
+);
+
 final planRepositoryProvider = Provider<PlanRepository>(
   (ref) => PlanRepository(ref.watch(databaseProvider)),
 );

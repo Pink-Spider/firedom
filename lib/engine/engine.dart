@@ -4,3 +4,4 @@ library;
 export 'deterministic.dart';
 export 'models.dart';
 export 'monte_carlo.dart';
+export 'tracking.dart';
