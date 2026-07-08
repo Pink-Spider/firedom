@@ -16,9 +16,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// 그렇지 않으면 "A Timer is still pending" 불변식에 걸린다.
 void appTest(String description, WidgetTesterCallback callback) {
   testWidgets(description, (tester) async {
-    await callback(tester);
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump(const Duration(seconds: 1));
+    try {
+      await callback(tester);
+    } finally {
+      // 실패 시에도 반드시 트리를 내려 스트림 구독을 해제해야
+      // 남은 타이머/DB 정리가 다음 테스트를 막지 않는다
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(seconds: 1));
+    }
   });
 }
 
