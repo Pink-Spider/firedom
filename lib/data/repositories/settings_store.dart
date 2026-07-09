@@ -54,4 +54,7 @@ abstract final class SettingKeys {
 
   /// `Map<String, int>` — 목표 자산 배분 (자산군 → %)
   static const targetAllocation = 'target_allocation';
+
+  /// bool — 프리미엄 entitlement 캐시 (B1: 구독 entitlement 캐시)
+  static const premiumEntitlement = 'entitlement.premium';
 }

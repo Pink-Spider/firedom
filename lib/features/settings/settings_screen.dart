@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/db/providers.dart';
+import '../../data/entitlements.dart';
 import '../../data/notifications/reminder_scheduler.dart';
 import '../../data/reminders.dart';
 import '../../data/repositories/settings_store.dart';
@@ -190,12 +192,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             const Divider(),
             _SectionHeader('구독'),
-            ListTile(
-              title: const Text('파이어덤 프리미엄'),
-              subtitle: const Text('몬테카를로 상세 · 시나리오 비교 · 연금 뷰'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => showPaywallSheet(context),
-            ),
+            Builder(builder: (context) {
+              final isPremium = ref.watch(isPremiumProvider).value ?? false;
+              return ListTile(
+                title: const Text('파이어덤 프리미엄'),
+                subtitle: Text(isPremium
+                    ? '이용 중 🎉'
+                    : '몬테카를로 상세 · 시나리오 비교 · 연금 뷰'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => showPaywallSheet(context),
+              );
+            }),
+            if (kDebugMode)
+              SwitchListTile(
+                key: const ValueKey('debug-premium-switch'),
+                title: const Text('프리미엄 시뮬레이션 (디버그)'),
+                subtitle: const Text('개발 빌드 전용 — 유료 게이트 QA'),
+                value: ref.watch(isPremiumProvider).value ?? false,
+                onChanged: (value) => ref
+                    .read(entitlementServiceProvider)
+                    .setDebugPremium(value),
+              ),
             const Divider(),
             _SectionHeader('데이터 · 정보'),
             const ListTile(

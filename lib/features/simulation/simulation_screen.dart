@@ -6,9 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/money_format.dart';
 import '../../data/db/providers.dart';
+import '../../data/entitlements.dart';
 import '../../data/repositories/plan_repository.dart';
 import '../../engine/engine.dart';
 import '../paywall/paywall_sheet.dart';
+import 'monte_carlo_detail_screen.dart';
 import 'monte_carlo_runner.dart';
 
 /// S4. 시뮬레이션 — What-if 놀이터 (PRD)
@@ -145,7 +147,10 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
               result: result,
               mcResult: _mcResult,
               running: _mcRunning,
+              isPremium: ref.watch(isPremiumProvider).value ?? false,
               onRun: () => _runMonteCarlo(input, result),
+              onShowDetail: (mc, isPremium) =>
+                  _showDetail(input, mc, isPremium),
             ),
             const SizedBox(height: 12),
             Row(
@@ -172,6 +177,19 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showDetail(PlanInput input, MonteCarloResult mc, bool isPremium) {
+    if (!isPremium) {
+      // 유료 훅 (PRD S4): 티저는 무료, 상세 분포는 구독
+      showPaywallSheet(context, successRate: mc.successRate);
+      return;
+    }
+    Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute<void>(
+        builder: (_) => MonteCarloDetailScreen(plan: input, result: mc),
       ),
     );
   }
@@ -328,14 +346,18 @@ class _MonteCarloCard extends StatelessWidget {
   final FireResult result;
   final MonteCarloResult? mcResult;
   final bool running;
+  final bool isPremium;
   final VoidCallback onRun;
+  final void Function(MonteCarloResult mc, bool isPremium) onShowDetail;
 
   const _MonteCarloCard({
     required this.input,
     required this.result,
     required this.mcResult,
     required this.running,
+    required this.isPremium,
     required this.onRun,
+    required this.onShowDetail,
   });
 
   @override
@@ -377,9 +399,8 @@ class _MonteCarloCard extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               TextButton(
-                onPressed: () =>
-                    showPaywallSheet(context, successRate: mc.successRate),
-                child: const Text('상세 분포 보기 🔒'),
+                onPressed: () => onShowDetail(mc, isPremium),
+                child: Text(isPremium ? '상세 분포 보기' : '상세 분포 보기 🔒'),
               ),
             ] else
               FilledButton.tonal(
