@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../core/ym.dart';
 import '../data/db/providers.dart';
 import '../features/assets/assets_screen.dart';
+import '../features/goal/goal_settings_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/onboarding/onboarding_result_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
@@ -48,6 +49,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: OnboardingResultScreen.path,
         builder: (context, state) => const OnboardingResultScreen(),
+      ),
+      GoRoute(
+        path: GoalSettingsScreen.path,
+        builder: (context, state) => const GoalSettingsScreen(),
       ),
       GoRoute(
         path: SnapshotFlowScreen.path,

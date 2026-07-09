@@ -14,6 +14,7 @@ import '../../data/repositories/settings_store.dart';
 import '../../data/repositories/snapshot_repository.dart';
 import '../../engine/engine.dart';
 import '../common/deviation_badge.dart';
+import '../goal/goal_settings_screen.dart';
 import '../onboarding/onboarding_screen.dart';
 import '../snapshot/snapshot_flow_screen.dart';
 
@@ -73,6 +74,8 @@ class _Dashboard extends ConsumerWidget {
     final summaries =
         ref.watch(snapshotSummariesProvider).value ?? const <SnapshotSummary>[];
     final masked = ref.watch(maskAmountsProvider).value ?? false;
+    final revisions =
+        ref.watch(activePlanRevisionsProvider).value ?? const <Plan>[];
 
     final input = planInputOf(plan);
     final result = solvePlan(input);
@@ -88,6 +91,11 @@ class _Dashboard extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('파이어덤'),
         actions: [
+          IconButton(
+            tooltip: '목표 설정',
+            icon: const Icon(Icons.tune),
+            onPressed: () => context.push(GoalSettingsScreen.path),
+          ),
           // 금액 가림 토글 — 탭 1번 (지하철에서 여는 앱)
           IconButton(
             tooltip: masked ? '금액 보이기' : '금액 가리기',
@@ -120,6 +128,7 @@ class _Dashboard extends ConsumerWidget {
               result: result,
               summaries: summaries,
               masked: masked,
+              revisions: revisions,
             ),
             const SizedBox(height: 12),
             _SavingRateCard(summaries: summaries),
@@ -244,6 +253,7 @@ class _TrajectoryCard extends StatelessWidget {
   final FireResult result;
   final List<SnapshotSummary> summaries;
   final bool masked;
+  final List<Plan> revisions;
 
   const _TrajectoryCard({
     required this.plan,
@@ -251,6 +261,7 @@ class _TrajectoryCard extends StatelessWidget {
     required this.result,
     required this.summaries,
     required this.masked,
+    required this.revisions,
   });
 
   @override
@@ -298,6 +309,12 @@ class _TrajectoryCard extends StatelessWidget {
     );
   }
 
+  double _revisionX(Plan revision) {
+    final revisionYm =
+        ymOf(DateTime.fromMillisecondsSinceEpoch(revision.createdAt));
+    return ymDiffMonths(plan.startedYm, revisionYm) / 12;
+  }
+
   Widget _chart(BuildContext context) {
     final theme = Theme.of(context);
     final trajectory = result.assetsByMonth;
@@ -317,6 +334,19 @@ class _TrajectoryCard extends StatelessWidget {
           ),
     ];
 
+    // 계획 변경 마커 (S7 수용 기준): 리비전 시점을 수직선으로 표시
+    final maxX = (trajectory.length - 1) / 12;
+    final revisionLines = <VerticalLine>[
+      for (final revision in revisions.skip(1))
+        if (_revisionX(revision) > 0 && _revisionX(revision) < maxX)
+          VerticalLine(
+            x: _revisionX(revision),
+            color: theme.colorScheme.tertiary,
+            strokeWidth: 1,
+            dashArray: [4, 4],
+          ),
+    ];
+
     return SizedBox(
       height: 190,
       child: LineChart(
@@ -324,6 +354,7 @@ class _TrajectoryCard extends StatelessWidget {
           gridData: const FlGridData(show: false),
           borderData: FlBorderData(show: false),
           lineTouchData: const LineTouchData(enabled: false),
+          extraLinesData: ExtraLinesData(verticalLines: revisionLines),
           titlesData: FlTitlesData(
             topTitles:
                 const AxisTitles(sideTitles: SideTitles(showTitles: false)),

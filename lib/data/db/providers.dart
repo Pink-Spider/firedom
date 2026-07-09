@@ -37,6 +37,15 @@ final activePlanRowProvider = StreamProvider<Plan?>(
   (ref) => ref.watch(planRepositoryProvider).watchActivePlan(),
 );
 
+/// 활성 계획의 리비전 이력 (계획 변경 마커용)
+final activePlanRevisionsProvider = StreamProvider<List<Plan>>((ref) {
+  final active = ref.watch(activePlanRowProvider).value;
+  if (active == null) return Stream.value(const <Plan>[]);
+  return ref
+      .watch(planRepositoryProvider)
+      .watchRevisions(active.revisionGroup);
+});
+
 final snapshotSummariesProvider = StreamProvider<List<SnapshotSummary>>(
   (ref) => ref.watch(snapshotRepositoryProvider).watchSummaries(),
 );
