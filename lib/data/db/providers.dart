@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../repositories/plan_repository.dart';
+import '../repositories/scenario_repository.dart';
 import '../repositories/settings_store.dart';
 import '../repositories/snapshot_repository.dart';
 import 'database.dart';
@@ -26,6 +27,10 @@ final snapshotRepositoryProvider = Provider<SnapshotRepository>(
 
 final settingsStoreProvider = Provider<SettingsStore>(
   (ref) => SettingsStore(ref.watch(databaseProvider)),
+);
+
+final scenarioRepositoryProvider = Provider<ScenarioRepository>(
+  (ref) => ScenarioRepository(ref.watch(databaseProvider)),
 );
 
 final activePlanRowProvider = StreamProvider<Plan?>(

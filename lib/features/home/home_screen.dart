@@ -98,11 +98,6 @@ class _Dashboard extends ConsumerWidget {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push(SnapshotFlowScreen.path),
-        icon: const Icon(Icons.add),
-        label: const Text('기록'),
-      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),

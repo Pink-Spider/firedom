@@ -33,6 +33,8 @@ Future<AppDatabase> pumpApp(
   WidgetTester tester, {
   Map<String, Object> prefsValues = const {},
   Future<void> Function(AppDatabase db)? seed,
+  // Riverpod 3은 Override 타입을 공개하지 않아 Object로 받고 cast()로 전달
+  List<Object> overrides = const [],
 }) async {
   SharedPreferences.setMockInitialValues(prefsValues);
   final prefs = await SharedPreferences.getInstance();
@@ -46,6 +48,7 @@ Future<AppDatabase> pumpApp(
         sharedPreferencesProvider.overrideWithValue(prefs),
         databaseProvider.overrideWithValue(db),
         hasActivePlanAtLaunchProvider.overrideWithValue(hasPlan),
+        ...overrides.cast(),
       ],
       child: const FiredomApp(),
     ),
