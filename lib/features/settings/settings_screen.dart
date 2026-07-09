@@ -1,7 +1,12 @@
+import 'dart:io';
+
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 
+import '../../data/backup_service.dart';
 import '../../data/db/providers.dart';
 import '../../data/entitlements.dart';
 import '../../data/notifications/reminder_scheduler.dart';
@@ -215,10 +220,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             const Divider(),
             _SectionHeader('데이터 · 정보'),
-            const ListTile(
-              title: Text('백업 / 복원'),
-              subtitle: Text('암호화 백업 — 준비 중 (v1.0)'),
-              enabled: false,
+            ListTile(
+              key: const ValueKey('backup-export-tile'),
+              title: const Text('백업 파일 내보내기'),
+              subtitle: const Text(
+                  '암호화(AES-256) 파일 — iCloud/Drive에 보관하세요 · 서버 없음'),
+              trailing: const Icon(Icons.upload_outlined),
+              onTap: _exportBackup,
+            ),
+            ListTile(
+              key: const ValueKey('backup-import-tile'),
+              title: const Text('백업 가져오기'),
+              subtitle: const Text('현재 데이터를 백업 내용으로 전체 교체해요'),
+              trailing: const Icon(Icons.download_outlined),
+              onTap: _importBackup,
             ),
             ListTile(
               title: const Text('개인정보 처리방침'),
@@ -238,6 +253,149 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
       ),
     );
+  }
+
+  // ── 백업 / 복원 (B4) ─────────────────────────────────────────
+
+  Future<String?> _askPassphrase({required bool creating}) {
+    final controller = TextEditingController();
+    final confirmController = TextEditingController();
+    String? error;
+    return showDialog<String>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(creating ? '백업 암호 만들기' : '백업 암호 입력'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                key: const ValueKey('passphrase-field'),
+                controller: controller,
+                obscureText: true,
+                autofocus: true,
+                decoration: InputDecoration(
+                  labelText: '패스프레이즈 (8자 이상)',
+                  errorText: error,
+                ),
+              ),
+              if (creating) ...[
+                const SizedBox(height: 8),
+                TextField(
+                  key: const ValueKey('passphrase-confirm-field'),
+                  controller: confirmController,
+                  obscureText: true,
+                  decoration: const InputDecoration(labelText: '한 번 더 입력'),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '암호를 잊으면 복구할 수 없어요 — 안전한 곳에 보관하세요',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('취소'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final passphrase = controller.text;
+                if (passphrase.length < 8) {
+                  setDialogState(() => error = '8자 이상 입력해주세요');
+                  return;
+                }
+                if (creating && passphrase != confirmController.text) {
+                  setDialogState(() => error = '암호가 서로 달라요');
+                  return;
+                }
+                Navigator.pop(context, passphrase);
+              },
+              child: const Text('확인'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showSnack(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  Future<void> _exportBackup() async {
+    final passphrase = await _askPassphrase(creating: true);
+    if (passphrase == null) return;
+    try {
+      final bytes = await BackupService(ref.read(databaseProvider))
+          .export(passphrase: passphrase);
+      final now = DateTime.now();
+      final name = 'firedom-backup-${now.year}'
+          '${now.month.toString().padLeft(2, '0')}'
+          '${now.day.toString().padLeft(2, '0')}.fdbk';
+      final file = File('${Directory.systemTemp.path}/$name');
+      await file.writeAsBytes(bytes, flush: true);
+      await SharePlus.instance.share(ShareParams(files: [XFile(file.path)]));
+    } on BackupException catch (error) {
+      _showSnack(error.message);
+    } catch (_) {
+      _showSnack('백업 파일을 만들지 못했어요');
+    }
+  }
+
+  Future<void> _importBackup() async {
+    final XFile? picked;
+    try {
+      picked = await openFile();
+    } catch (_) {
+      _showSnack('파일을 열지 못했어요');
+      return;
+    }
+    if (picked == null) return;
+    final bytes = await picked.readAsBytes();
+
+    final passphrase = await _askPassphrase(creating: false);
+    if (passphrase == null || !mounted) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('전체 교체 확인'),
+        content: const Text(
+            '현재 기기의 모든 기록·계획·설정이 백업 내용으로 교체돼요. 계속할까요?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('취소'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('교체하기'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      await BackupService(ref.read(databaseProvider))
+          .import(bytes: bytes, passphrase: passphrase);
+      _showSnack('복원 완료 — 데이터가 교체됐어요');
+      await _load(); // 설정 항목(리마인더 등) 다시 읽기
+      await rescheduleReminders(
+        db: ref.read(databaseProvider),
+        scheduler: ref.read(reminderSchedulerProvider),
+      );
+    } on BackupException catch (error) {
+      _showSnack(error.message);
+    } catch (_) {
+      _showSnack('복원에 실패했어요 — 파일과 암호를 확인해주세요');
+    }
   }
 
   void _showPrivacyDialog(BuildContext context) {
