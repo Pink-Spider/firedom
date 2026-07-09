@@ -17,6 +17,7 @@ import '../common/deviation_badge.dart';
 import '../common/milestone_labels.dart';
 import '../goal/goal_settings_screen.dart';
 import '../onboarding/onboarding_screen.dart';
+import '../settings/settings_screen.dart';
 import '../snapshot/snapshot_flow_screen.dart';
 
 /// S3. 홈 — 궤도 대시보드 (PRD)
@@ -115,6 +116,11 @@ class _Dashboard extends ConsumerWidget {
             onPressed: () => ref
                 .read(settingsStoreProvider)
                 .set(SettingKeys.maskAmounts, !masked),
+          ),
+          IconButton(
+            tooltip: '설정',
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () => context.push(SettingsScreen.path),
           ),
         ],
       ),

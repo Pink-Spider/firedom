@@ -7,7 +7,9 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Firedom</string>
+	<string>파이어덤</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>앱 잠금 해제에 Face ID를 사용합니다. 재무 데이터는 기기에만 저장됩니다.</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>

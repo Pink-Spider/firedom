@@ -4,6 +4,7 @@ import 'package:firedom/data/bootstrap.dart';
 import 'package:firedom/data/db/database.dart';
 import 'package:firedom/data/db/providers.dart';
 import 'package:firedom/data/prefs.dart';
+import 'package:firedom/features/lock/app_lock.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -41,13 +42,16 @@ Future<AppDatabase> pumpApp(
   final db = AppDatabase(NativeDatabase.memory());
   addTearDown(db.close);
   if (seed != null) await seed(db);
-  final hasPlan = await bootstrapApp(db, prefs);
+  final bootstrap = await bootstrapApp(db, prefs);
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
         sharedPreferencesProvider.overrideWithValue(prefs),
         databaseProvider.overrideWithValue(db),
-        hasActivePlanAtLaunchProvider.overrideWithValue(hasPlan),
+        hasActivePlanAtLaunchProvider.overrideWithValue(
+            bootstrap.hasActivePlan),
+        biometricLockAtLaunchProvider.overrideWithValue(
+            bootstrap.biometricLockEnabled),
         ...overrides.cast(),
       ],
       child: const FiredomApp(),

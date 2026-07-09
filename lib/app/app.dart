@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../features/lock/app_lock.dart';
 import 'router.dart';
 import 'theme.dart';
 
@@ -10,6 +11,7 @@ class FiredomApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final locked = ref.watch(appLockedProvider);
     return MaterialApp.router(
       title: '파이어덤',
       theme: buildTheme(),
@@ -21,6 +23,9 @@ class FiredomApp extends ConsumerWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
+      // 생체인증 앱 잠금 (S10): 해제 전까지 전체 화면을 가린다
+      builder: (context, child) =>
+          locked ? const AppLockScreen() : child!,
     );
   }
 }

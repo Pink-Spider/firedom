@@ -36,4 +36,19 @@ class SettingsStore {
 abstract final class SettingKeys {
   /// bool — 금액 가림(●●●) 상태
   static const maskAmounts = 'mask_amounts';
+
+  /// bool — 월간 기록 리마인더 사용
+  static const reminderEnabled = 'reminder.enabled';
+
+  /// int — 리마인더 일자 (0 = 매월 말일)
+  static const reminderDay = 'reminder.day';
+
+  /// int — 리마인더 시각 (시)
+  static const reminderHour = 'reminder.hour';
+
+  /// int — 리마인더 시각 (분)
+  static const reminderMinute = 'reminder.minute';
+
+  /// bool — 생체인증 앱 잠금
+  static const biometricLock = 'biometric_lock';
 }

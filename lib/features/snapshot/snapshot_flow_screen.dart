@@ -9,7 +9,9 @@ import '../../core/ym.dart';
 import '../../data/db/database.dart';
 import '../../data/db/providers.dart';
 import '../../data/milestone_service.dart';
+import '../../data/notifications/reminder_scheduler.dart';
 import '../../data/prefs.dart';
+import '../../data/reminders.dart';
 import 'snapshot_result_screen.dart';
 
 const _assetClassLabels = {
@@ -182,6 +184,11 @@ class _SnapshotFlowScreenState extends ConsumerState<SnapshotFlowScreen> {
     );
     // 마일스톤 판정은 저장 직후 (B1) — 결과 리빌에서 축하 표시
     await evaluateAndRecordMilestones(ref.read(databaseProvider), ym: _ym);
+    // 기록된 달은 리마인더에서 제외 (미기록 시에만 발송 — S10)
+    await rescheduleReminders(
+      db: ref.read(databaseProvider),
+      scheduler: ref.read(reminderSchedulerProvider),
+    );
     await ref.read(sharedPreferencesProvider).remove(_draftKey);
     if (mounted) {
       context.pushReplacement('${SnapshotResultScreen.path}?ym=$_ym');

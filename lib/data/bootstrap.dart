@@ -6,10 +6,12 @@ import '../core/ym.dart';
 import 'db/database.dart';
 import 'plan_input_json.dart';
 import 'repositories/plan_repository.dart';
+import 'repositories/settings_store.dart';
 
 /// 앱 기동 준비: 레거시(SharedPreferences) 활성 계획을 plans 테이블로
-/// 이관하고, 활성 계획 존재 여부를 반환한다 (라우터 시작 위치 결정용).
-Future<bool> bootstrapApp(AppDatabase db, SharedPreferences prefs) async {
+/// 이관하고, 라우터 시작 위치·앱 잠금 결정에 필요한 상태를 반환한다.
+Future<({bool hasActivePlan, bool biometricLockEnabled})> bootstrapApp(
+    AppDatabase db, SharedPreferences prefs) async {
   const legacyKey = 'active_plan_v0';
   final repository = PlanRepository(db);
   var active = await repository.getActivePlan();
@@ -28,5 +30,12 @@ Future<bool> bootstrapApp(AppDatabase db, SharedPreferences prefs) async {
     }
     await prefs.remove(legacyKey);
   }
-  return active != null;
+
+  final biometricLockEnabled =
+      await SettingsStore(db).get<bool>(SettingKeys.biometricLock) ?? false;
+
+  return (
+    hasActivePlan: active != null,
+    biometricLockEnabled: biometricLockEnabled,
+  );
 }
