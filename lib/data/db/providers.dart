@@ -70,3 +70,18 @@ final maskAmountsProvider = StreamProvider<bool>(
       .watch<bool>(SettingKeys.maskAmounts)
       .map((value) => value ?? false),
 );
+
+/// 최신 스냅샷의 자산군별 배분 (S6)
+final latestAllocationProvider =
+    StreamProvider<({int ym, Map<String, int> byClass})?>(
+  (ref) => ref.watch(snapshotRepositoryProvider).watchLatestAllocation(),
+);
+
+/// 목표 자산 배분 (자산군 → %) — settings 테이블
+final targetAllocationProvider = StreamProvider<Map<String, int>>(
+  (ref) => ref
+      .watch(settingsStoreProvider)
+      .watch<Map<String, dynamic>>(SettingKeys.targetAllocation)
+      .map((value) =>
+          value == null ? const {} : value.map((k, v) => MapEntry(k, v as int))),
+);

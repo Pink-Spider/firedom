@@ -200,6 +200,43 @@ class SnapshotRepository {
     });
   }
 
+  /// 최신 스냅샷의 자산군별 합계 (S6 자산배분).
+  /// FIRE 포함 자산의 양수 항목만 — 부채(음수)는 배분 도넛에서 제외.
+  Stream<({int ym, Map<String, int> byClass})?> watchLatestAllocation() {
+    final query = _db.select(_db.snapshots).join([
+      innerJoin(
+        _db.snapshotItems,
+        _db.snapshotItems.snapshotId.equalsExp(_db.snapshots.id) &
+            _db.snapshotItems.deletedAt.isNull(),
+      ),
+      innerJoin(
+        _db.accounts,
+        _db.accounts.id.equalsExp(_db.snapshotItems.accountId),
+      ),
+    ])
+      ..where(_db.snapshots.deletedAt.isNull());
+
+    return query.watch().map((rows) {
+      var latestYm = -1;
+      for (final row in rows) {
+        final ym = row.readTable(_db.snapshots).ym;
+        if (ym > latestYm) latestYm = ym;
+      }
+      if (latestYm < 0) return null;
+
+      final byClass = <String, int>{};
+      for (final row in rows) {
+        if (row.readTable(_db.snapshots).ym != latestYm) continue;
+        final account = row.readTable(_db.accounts);
+        final amount = row.readTable(_db.snapshotItems).amount;
+        if (!account.includeInFire || amount <= 0) continue;
+        byClass[account.assetClass] =
+            (byClass[account.assetClass] ?? 0) + amount;
+      }
+      return (ym: latestYm, byClass: byClass);
+    });
+  }
+
   /// ym 오름차순 스냅샷 + 순자산. 빈 달은 항목이 없으므로 자연히 공백 (보간 금지).
   Stream<List<SnapshotSummary>> watchSummaries() {
     return _summariesQuery().watch().map(_mapSummaryRows);

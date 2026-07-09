@@ -51,4 +51,7 @@ abstract final class SettingKeys {
 
   /// bool — 생체인증 앱 잠금
   static const biometricLock = 'biometric_lock';
+
+  /// `Map<String, int>` — 목표 자산 배분 (자산군 → %)
+  static const targetAllocation = 'target_allocation';
 }

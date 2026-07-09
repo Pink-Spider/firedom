@@ -12,16 +12,8 @@ import '../../data/milestone_service.dart';
 import '../../data/notifications/reminder_scheduler.dart';
 import '../../data/prefs.dart';
 import '../../data/reminders.dart';
+import '../common/asset_class_labels.dart';
 import 'snapshot_result_screen.dart';
-
-const _assetClassLabels = {
-  'cash': '현금/예금',
-  'equity': '주식',
-  'bond': '채권',
-  'real_estate': '부동산',
-  'pension': '연금',
-  'other': '기타',
-};
 
 /// S5→S8. 월 스냅샷 기록 플로우 (PRD) ★ retention 심장
 ///
@@ -220,7 +212,7 @@ class _SnapshotFlowScreenState extends ConsumerState<SnapshotFlowScreen> {
                 initialValue: assetClass,
                 decoration: const InputDecoration(labelText: '자산군'),
                 items: [
-                  for (final entry in _assetClassLabels.entries)
+                  for (final entry in assetClassLabels.entries)
                     DropdownMenuItem(
                         value: entry.key, child: Text(entry.value)),
                 ],
@@ -431,8 +423,8 @@ class _SnapshotFlowScreenState extends ConsumerState<SnapshotFlowScreen> {
                 prefixText: account.isLiability ? '−' : null,
                 suffixText: '원',
                 helperText: account.isLiability
-                    ? '${_assetClassLabels[account.assetClass] ?? '기타'} · 부채'
-                    : _assetClassLabels[account.assetClass],
+                    ? '${assetClassLabels[account.assetClass] ?? '기타'} · 부채'
+                    : assetClassLabels[account.assetClass],
                 border: const OutlineInputBorder(),
               ),
             ),
