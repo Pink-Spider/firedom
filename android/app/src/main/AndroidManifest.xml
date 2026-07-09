@@ -35,6 +35,14 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- W1 홈 화면 위젯 -->
+        <receiver android:name=".FiredomWidgetProvider" android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider"
+                android:resource="@xml/firedom_widget_info"/>
+        </receiver>
         <!-- 예약된 로컬 알림이 재부팅 후에도 유지되도록 (flutter_local_notifications) -->
         <receiver android:exported="false"
             android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />

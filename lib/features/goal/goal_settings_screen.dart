@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/money_format.dart';
 import '../../data/db/database.dart';
 import '../../data/db/providers.dart';
+import '../../data/home_widget_sync.dart';
 import '../../data/repositories/plan_repository.dart';
 import '../../engine/engine.dart';
 
@@ -153,6 +154,7 @@ class _GoalSettingsScreenState extends ConsumerState<GoalSettingsScreen> {
           input: input,
           fireType: _fireType,
         );
+    await ref.read(homeWidgetSyncProvider)(ref.read(databaseProvider));
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('계획을 업데이트했어요 — 궤도에 반영됩니다')),

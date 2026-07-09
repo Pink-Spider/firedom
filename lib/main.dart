@@ -7,6 +7,7 @@ import 'app/app.dart';
 import 'data/bootstrap.dart';
 import 'data/db/database.dart';
 import 'data/db/providers.dart';
+import 'data/home_widget_sync.dart';
 import 'data/notifications/reminder_scheduler.dart';
 import 'data/prefs.dart';
 import 'data/reminders.dart';
@@ -18,11 +19,12 @@ Future<void> main() async {
   final db = AppDatabase(driftDatabase(name: 'firedom'));
   final bootstrap = await bootstrapApp(db, prefs);
 
-  // 리마인더 재예약 (미기록 월 기준 최신화) — 실패해도 기동을 막지 않는다
+  // 리마인더 재예약·위젯 갱신 — 실패해도 기동을 막지 않는다
   await rescheduleReminders(
     db: db,
     scheduler: LocalNotificationReminderScheduler(),
   );
+  await syncHomeWidget(db);
 
   runApp(
     ProviderScope(

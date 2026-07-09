@@ -3,6 +3,7 @@ import 'package:firedom/app/app.dart';
 import 'package:firedom/data/bootstrap.dart';
 import 'package:firedom/data/db/database.dart';
 import 'package:firedom/data/db/providers.dart';
+import 'package:firedom/data/home_widget_sync.dart';
 import 'package:firedom/data/prefs.dart';
 import 'package:firedom/features/lock/app_lock.dart';
 import 'package:flutter/widgets.dart';
@@ -52,6 +53,8 @@ Future<AppDatabase> pumpApp(
             bootstrap.hasActivePlan),
         biometricLockAtLaunchProvider.overrideWithValue(
             bootstrap.biometricLockEnabled),
+        // 위젯 동기화는 플랫폼 채널이라 테스트에서 no-op
+        homeWidgetSyncProvider.overrideWithValue((_) async {}),
         ...overrides.cast(),
       ],
       child: const FiredomApp(),

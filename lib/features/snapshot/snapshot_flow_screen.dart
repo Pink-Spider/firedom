@@ -8,6 +8,7 @@ import '../../core/money_format.dart';
 import '../../core/ym.dart';
 import '../../data/db/database.dart';
 import '../../data/db/providers.dart';
+import '../../data/home_widget_sync.dart';
 import '../../data/milestone_service.dart';
 import '../../data/notifications/reminder_scheduler.dart';
 import '../../data/prefs.dart';
@@ -181,6 +182,8 @@ class _SnapshotFlowScreenState extends ConsumerState<SnapshotFlowScreen> {
       db: ref.read(databaseProvider),
       scheduler: ref.read(reminderSchedulerProvider),
     );
+    // 홈 위젯 갱신 (W1: 스냅샷 저장 시)
+    await ref.read(homeWidgetSyncProvider)(ref.read(databaseProvider));
     await ref.read(sharedPreferencesProvider).remove(_draftKey);
     if (mounted) {
       context.pushReplacement('${SnapshotResultScreen.path}?ym=$_ym');

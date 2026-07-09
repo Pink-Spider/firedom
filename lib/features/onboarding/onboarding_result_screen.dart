@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/money_format.dart';
 import '../../core/ym.dart';
 import '../../data/db/providers.dart';
+import '../../data/home_widget_sync.dart';
 import '../../engine/engine.dart';
 import '../home/home_screen.dart';
 import 'onboarding_draft.dart';
@@ -124,6 +125,7 @@ class _OnboardingResultScreenState
           startedYm: ym,
         );
     await ref.read(onboardingDraftProvider.notifier).clear();
+    await ref.read(homeWidgetSyncProvider)(ref.read(databaseProvider));
     if (mounted) context.go(HomeScreen.path);
   }
 
