@@ -1,0 +1,69 @@
+/// 마일스톤 판정 (엔진명세 B1) — 스냅샷 저장 시 호출되는 순수 함수.
+/// 판정은 엔진이 수행하고, 결과("달성 순간")만 DB에 기록한다.
+library;
+
+/// 순자산 구간 돌파 기준 (원, 오름차순)
+const netWorthMilestoneTiers = [
+  (threshold: 50000000, key: 'net_worth_50m'),
+  (threshold: 100000000, key: 'net_worth_100m'),
+  (threshold: 300000000, key: 'net_worth_300m'),
+  (threshold: 500000000, key: 'net_worth_500m'),
+  (threshold: 1000000000, key: 'net_worth_1b'),
+];
+
+/// FIRE 진행률 기준 (%)
+const fireProgressMilestones = [25, 50, 75, 100];
+
+/// 연속 기록 기준 (개월)
+const streakMilestones = [
+  (months: 3, key: 'streak_3mo'),
+  (months: 6, key: 'streak_6mo'),
+  (months: 12, key: 'streak_12mo'),
+];
+
+/// 새로 달성한 마일스톤 키 목록을 반환한다. 이미 달성한 키는 제외.
+///
+/// [recordedYms]: 기록된 스냅샷 연월(yyyymm) 목록 (이번 달 포함)
+/// [ym]: 이번 스냅샷 연월
+List<String> evaluateMilestones({
+  required int netWorth,
+  required int fireNumber,
+  required List<int> recordedYms,
+  required int ym,
+  required Set<String> achievedKeys,
+}) {
+  final newlyAchieved = <String>[];
+
+  void add(String key) {
+    if (!achievedKeys.contains(key)) newlyAchieved.add(key);
+  }
+
+  for (final tier in netWorthMilestoneTiers) {
+    if (netWorth >= tier.threshold) add(tier.key);
+  }
+
+  if (fireNumber > 0) {
+    for (final percent in fireProgressMilestones) {
+      if (netWorth * 100 >= fireNumber * percent) add('fire_${percent}pct');
+    }
+  }
+
+  // 연속 기록: 이번 달부터 거꾸로 이어진 개월 수
+  final recorded = recordedYms.toSet();
+  var streak = 0;
+  var cursor = ym;
+  while (recorded.contains(cursor)) {
+    streak++;
+    cursor = _previousYm(cursor);
+  }
+  for (final entry in streakMilestones) {
+    if (streak >= entry.months) add(entry.key);
+  }
+
+  return newlyAchieved;
+}
+
+int _previousYm(int ym) {
+  final month = ym % 100;
+  return month == 1 ? ym - 100 + 11 : ym - 1;
+}

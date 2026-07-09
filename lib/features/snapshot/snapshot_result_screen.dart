@@ -7,6 +7,7 @@ import '../../data/db/providers.dart';
 import '../../data/repositories/plan_repository.dart';
 import '../../engine/engine.dart';
 import '../common/deviation_badge.dart';
+import '../common/milestone_labels.dart';
 import '../home/home_screen.dart';
 
 /// S8-③. 결과 리빌 (PRD): 순자산 증감 → 저축률 → 궤도 편차 갱신.
@@ -108,6 +109,41 @@ class SnapshotResultScreen extends ConsumerWidget {
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
+            Builder(builder: (context) {
+              // 이번 달 달성 마일스톤 축하 (PRD S8 결과 리빌)
+              final milestones =
+                  ref.watch(milestonesProvider).value ?? const [];
+              final achievedNow = [
+                for (final milestone in milestones)
+                  if (milestone.achievedYm == ym) milestone,
+              ];
+              if (achievedNow.isEmpty) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Card(
+                  color: theme.colorScheme.tertiaryContainer,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('마일스톤 달성',
+                            style: theme.textTheme.labelLarge),
+                        const SizedBox(height: 4),
+                        for (final milestone in achievedNow)
+                          Text(
+                            milestoneLabel(milestone.milestoneKey),
+                            style: theme.textTheme.titleMedium!.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.onTertiaryContainer,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }),
             const SizedBox(height: 32),
             FilledButton(
               onPressed: () => context.go(HomeScreen.path),

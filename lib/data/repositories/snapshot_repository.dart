@@ -202,7 +202,15 @@ class SnapshotRepository {
 
   /// ym 오름차순 스냅샷 + 순자산. 빈 달은 항목이 없으므로 자연히 공백 (보간 금지).
   Stream<List<SnapshotSummary>> watchSummaries() {
-    final query = _db.select(_db.snapshots).join([
+    return _summariesQuery().watch().map(_mapSummaryRows);
+  }
+
+  Future<List<SnapshotSummary>> getSummaries() async {
+    return _mapSummaryRows(await _summariesQuery().get());
+  }
+
+  JoinedSelectStatement<HasResultSet, dynamic> _summariesQuery() {
+    return _db.select(_db.snapshots).join([
       leftOuterJoin(
         _db.snapshotItems,
         _db.snapshotItems.snapshotId.equalsExp(_db.snapshots.id) &
@@ -215,27 +223,27 @@ class SnapshotRepository {
     ])
       ..where(_db.snapshots.deletedAt.isNull())
       ..orderBy([OrderingTerm(expression: _db.snapshots.ym)]);
+  }
 
-    return query.watch().map((rows) {
-      final byId = <String, Snapshot>{};
-      final netById = <String, int>{};
-      for (final row in rows) {
-        final snapshot = row.readTable(_db.snapshots);
-        byId[snapshot.id] = snapshot;
-        final item = row.readTableOrNull(_db.snapshotItems);
-        final account = row.readTableOrNull(_db.accounts);
-        // 항목이 참조하는 계정이 이후 삭제됐어도 과거 기록의 순자산은 보존한다
-        if (item != null && account != null && account.includeInFire) {
-          netById[snapshot.id] = (netById[snapshot.id] ?? 0) + item.amount;
-        }
+  List<SnapshotSummary> _mapSummaryRows(List<TypedResult> rows) {
+    final byId = <String, Snapshot>{};
+    final netById = <String, int>{};
+    for (final row in rows) {
+      final snapshot = row.readTable(_db.snapshots);
+      byId[snapshot.id] = snapshot;
+      final item = row.readTableOrNull(_db.snapshotItems);
+      final account = row.readTableOrNull(_db.accounts);
+      // 항목이 참조하는 계정이 이후 삭제됐어도 과거 기록의 순자산은 보존한다
+      if (item != null && account != null && account.includeInFire) {
+        netById[snapshot.id] = (netById[snapshot.id] ?? 0) + item.amount;
       }
-      return [
-        for (final entry in byId.entries)
-          SnapshotSummary(
-            snapshot: entry.value,
-            netWorth: netById[entry.key] ?? 0,
-          ),
-      ];
-    });
+    }
+    return [
+      for (final entry in byId.entries)
+        SnapshotSummary(
+          snapshot: entry.value,
+          netWorth: netById[entry.key] ?? 0,
+        ),
+    ];
   }
 }

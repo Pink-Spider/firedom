@@ -14,6 +14,7 @@ import '../../data/repositories/settings_store.dart';
 import '../../data/repositories/snapshot_repository.dart';
 import '../../engine/engine.dart';
 import '../common/deviation_badge.dart';
+import '../common/milestone_labels.dart';
 import '../goal/goal_settings_screen.dart';
 import '../onboarding/onboarding_screen.dart';
 import '../snapshot/snapshot_flow_screen.dart';
@@ -71,6 +72,7 @@ class _Dashboard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     final summaries =
         ref.watch(snapshotSummariesProvider).value ?? const <SnapshotSummary>[];
     final masked = ref.watch(maskAmountsProvider).value ?? false;
@@ -86,6 +88,16 @@ class _Dashboard extends ConsumerWidget {
     final hasCurrentMonthRecord = summaries.any((s) => s.ym == currentYm);
     final monthsSinceLast =
         latest == null ? null : ymDiffMonths(latest.ym, currentYm);
+
+    // 마일스톤 배너 — 최신 기록 월에 달성한 것이 있을 때만 (PRD S3)
+    final milestones =
+        ref.watch(milestonesProvider).value ?? const <Milestone>[];
+    final latestMilestones = latest == null
+        ? const <Milestone>[]
+        : [
+            for (final milestone in milestones)
+              if (milestone.achievedYm == latest.ym) milestone,
+          ];
 
     return Scaffold(
       appBar: AppBar(
@@ -114,6 +126,21 @@ class _Dashboard extends ConsumerWidget {
               _RecordNudgeCard(
                 currentYm: currentYm,
                 isComeback: monthsSinceLast != null && monthsSinceLast >= 3,
+              ),
+            if (latestMilestones.isNotEmpty)
+              Card(
+                color: theme.colorScheme.tertiaryContainer,
+                margin: const EdgeInsets.only(bottom: 12),
+                child: ListTile(
+                  leading: const Text('🏆', style: TextStyle(fontSize: 24)),
+                  title: Text(
+                    milestoneLabel(latestMilestones.last.milestoneKey),
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: latestMilestones.length > 1
+                      ? Text('외 ${latestMilestones.length - 1}개 달성')
+                      : null,
+                ),
               ),
             _DdayCard(
               result: result,

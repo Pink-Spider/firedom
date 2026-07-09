@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../repositories/milestone_repository.dart';
 import '../repositories/plan_repository.dart';
 import '../repositories/scenario_repository.dart';
 import '../repositories/settings_store.dart';
@@ -31,6 +32,14 @@ final settingsStoreProvider = Provider<SettingsStore>(
 
 final scenarioRepositoryProvider = Provider<ScenarioRepository>(
   (ref) => ScenarioRepository(ref.watch(databaseProvider)),
+);
+
+final milestoneRepositoryProvider = Provider<MilestoneRepository>(
+  (ref) => MilestoneRepository(ref.watch(databaseProvider)),
+);
+
+final milestonesProvider = StreamProvider<List<Milestone>>(
+  (ref) => ref.watch(milestoneRepositoryProvider).watchAll(),
 );
 
 final activePlanRowProvider = StreamProvider<Plan?>(
