@@ -7,7 +7,8 @@ plugins {
 android {
     namespace = "app.firedom.firedom"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    // 로컬에 설치된 NDK로 고정 (flutter 기본 핀 28.2는 미설치)
+    ndkVersion = "27.1.12297006"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
