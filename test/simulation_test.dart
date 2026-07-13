@@ -86,6 +86,9 @@ void main() {
 
     await tester.scrollUntilVisible(find.text('성공 확률 계산하기'), 200,
         scrollable: find.byType(Scrollable).first);
+    // scrollUntilVisible은 cacheExtent에서 빌드만 되면 멈춘다 — 실제 뷰포트 안으로
+    await tester.ensureVisible(find.text('성공 확률 계산하기'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('성공 확률 계산하기'));
     await tester.pumpAndSettle();
 
@@ -100,6 +103,7 @@ void main() {
     expect(find.text('이 계획의 성공 확률 $pct%'), findsOneWidget);
 
     // 상세 분포는 유료 훅 → 페이월 시트
+    await tester.ensureVisible(find.text('상세 분포 보기 🔒'));
     await tester.tap(find.text('상세 분포 보기 🔒'));
     await tester.pumpAndSettle();
     expect(find.text('파이어덤 프리미엄'), findsOneWidget);

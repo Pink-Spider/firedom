@@ -12,6 +12,7 @@ import '../../engine/engine.dart';
 import '../paywall/paywall_sheet.dart';
 import 'monte_carlo_detail_screen.dart';
 import 'monte_carlo_runner.dart';
+import 'portfolio_screen.dart';
 
 /// S4. 시뮬레이션 — What-if 놀이터 (PRD)
 ///
@@ -31,6 +32,9 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
   int? _monthlySaving;
   int? _returnBp;
   int? _monthlySpend;
+
+  /// 포트폴리오 구성(S4-2)에서 반영된 변동성 — null이면 계획 값 사용
+  int? _volatilityBp;
   MonteCarloResult? _mcResult;
   bool _mcRunning = false;
   bool _hasScenario = false;
@@ -66,6 +70,7 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
       monthlySaving: _monthlySaving,
       realReturnBp: _returnBp,
       monthlySpendRetire: _monthlySpend,
+      volatilityBp: _volatilityBp,
     );
     final result = solvePlan(input);
 
@@ -80,6 +85,7 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
               _monthlySaving = null;
               _returnBp = null;
               _monthlySpend = null;
+              _volatilityBp = null;
               _invalidateMc();
             }),
           ),
@@ -125,8 +131,14 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
               divisions: 32,
               onChanged: (value) => setState(() {
                 _returnBp = value.round();
+                _volatilityBp = null; // 직접 조정 시 포트폴리오 축약 해제
                 _invalidateMc();
               }),
+              footer: TextButton.icon(
+                onPressed: () => _openPortfolio(input),
+                icon: const Icon(Icons.pie_chart_outline, size: 18),
+                label: const Text('포트폴리오로 구성하기'),
+              ),
             ),
             _SliderCard(
               sliderKey: const ValueKey('spend-slider'),
@@ -179,6 +191,21 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
         ),
       ),
     );
+  }
+
+  /// S4-2 포트폴리오 구성으로 이동 — 반환된 축약 값(가중 수익률·변동성)을
+  /// 슬라이더/몬테카를로에 반영한다 (계획에는 반영 안 됨, A5 원칙 동일)
+  Future<void> _openPortfolio(PlanInput input) async {
+    final applied = await Navigator.of(context, rootNavigator: true)
+        .push<PortfolioApplyResult>(
+      MaterialPageRoute(builder: (_) => PortfolioScreen(base: input)),
+    );
+    if (applied == null || !mounted) return;
+    setState(() {
+      _returnBp = applied.returnBp.clamp(0, 800);
+      _volatilityBp = applied.volatilityBp;
+      _invalidateMc();
+    });
   }
 
   void _showDetail(PlanInput input, MonteCarloResult mc, bool isPremium) {
@@ -293,6 +320,9 @@ class _SliderCard extends StatelessWidget {
   final int divisions;
   final ValueChanged<double> onChanged;
 
+  /// 슬라이더 아래 부가 액션 (예: S4-2 포트폴리오 진입 링크)
+  final Widget? footer;
+
   const _SliderCard({
     required this.sliderKey,
     required this.title,
@@ -302,6 +332,7 @@ class _SliderCard extends StatelessWidget {
     required this.max,
     required this.divisions,
     required this.onChanged,
+    this.footer,
   });
 
   @override
@@ -334,6 +365,8 @@ class _SliderCard extends StatelessWidget {
               divisions: divisions,
               onChanged: onChanged,
             ),
+            if (footer != null)
+              Align(alignment: Alignment.centerLeft, child: footer),
           ],
         ),
       ),

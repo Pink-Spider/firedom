@@ -5,4 +5,5 @@ export 'deterministic.dart';
 export 'milestones.dart';
 export 'models.dart';
 export 'monte_carlo.dart';
+export 'portfolio.dart';
 export 'tracking.dart';

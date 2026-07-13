@@ -40,6 +40,9 @@ Future<void> runTeaser(WidgetTester tester) async {
   await tester.pumpAndSettle();
   await tester.scrollUntilVisible(find.text('성공 확률 계산하기'), 200,
       scrollable: find.byType(Scrollable).first);
+  // scrollUntilVisible은 cacheExtent에서 빌드만 되면 멈춘다 — 실제 뷰포트 안으로
+  await tester.ensureVisible(find.text('성공 확률 계산하기'));
+  await tester.pumpAndSettle();
   await tester.tap(find.text('성공 확률 계산하기'));
   await tester.pumpAndSettle();
 }
@@ -50,6 +53,7 @@ void main() {
         seed: (db) async => seedPlan(db), overrides: [_syncRunner]);
     await runTeaser(tester);
 
+    await tester.ensureVisible(find.text('상세 분포 보기 🔒'));
     await tester.tap(find.text('상세 분포 보기 🔒'));
     await tester.pumpAndSettle();
     expect(find.text('파이어덤 프리미엄'), findsOneWidget);
@@ -69,6 +73,7 @@ void main() {
     await runTeaser(tester);
 
     expect(find.text('상세 분포 보기'), findsOneWidget); // 🔒 없음
+    await tester.ensureVisible(find.text('상세 분포 보기'));
     await tester.tap(find.text('상세 분포 보기'));
     await tester.pumpAndSettle();
 
