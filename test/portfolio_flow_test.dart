@@ -97,12 +97,12 @@ void main() {
     );
     expect(slider.onChanged, isNull, reason: '무료는 비중 편집 잠금');
 
-    await tester.tap(find.textContaining('비중 편집은 프리미엄'));
+    await tester.tap(find.textContaining('비중 편집·자산군 추가는 프리미엄'));
     await tester.pumpAndSettle();
     expect(find.text('파이어덤 프리미엄'), findsOneWidget);
   });
 
-  appTest('S4-2 프리미엄: 편집 → 합계 깨짐 → CTA 비활성 → 정규화 복구', (tester) async {
+  appTest('S4-2 프리미엄: 슬라이더 조절해도 총합 100% 유지 (auto-lock)', (tester) async {
     await pumpApp(tester, seed: (db) async {
       await seedPlan(db);
       await SettingsStore(db).set(SettingKeys.premiumEntitlement, true);
@@ -110,34 +110,23 @@ void main() {
     await openPortfolio(tester);
 
     // 편집 가능 + 배너 없음
-    expect(find.textContaining('비중 편집은 프리미엄'), findsNothing);
+    expect(find.textContaining('비중 편집·자산군 추가는 프리미엄'), findsNothing);
     final sp500 = find.byKey(const ValueKey('weight-us_sp500'));
     expect(tester.widget<Slider>(sp500).onChanged, isNotNull);
 
-    // 비중을 키워 합계를 깨뜨린다
-    await tester.drag(sp500, const Offset(80, 0));
+    // 비중을 크게 움직여도 나머지가 재분배되어 합계는 100% 유지
+    await tester.drag(sp500, const Offset(120, 0));
     await tester.pumpAndSettle();
-    expect(find.textContaining('합계 100.0%'), findsNothing);
+    await tester.drag(_portfolioList, const Offset(0, 1200)); // 맨 위로
+    await tester.pumpAndSettle();
+    expect(find.textContaining('합계 100.0%'), findsOneWidget);
 
-    // 합계 ≠ 100% → 반영 불가 (수용 기준)
+    // CTA는 항상 활성 (합계가 깨지지 않으므로)
     await scrollTo(tester, find.text('이 구성으로 시뮬레이션'));
     final cta = tester.widget<FilledButton>(
       find.widgetWithText(FilledButton, '이 구성으로 시뮬레이션'),
     );
-    expect(cta.onPressed, isNull);
-
-    // 자동 정규화 제안 → 복구
-    await tester.drag(_portfolioList, const Offset(0, 1200)); // 맨 위로
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('100%로 맞추기'));
-    await tester.pumpAndSettle();
-    expect(find.textContaining('합계 100.0%'), findsOneWidget);
-
-    await scrollTo(tester, find.text('이 구성으로 시뮬레이션'));
-    final ctaAfter = tester.widget<FilledButton>(
-      find.widgetWithText(FilledButton, '이 구성으로 시뮬레이션'),
-    );
-    expect(ctaAfter.onPressed, isNotNull);
+    expect(cta.onPressed, isNotNull);
   });
 
   appTest('S4-2 가정 보기: 출처·참고치·캐비앳 공개 (수용 기준)', (tester) async {
@@ -154,7 +143,7 @@ void main() {
     expect(find.textContaining('참고치'), findsWidgets); // 잠정 라벨
   });
 
-  appTest('S4-2 프리미엄: 자산군 삭제 → 행 사라지고 합계 90%', (tester) async {
+  appTest('S4-2 프리미엄: 자산군 삭제 → 행 사라지고 총합 100% 유지', (tester) async {
     await pumpApp(tester, seed: (db) async {
       await seedPlan(db);
       await SettingsStore(db).set(SettingKeys.premiumEntitlement, true);
@@ -168,10 +157,35 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const ValueKey('weight-gold')), findsNothing);
-    // 합계 헤더는 리스트 위쪽 — 스크롤 올려 확인
+    // 삭제된 10%가 재분배되어 합계는 100% 유지
     await tester.drag(_portfolioList, const Offset(0, 800));
     await tester.pumpAndSettle();
-    expect(find.textContaining('합계 90.0%'), findsOneWidget); // 금 10% 빠짐
+    expect(find.textContaining('합계 100.0%'), findsOneWidget);
+  });
+
+  appTest('S4-2 프리미엄: 직접 입력 자산군 추가', (tester) async {
+    await pumpApp(tester, seed: (db) async {
+      await seedPlan(db);
+      await SettingsStore(db).set(SettingKeys.premiumEntitlement, true);
+    });
+    await openPortfolio(tester);
+
+    await scrollTo(tester, find.byKey(const ValueKey('add-asset')));
+    await tester.tap(find.byKey(const ValueKey('add-asset')));
+    await tester.pumpAndSettle();
+
+    // 시트 상단 '직접 입력' → 다이얼로그
+    await tester.tap(find.byKey(const ValueKey('custom-add-tile')));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(const ValueKey('custom-name')), '사모펀드');
+    await tester.enterText(find.byKey(const ValueKey('custom-return')), '9');
+    await tester.tap(find.text('추가'));
+    await tester.pumpAndSettle();
+
+    // 커스텀 자산 행이 생김 (key: weight-custom:0)
+    await scrollTo(tester, find.byKey(const ValueKey('weight-custom:0')));
+    expect(find.byKey(const ValueKey('weight-custom:0')), findsOneWidget);
   });
 
   appTest('S4-2 프리미엄: 자산군 추가 → 시트에서 선택하면 행 생김', (tester) async {
