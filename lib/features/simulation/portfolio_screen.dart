@@ -68,13 +68,18 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
   }
 
   void _applyExample(PortfolioExample example) {
-    final built = example.build();
-    _weights = {for (final a in PortfolioAsset.values) a.key: 0};
-    for (final h in built.holdings) {
-      _weights[h.assetKey] = h.weightBp;
-    }
+    // 예시 구성에 포함된 자산군만 남긴다 (편집 시 추가/삭제)
+    _weights = {for (final h in example.build().holdings) h.assetKey: h.weightBp};
     _example = example;
   }
+
+  /// 현재 포트폴리오에 담긴 자산군 (values 순서 유지)
+  List<PortfolioAsset> get _included =>
+      [for (final a in PortfolioAsset.values) if (_weights.containsKey(a.key)) a];
+
+  /// 아직 담기지 않은 자산군 (추가 후보)
+  List<PortfolioAsset> get _available =>
+      [for (final a in PortfolioAsset.values) if (!_weights.containsKey(a.key)) a];
 
   int get _totalBp => _weights.values.fold(0, (sum, w) => sum + w);
 
@@ -84,9 +89,63 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
     if (!_isValid) return null;
     return PortfolioInput(holdings: [
       for (final asset in PortfolioAsset.values)
-        if (_weights[asset.key]! > 0)
+        if ((_weights[asset.key] ?? 0) > 0)
           PortfolioHolding.fromPreset(asset, weightBp: _weights[asset.key]!),
     ]);
+  }
+
+  void _addAsset(PortfolioAsset asset) => setState(() {
+        _weights[asset.key] = 0;
+        _example = null;
+      });
+
+  void _removeAsset(PortfolioAsset asset) => setState(() {
+        _weights.remove(asset.key);
+        _example = null;
+      });
+
+  /// 담기지 않은 자산군 선택 시트 (프리미엄)
+  void _showAddAsset(BuildContext context) {
+    final theme = Theme.of(context);
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: _available.isEmpty
+            ? const Padding(
+                padding: EdgeInsets.all(24),
+                child: Text('추가할 자산군이 없어요 — 13종을 모두 담았어요'),
+              )
+            : ListView(
+                shrinkWrap: true,
+                padding: const EdgeInsets.only(bottom: 16),
+                children: [
+                  for (final asset in _available)
+                    ListTile(
+                      leading: Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: assetColor(asset),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      title: Text(
+                          asset.verified ? asset.label : '${asset.label} · 참고치'),
+                      subtitle: Text(
+                        '가정 ${(asset.realReturnBp / 100).toStringAsFixed(1)}% · '
+                        '변동성 ${(asset.volatilityBp / 100).toStringAsFixed(0)}%',
+                        style: theme.textTheme.bodySmall,
+                      ),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _addAsset(asset);
+                      },
+                    ),
+                ],
+              ),
+      ),
+    );
   }
 
   /// 합계를 정확히 10000bp로 비례 조정 (최대 잔여법, 50bp 단위) —
@@ -175,9 +234,12 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
               ),
             ],
             const SizedBox(height: 12),
+            // 기대수익률 — 자산군 비중 위에 크게 (조절 시 실시간 갱신)
+            _ReturnHeadline(portfolio: portfolio),
+            const SizedBox(height: 12),
             _TotalGauge(weights: _weights, onNormalize: _normalize),
             const SizedBox(height: 4),
-            for (final asset in PortfolioAsset.values)
+            for (final asset in _included)
               _AssetRow(
                 asset: asset,
                 weightBp: _weights[asset.key]!,
@@ -187,6 +249,17 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                   _weights[asset.key] = weightBp;
                   _example = null;
                 }),
+                onRemove: isPremium ? () => _removeAsset(asset) : null,
+              ),
+            if (isPremium && _available.isNotEmpty)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  key: const ValueKey('add-asset'),
+                  onPressed: () => _showAddAsset(context),
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('자산군 추가'),
+                ),
               ),
             const SizedBox(height: 12),
             _ResultCard(base: widget.base, portfolio: portfolio, result: result),
@@ -327,7 +400,7 @@ class _TotalGauge extends StatelessWidget {
         isValid ? theme.colorScheme.primary : theme.colorScheme.error;
     final segments = [
       for (final asset in PortfolioAsset.values)
-        if (weights[asset.key]! > 0)
+        if ((weights[asset.key] ?? 0) > 0)
           Expanded(
             flex: weights[asset.key]!,
             child: ColoredBox(color: assetColor(asset)),
@@ -384,12 +457,16 @@ class _AssetRow extends StatelessWidget {
   final bool enabled;
   final ValueChanged<int> onChanged;
 
+  /// 이 자산군을 포트폴리오에서 뺀다 (프리미엄만 — null이면 삭제 버튼 숨김)
+  final VoidCallback? onRemove;
+
   const _AssetRow({
     required this.asset,
     required this.weightBp,
     required this.stepBp,
     required this.enabled,
     required this.onChanged,
+    this.onRemove,
   });
 
   @override
@@ -433,6 +510,15 @@ class _AssetRow extends StatelessWidget {
                 fontWeight: FontWeight.w600,
               ),
             ),
+            if (onRemove != null)
+              IconButton(
+                key: ValueKey('remove-${asset.key}'),
+                visualDensity: VisualDensity.compact,
+                tooltip: '이 자산군 빼기',
+                icon: Icon(Icons.close,
+                    size: 18, color: theme.colorScheme.onSurfaceVariant),
+                onPressed: onRemove,
+              ),
           ],
         ),
         SizedBox(
@@ -507,26 +593,82 @@ class _ResultCard extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            if (p != null) ...[
+            // 기대수익률·변동성은 상단 _ReturnHeadline로 이동 — 여기선 FIRE 결과만
+            if (p != null && r != null && r.isReachable && r.monthsToFire! > 0)
               Text(
-                '기대수익률(실질) ${(p.portfolioReturnBp / 100).toStringAsFixed(2)}% · '
-                '변동성(간이) ${(p.portfolioVolatilityBp / 100).toStringAsFixed(2)}%',
+                '${r.monthsToFire! ~/ 12}년 ${r.monthsToFire! % 12}개월 후 · '
+                '필요 자산 ${formatKoreanMoney(r.fireNumber)}원',
                 style: theme.textTheme.bodySmall!.copyWith(
                   color: theme.colorScheme.onPrimaryContainer,
                 ),
               ),
-              if (r != null && r.isReachable && r.monthsToFire! > 0)
-                Text(
-                  '${r.monthsToFire! ~/ 12}년 ${r.monthsToFire! % 12}개월 후 · '
-                  '필요 자산 ${formatKoreanMoney(r.fireNumber)}원',
-                  style: theme.textTheme.bodySmall!.copyWith(
-                    color: theme.colorScheme.onPrimaryContainer,
-                  ),
-                ),
-            ],
           ],
         ),
       ),
+    );
+  }
+}
+
+/// 기대수익률(실질)·변동성을 자산군 비중 위에 크게 표시 (S4-2, 조절 시 실시간)
+class _ReturnHeadline extends StatelessWidget {
+  final PortfolioInput? portfolio;
+
+  const _ReturnHeadline({required this.portfolio});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final p = portfolio;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: p == null
+          ? Text(
+              '합계를 100%로 맞추면 기대수익률이 계산돼요',
+              style: theme.textTheme.bodyMedium!.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            )
+          : Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('기대수익률(실질)',
+                        style: theme.textTheme.labelMedium!.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        )),
+                    Text(
+                      '${(p.portfolioReturnBp / 100).toStringAsFixed(2)}%',
+                      style: theme.textTheme.headlineMedium!.copyWith(
+                        color: theme.colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text('변동성(간이)',
+                        style: theme.textTheme.labelSmall!.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        )),
+                    Text(
+                      '${(p.portfolioVolatilityBp / 100).toStringAsFixed(2)}%',
+                      style: theme.textTheme.titleMedium!.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
     );
   }
 }

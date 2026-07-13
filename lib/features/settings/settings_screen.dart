@@ -17,6 +17,10 @@ import '../lock/biometric.dart';
 import '../paywall/paywall_sheet.dart';
 import 'subscription_screen.dart';
 
+/// QA 릴리스 빌드 플래그 — `--dart-define=FIREDOM_QA=true`로 활성화.
+/// 결제 연동 전 실기기에서 유료 게이트를 테스트하기 위한 것. 기본 false.
+const _qaBuild = bool.fromEnvironment('FIREDOM_QA');
+
 /// S10. 설정 (PRD, v0.9 — 백업/복원 제외)
 ///
 /// 월간 기록 리마인더(로컬 알림만, 미기록 월에만 발송), 금액 가림 기본값,
@@ -241,11 +245,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 },
               );
             }),
-            if (kDebugMode)
+            // 디버그 빌드, 또는 --dart-define=FIREDOM_QA=true로 빌드한
+            // QA용 릴리스에서 유료 게이트를 결제 없이 켜본다 (프로덕션엔 없음)
+            if (kDebugMode || _qaBuild)
               SwitchListTile(
                 key: const ValueKey('debug-premium-switch'),
-                title: const Text('프리미엄 시뮬레이션 (디버그)'),
-                subtitle: const Text('개발 빌드 전용 — 유료 게이트 QA'),
+                title: const Text('프리미엄 시뮬레이션 (QA)'),
+                subtitle: const Text('결제 없이 유료 게이트 테스트 — QA 빌드 전용'),
                 value: ref.watch(isPremiumProvider).value ?? false,
                 onChanged: (value) => ref
                     .read(entitlementServiceProvider)

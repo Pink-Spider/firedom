@@ -58,10 +58,12 @@ void main() {
     // 규제 프레이밍: "추천" 문구 금지 (PRD S4-2)
     expect(find.textContaining('추천'), findsNothing);
 
-    // G8: r_port=380bp, σ_port=1610bp
-    await scrollTo(tester, find.textContaining('기대수익률(실질)'));
-    expect(find.textContaining('기대수익률(실질) 3.80%'), findsOneWidget);
-    expect(find.textContaining('변동성(간이) 16.10%'), findsOneWidget);
+    // G8: r_port=380bp, σ_port=1610bp — 기대수익률은 자산군 비중 위 헤드라인
+    await scrollTo(tester, find.text('기대수익률(실질)'));
+    expect(find.text('기대수익률(실질)'), findsOneWidget);
+    expect(find.text('3.80%'), findsOneWidget);
+    expect(find.text('변동성(간이)'), findsOneWidget);
+    expect(find.text('16.10%'), findsOneWidget);
   });
 
   appTest('S4-2 CTA: 이 구성으로 시뮬레이션 → S4 수익률 3.80% 반영', (tester) async {
@@ -82,8 +84,8 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey('example-growth')));
     await tester.pumpAndSettle();
-    await scrollTo(tester, find.textContaining('기대수익률(실질)'));
-    expect(find.textContaining('기대수익률(실질) 5.48%'), findsOneWidget);
+    await scrollTo(tester, find.text('기대수익률(실질)'));
+    expect(find.text('5.48%'), findsOneWidget);
   });
 
   appTest('S4-2 무료: 비중 슬라이더 잠금 + 배너 탭 → 페이월', (tester) async {
@@ -150,5 +152,52 @@ void main() {
     expect(find.textContaining('USD 기준'), findsOneWidget); // 환변동 캐비앳
     expect(find.textContaining('Damodaran'), findsWidgets); // 출처
     expect(find.textContaining('참고치'), findsWidgets); // 잠정 라벨
+  });
+
+  appTest('S4-2 프리미엄: 자산군 삭제 → 행 사라지고 합계 90%', (tester) async {
+    await pumpApp(tester, seed: (db) async {
+      await seedPlan(db);
+      await SettingsStore(db).set(SettingKeys.premiumEntitlement, true);
+    });
+    await openPortfolio(tester);
+
+    // 균형형에 금(gold 10%) 포함 — lazy 리스트라 스크롤해 빌드시킨 뒤 확인
+    await scrollTo(tester, find.byKey(const ValueKey('remove-gold')));
+    expect(find.byKey(const ValueKey('weight-gold')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('remove-gold')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('weight-gold')), findsNothing);
+    // 합계 헤더는 리스트 위쪽 — 스크롤 올려 확인
+    await tester.drag(_portfolioList, const Offset(0, 800));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('합계 90.0%'), findsOneWidget); // 금 10% 빠짐
+  });
+
+  appTest('S4-2 프리미엄: 자산군 추가 → 시트에서 선택하면 행 생김', (tester) async {
+    await pumpApp(tester, seed: (db) async {
+      await seedPlan(db);
+      await SettingsStore(db).set(SettingKeys.premiumEntitlement, true);
+    });
+    await openPortfolio(tester);
+
+    // 균형형에 은(silver) 없음
+    expect(find.byKey(const ValueKey('weight-silver')), findsNothing);
+    await scrollTo(tester, find.byKey(const ValueKey('add-asset')));
+    await tester.tap(find.byKey(const ValueKey('add-asset')));
+    await tester.pumpAndSettle();
+
+    // 담기지 않은 자산군 시트에서 은 선택 (미검증이라 '· 참고치')
+    await tester.tap(find.text('은 · 참고치'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('weight-silver')), findsOneWidget);
+  });
+
+  appTest('S4-2 무료: 삭제 버튼·자산군 추가 없음', (tester) async {
+    await pumpApp(tester, seed: (db) async => seedPlan(db));
+    await openPortfolio(tester);
+
+    expect(find.byKey(const ValueKey('remove-gold')), findsNothing);
+    expect(find.byKey(const ValueKey('add-asset')), findsNothing);
   });
 }
