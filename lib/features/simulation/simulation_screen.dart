@@ -39,6 +39,10 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
   bool _mcRunning = false;
   bool _hasScenario = false;
 
+  /// 기대수익률(실질) 슬라이더 상한 (bp) — 놀이터라 공격적 시나리오까지 허용.
+  /// 0.25%(25bp) 스텝 유지.
+  static const _returnMaxBp = 1500;
+
   @override
   void initState() {
     super.initState();
@@ -63,7 +67,7 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
 
     final baseline = planInputOf(plan);
     _monthlySaving ??= baseline.monthlySaving.clamp(0, 10000000);
-    _returnBp ??= baseline.realReturnBp.clamp(0, 800);
+    _returnBp ??= baseline.realReturnBp.clamp(0, _returnMaxBp);
     _monthlySpend ??= baseline.monthlySpendRetire.clamp(500000, 10000000);
 
     final input = baseline.copyWith(
@@ -127,8 +131,8 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
               valueLabel: '${(_returnBp! / 100).toStringAsFixed(2)}%',
               value: _returnBp!.toDouble(),
               min: 0,
-              max: 800,
-              divisions: 32,
+              max: _returnMaxBp.toDouble(),
+              divisions: _returnMaxBp ~/ 25,
               onChanged: (value) => setState(() {
                 _returnBp = value.round();
                 _volatilityBp = null; // 직접 조정 시 포트폴리오 축약 해제
@@ -202,7 +206,7 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
     );
     if (applied == null || !mounted) return;
     setState(() {
-      _returnBp = applied.returnBp.clamp(0, 800);
+      _returnBp = applied.returnBp.clamp(0, _returnMaxBp);
       _volatilityBp = applied.volatilityBp;
       _invalidateMc();
     });
@@ -254,7 +258,7 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
     if (scenario == null || !mounted) return;
     setState(() {
       _monthlySaving = scenario.input.monthlySaving.clamp(0, 10000000);
-      _returnBp = scenario.input.realReturnBp.clamp(0, 800);
+      _returnBp = scenario.input.realReturnBp.clamp(0, _returnMaxBp);
       _monthlySpend =
           scenario.input.monthlySpendRetire.clamp(500000, 10000000);
       _invalidateMc();
