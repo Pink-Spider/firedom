@@ -6,19 +6,72 @@ import '../data/repositories/settings_store.dart';
 
 const _seedColor = Color(0xFFE8590C);
 
-ThemeData buildTheme() {
-  final scheme = ColorScheme.fromSeed(seedColor: _seedColor);
-  return _themeFrom(scheme);
-}
+/// Figma 디자인 토큰과 정확히 일치시키기 위해, fromSeed로 완전한 M3 스킴을
+/// 만든 뒤 Figma에서 지정한 색 토큰(`Firedom / Color` 컬렉션)으로 덮어쓴다.
+/// 토큰 미지정 항목(onSecondary 등)은 fromSeed 값을 그대로 둔다.
 
-/// S10 다크 테마 — 라이트와 같은 시드의 M3 다크 스킴 (Figma 다크 토큰 기준)
-ThemeData buildDarkTheme() {
-  final scheme = ColorScheme.fromSeed(
-    seedColor: _seedColor,
-    brightness: Brightness.dark,
-  );
-  return _themeFrom(scheme);
-}
+ThemeData buildTheme() => _themeFrom(_lightScheme());
+
+/// S10 다크 테마 — Figma 다크 모드 토큰과 일치
+ThemeData buildDarkTheme() => _themeFrom(_darkScheme());
+
+ColorScheme _lightScheme() =>
+    ColorScheme.fromSeed(seedColor: _seedColor).copyWith(
+      primary: const Color(0xFF9C4A0E),
+      onPrimary: Colors.white,
+      primaryContainer: const Color(0xFFFFDBC7),
+      onPrimaryContainer: const Color(0xFF341100),
+      secondary: const Color(0xFF765847),
+      secondaryContainer: const Color(0xFFFFDBC7),
+      onSecondaryContainer: const Color(0xFF2B1708),
+      tertiary: const Color(0xFF616134),
+      tertiaryContainer: const Color(0xFFE7E6AE),
+      onTertiaryContainer: const Color(0xFF1D1D00),
+      error: const Color(0xFFBA1A1A),
+      errorContainer: const Color(0xFFFFDAD6),
+      onErrorContainer: const Color(0xFF410002),
+      surface: const Color(0xFFFFF8F5),
+      onSurface: const Color(0xFF221A14),
+      surfaceContainerLow: const Color(0xFFFDF1EA),
+      surfaceContainer: const Color(0xFFF7EBE3),
+      surfaceContainerHigh: const Color(0xFFF1E5DD),
+      surfaceContainerHighest: const Color(0xFFEDE0D5),
+      onSurfaceVariant: const Color(0xFF52443B),
+      outline: const Color(0xFF85736A),
+      outlineVariant: const Color(0xFFD7C3B8),
+      inverseSurface: const Color(0xFF382E28),
+      onInverseSurface: const Color(0xFFFFEDE2),
+    );
+
+ColorScheme _darkScheme() => ColorScheme.fromSeed(
+      seedColor: _seedColor,
+      brightness: Brightness.dark,
+    ).copyWith(
+      primary: const Color(0xFFFFB68A),
+      onPrimary: const Color(0xFF542100),
+      primaryContainer: const Color(0xFF703614),
+      onPrimaryContainer: const Color(0xFFFFDBC7),
+      secondary: const Color(0xFFE6BEA8),
+      secondaryContainer: const Color(0xFF5D4231),
+      onSecondaryContainer: const Color(0xFFFFDBC7),
+      tertiary: const Color(0xFFCACA8F),
+      tertiaryContainer: const Color(0xFF494A20),
+      onTertiaryContainer: const Color(0xFFE7E6AE),
+      error: const Color(0xFFFFB4AB),
+      errorContainer: const Color(0xFF93000A),
+      onErrorContainer: const Color(0xFFFFDAD6),
+      surface: const Color(0xFF1A120D),
+      onSurface: const Color(0xFFF0DFD5),
+      surfaceContainerLow: const Color(0xFF221A14),
+      surfaceContainer: const Color(0xFF271E18),
+      surfaceContainerHigh: const Color(0xFF322821),
+      surfaceContainerHighest: const Color(0xFF3D322A),
+      onSurfaceVariant: const Color(0xFFD7C3B8),
+      outline: const Color(0xFF9F8D82),
+      outlineVariant: const Color(0xFF52443B),
+      inverseSurface: const Color(0xFFF0DFD5),
+      onInverseSurface: const Color(0xFF382E28),
+    );
 
 ThemeData _themeFrom(ColorScheme scheme) {
   return ThemeData(

@@ -17,6 +17,27 @@ class PortfolioApplyResult {
   });
 }
 
+/// 자산군별 표시 색 (Figma S4-2 팔레트) — 스택 바·색 점·슬라이더에 공통.
+/// 엔진(순수 Dart)이 아닌 UI 레이어에만 둔다.
+Color assetColor(PortfolioAsset asset) {
+  const map = {
+    'us_sp500': Color(0xFF9C4A0E),
+    'us_nasdaq100': Color(0xFFC4622D),
+    'us_dow': Color(0xFFB5651D),
+    'kr_equity': Color(0xFFD98A4F),
+    'global_dm_em': Color(0xFFE0A96D),
+    'us_treasury': Color(0xFF765847),
+    'kr_treasury': Color(0xFF9A8271),
+    'usd_cash': Color(0xFF5E6B3F),
+    'krw_deposit': Color(0xFF85736A),
+    'gold': Color(0xFFC9A227),
+    'silver': Color(0xFFA8A29E),
+    'commodities': Color(0xFF8A7B4F),
+    'reits': Color(0xFF6E5A73),
+  };
+  return map[asset.key] ?? const Color(0xFF9C4A0E);
+}
+
 /// S4-2. 시뮬레이션 — 포트폴리오 구성 (PRD, 엔진명세 A11)
 ///
 /// 단일 수익률 가정을 자산군별 비중으로 확장하는 What-if 심화.
@@ -109,6 +130,22 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            // 단순 ↔ 포트폴리오 전환 (단순 선택 시 S4로 복귀)
+            SizedBox(
+              width: double.infinity,
+              child: SegmentedButton<bool>(
+                segments: const [
+                  ButtonSegment(value: false, label: Text('단순')),
+                  ButtonSegment(value: true, label: Text('포트폴리오')),
+                ],
+                selected: const {true},
+                showSelectedIcon: false,
+                onSelectionChanged: (sel) {
+                  if (sel.contains(false)) Navigator.of(context).pop();
+                },
+              ),
+            ),
+            const SizedBox(height: 12),
             // 예시 구성 칩 — "추천" 아님 (PRD S4-2)
             Wrap(
               spacing: 8,
@@ -138,7 +175,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
               ),
             ],
             const SizedBox(height: 12),
-            _TotalGauge(totalBp: _totalBp, onNormalize: _normalize),
+            _TotalGauge(weights: _weights, onNormalize: _normalize),
             const SizedBox(height: 4),
             for (final asset in PortfolioAsset.values)
               _AssetRow(
@@ -276,17 +313,27 @@ class _PremiumBanner extends StatelessWidget {
 }
 
 class _TotalGauge extends StatelessWidget {
-  final int totalBp;
+  final Map<String, int> weights;
   final VoidCallback onNormalize;
 
-  const _TotalGauge({required this.totalBp, required this.onNormalize});
+  const _TotalGauge({required this.weights, required this.onNormalize});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final totalBp = weights.values.fold(0, (s, w) => s + w);
     final isValid = totalBp == 10000;
     final color =
         isValid ? theme.colorScheme.primary : theme.colorScheme.error;
+    final segments = [
+      for (final asset in PortfolioAsset.values)
+        if (weights[asset.key]! > 0)
+          Expanded(
+            flex: weights[asset.key]!,
+            child: ColoredBox(color: assetColor(asset)),
+          ),
+    ];
+    final leftover = 10000 - totalBp; // 미달 시 남는 칸(회색)
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -308,12 +355,21 @@ class _TotalGauge extends StatelessWidget {
               ),
           ],
         ),
+        // 자산색 100% 스택 바 (Figma S4-2)
         ClipRRect(
-          borderRadius: BorderRadius.circular(3),
-          child: LinearProgressIndicator(
-            value: (totalBp / 10000).clamp(0.0, 1.0),
-            minHeight: 6,
-            color: color,
+          borderRadius: BorderRadius.circular(6),
+          child: SizedBox(
+            height: 12,
+            child: Row(
+              children: [
+                ...segments,
+                if (leftover > 0)
+                  Expanded(
+                    flex: leftover,
+                    child: ColoredBox(color: theme.colorScheme.outlineVariant),
+                  ),
+              ],
+            ),
           ),
         ),
       ],
@@ -339,11 +395,19 @@ class _AssetRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final color = assetColor(asset);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
+            // 자산색 점 (Figma S4-2)
+            Container(
+              width: 10,
+              height: 10,
+              margin: const EdgeInsets.only(right: 8),
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            ),
             Expanded(
               child: Text.rich(
                 TextSpan(
@@ -365,7 +429,7 @@ class _AssetRow extends StatelessWidget {
             Text(
               '${(weightBp / 100).toStringAsFixed(1)}%',
               style: theme.textTheme.bodyMedium!.copyWith(
-                color: theme.colorScheme.primary,
+                color: color,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -373,13 +437,21 @@ class _AssetRow extends StatelessWidget {
         ),
         SizedBox(
           height: 32,
-          child: Slider(
-            key: ValueKey('weight-${asset.key}'),
-            value: weightBp.toDouble(),
-            max: 10000,
-            divisions: 10000 ~/ stepBp,
-            onChanged:
-                enabled ? (value) => onChanged(value.round()) : null,
+          child: SliderTheme(
+            // 슬라이더를 자산색으로 (Figma S4-2)
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: color,
+              thumbColor: color,
+              inactiveTrackColor: color.withValues(alpha: 0.2),
+            ),
+            child: Slider(
+              key: ValueKey('weight-${asset.key}'),
+              value: weightBp.toDouble(),
+              max: 10000,
+              divisions: 10000 ~/ stepBp,
+              onChanged:
+                  enabled ? (value) => onChanged(value.round()) : null,
+            ),
           ),
         ),
       ],
