@@ -1,6 +1,7 @@
 import 'package:firedom/core/ym.dart';
 import 'package:firedom/data/db/database.dart';
 import 'package:firedom/data/repositories/plan_repository.dart';
+import 'package:firedom/data/repositories/settings_store.dart';
 import 'package:firedom/data/repositories/snapshot_repository.dart';
 import 'package:firedom/engine/engine.dart';
 import 'package:flutter/material.dart';
@@ -117,5 +118,26 @@ void main() {
     await tester.tap(find.text('프리미엄 알아보기'));
     await tester.pumpAndSettle();
     expect(find.text('파이어덤 프리미엄'), findsOneWidget);
+  });
+
+  appTest('S6 연금·세제: 프리미엄은 페이월 대신 준비 중 안내 (dead-end 제거)',
+      (tester) async {
+    await pumpApp(tester, seed: (db) async {
+      final ym = nowYm();
+      await PlanRepository(db).createPlan(
+        input: _g1,
+        birthYm: birthYmFromAge(_g1.age0, ym),
+        startedYm: ym,
+      );
+      await SnapshotRepository(db).ensureDefaultAccounts();
+      await SettingsStore(db).set(SettingKeys.premiumEntitlement, true);
+    });
+    await openAssetsTab(tester);
+
+    await tester.tap(find.text('연금·세제 🔒'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('프리미엄 알아보기'), findsNothing);
+    expect(find.textContaining('곧 준비돼요'), findsOneWidget);
   });
 }

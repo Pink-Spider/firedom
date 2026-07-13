@@ -12,8 +12,10 @@ import '../../data/entitlements.dart';
 import '../../data/notifications/reminder_scheduler.dart';
 import '../../data/reminders.dart';
 import '../../data/repositories/settings_store.dart';
+import '../../app/theme.dart';
 import '../lock/biometric.dart';
 import '../paywall/paywall_sheet.dart';
+import 'subscription_screen.dart';
 
 /// S10. 설정 (PRD, v0.9 — 백업/복원 제외)
 ///
@@ -195,6 +197,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               value: _biometricLock,
               onChanged: _toggleBiometric,
             ),
+            ListTile(
+              title: const Text('화면 테마'),
+              trailing: DropdownButton<ThemeMode>(
+                key: const ValueKey('theme-mode-dropdown'),
+                value: ref.watch(themeModeProvider).value ?? ThemeMode.system,
+                items: const [
+                  DropdownMenuItem(
+                      value: ThemeMode.system, child: Text('시스템')),
+                  DropdownMenuItem(
+                      value: ThemeMode.light, child: Text('라이트')),
+                  DropdownMenuItem(value: ThemeMode.dark, child: Text('다크')),
+                ],
+                onChanged: (mode) {
+                  if (mode == null) return;
+                  ref
+                      .read(settingsStoreProvider)
+                      .set(SettingKeys.themeMode, themeModeName(mode));
+                },
+              ),
+            ),
             const Divider(),
             _SectionHeader('구독'),
             Builder(builder: (context) {
@@ -202,10 +224,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               return ListTile(
                 title: const Text('파이어덤 프리미엄'),
                 subtitle: Text(isPremium
-                    ? '이용 중 🎉'
-                    : '몬테카를로 상세 · 시나리오 비교 · 연금 뷰'),
+                    ? '이용 중 🎉 — 플랜·해지는 구독 관리에서'
+                    : '몬테카를로 상세 분포 · 포트폴리오 비중 편집'),
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () => showPaywallSheet(context),
+                // S10-2: 구독자는 관리 화면, 미구독자는 페이월
+                onTap: () {
+                  if (isPremium) {
+                    Navigator.of(context, rootNavigator: true).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const SubscriptionScreen(),
+                      ),
+                    );
+                  } else {
+                    showPaywallSheet(context);
+                  }
+                },
               );
             }),
             if (kDebugMode)
@@ -403,11 +436,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('개인정보 처리방침'),
-        content: const Text(
-          '모든 재무 데이터는 회원가입·계좌 연동 없이 이 기기에만 저장됩니다. '
-          '서버로 전송되지 않으며, 앱을 삭제하면 데이터도 함께 삭제됩니다.\n\n'
-          '알림은 기기 로컬 알림만 사용합니다 (푸시 서버 없음).\n\n'
-          '본 앱의 시뮬레이션 결과는 정보 제공 목적이며 투자 자문이 아닙니다.',
+        content: const SingleChildScrollView(
+          child: Text(
+            '모든 재무 데이터(자산·기록)는 회원가입·계좌 연동 없이 이 기기에만 '
+            '저장되며, 어떤 경우에도 서버로 전송되지 않습니다. 앱을 삭제하면 '
+            '데이터도 함께 삭제됩니다.\n\n'
+            '알림은 기기 로컬 알림만 사용합니다 (푸시 서버 없음).\n\n'
+            '구독을 이용하는 경우 결제·구독 상태 확인은 스토어(Apple/Google)를 '
+            '통해 처리되며, 이때도 자산·기록 등 재무 데이터는 전송되지 않습니다.\n\n'
+            '본 앱의 시뮬레이션 결과는 정보 제공 목적이며 투자 자문이 아닙니다.',
+          ),
         ),
         actions: [
           TextButton(

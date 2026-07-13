@@ -12,9 +12,13 @@ class FiredomApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final locked = ref.watch(appLockedProvider);
+    final themeMode =
+        ref.watch(themeModeProvider).value ?? ThemeMode.system;
     return MaterialApp.router(
       title: '파이어덤',
       theme: buildTheme(),
+      darkTheme: buildDarkTheme(),
+      themeMode: themeMode,
       routerConfig: ref.watch(routerProvider),
       locale: const Locale('ko'),
       supportedLocales: const [Locale('ko'), Locale('en')],

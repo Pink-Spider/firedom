@@ -45,14 +45,20 @@ class PaywallSheet extends ConsumerWidget {
               style: theme.textTheme.bodyMedium,
             ),
             const SizedBox(height: 16),
+            // 지금 제공되는 프리미엄 기능만 체크로 명시 (오인 구매 방지)
             const _FeatureRow('몬테카를로 상세 분포 · 자산 고갈 나이 분포'),
-            const _FeatureRow('시나리오 무제한 저장 · 나란히 비교'),
-            const _FeatureRow('은퇴 직후 폭락(시퀀스 리스크) 스트레스 테스트'),
-            const _FeatureRow('연금 · 세제 뷰'),
+            const _FeatureRow('포트폴리오 비중 자유 편집'),
+            // 아직 미출시 — '출시 예정' 배지로 구분 (스토어 심사·오인 방지)
+            const _FeatureRow('시나리오 무제한 저장 · 나란히 비교', comingSoon: true),
+            const _FeatureRow('은퇴 직후 폭락(시퀀스 리스크) 스트레스 테스트',
+                comingSoon: true),
+            const _FeatureRow('연금 · 세제 뷰', comingSoon: true),
             const SizedBox(height: 16),
+            // 연간 우선 노출 (월 1회 앱 특성상 연간이 리텐션에 유리 — PRD S9)
             Center(
               child: Text(
-                '월 4,900원 · 연 39,000원 (7일 무료 체험)',
+                '연 39,000원 — 월 3,250원꼴 · 34% 할인\n월 4,900원 · 7일 무료 체험',
+                textAlign: TextAlign.center,
                 style: theme.textTheme.titleMedium!
                     .copyWith(fontWeight: FontWeight.w600),
               ),
@@ -73,7 +79,9 @@ class PaywallSheet extends ConsumerWidget {
             ),
             Center(
               child: Text(
-                '구독은 스토어 계정으로 관리되며 언제든 해지할 수 있어요',
+                '무료 체험 종료 후 선택한 플랜으로 자동 갱신되며, 언제든 '
+                '스토어 계정에서 해지할 수 있어요.',
+                textAlign: TextAlign.center,
                 style: theme.textTheme.bodySmall!.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -111,18 +119,38 @@ class PaywallSheet extends ConsumerWidget {
 class _FeatureRow extends StatelessWidget {
   final String label;
 
-  const _FeatureRow(this.label);
+  /// 미출시 기능 — 흐린 아이콘 + '출시 예정' 배지 (오인 구매 방지)
+  final bool comingSoon;
+
+  const _FeatureRow(this.label, {this.comingSoon = false});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = comingSoon
+        ? theme.colorScheme.onSurfaceVariant
+        : theme.colorScheme.primary;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          Icon(Icons.check_circle,
-              size: 18, color: Theme.of(context).colorScheme.primary),
+          Icon(comingSoon ? Icons.schedule : Icons.check_circle,
+              size: 18, color: color),
           const SizedBox(width: 8),
-          Expanded(child: Text(label)),
+          Expanded(
+            child: Text(
+              label,
+              style: comingSoon
+                  ? theme.textTheme.bodyMedium!
+                      .copyWith(color: theme.colorScheme.onSurfaceVariant)
+                  : null,
+            ),
+          ),
+          if (comingSoon)
+            Text('출시 예정',
+                style: theme.textTheme.labelSmall!.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                )),
         ],
       ),
     );

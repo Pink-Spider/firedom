@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/money_format.dart';
 import '../../data/db/providers.dart';
+import '../../data/entitlements.dart';
 import '../../data/repositories/settings_store.dart';
 import '../../data/repositories/snapshot_repository.dart';
 import '../../engine/engine.dart';
@@ -451,17 +452,18 @@ class _LegendDot extends StatelessWidget {
 
 // ── 연금·세제 (유료, v1.1) ────────────────────────────────────
 
-class _PensionLockedView extends StatelessWidget {
+class _PensionLockedView extends ConsumerWidget {
   const _PensionLockedView();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final isPremium = ref.watch(isPremiumProvider).value ?? false;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 32),
       child: Column(
         children: [
-          Icon(Icons.lock_outline,
+          Icon(isPremium ? Icons.schedule : Icons.lock_outline,
               size: 40, color: theme.colorScheme.primary),
           const SizedBox(height: 12),
           Text('연금 · 세제 뷰', style: theme.textTheme.titleMedium),
@@ -474,10 +476,19 @@ class _PensionLockedView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          FilledButton.tonal(
-            onPressed: () => showPaywallSheet(context),
-            child: const Text('프리미엄 알아보기'),
-          ),
+          // 프리미엄 유저는 페이월 dead-end 대신 준비 중 안내
+          if (isPremium)
+            Text(
+              '곧 준비돼요 — 다음 업데이트에서 열려요',
+              style: theme.textTheme.bodySmall!.copyWith(
+                color: theme.colorScheme.primary,
+              ),
+            )
+          else
+            FilledButton.tonal(
+              onPressed: () => showPaywallSheet(context),
+              child: const Text('프리미엄 알아보기'),
+            ),
         ],
       ),
     );

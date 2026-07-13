@@ -58,6 +58,12 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('파이어덤 프리미엄'), findsOneWidget);
 
+    // 혜택 목록: 제공 중인 기능만 체크, 미출시는 '출시 예정' (오인 구매 방지)
+    expect(find.text('포트폴리오 비중 자유 편집'), findsOneWidget);
+    expect(find.text('출시 예정'), findsWidgets);
+    // 연간 우선 표기
+    expect(find.textContaining('연 39,000원'), findsOneWidget);
+
     await tester.tap(find.text('구독 시작하기'));
     await tester.pumpAndSettle();
     expect(find.textContaining('결제 연동 준비 중'), findsOneWidget);
@@ -96,6 +102,6 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('debug-premium-switch')));
     await tester.pumpAndSettle();
 
-    expect(find.text('이용 중 🎉'), findsOneWidget);
+    expect(find.textContaining('이용 중 🎉'), findsOneWidget);
   });
 }

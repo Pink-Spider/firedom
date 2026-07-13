@@ -57,4 +57,7 @@ abstract final class SettingKeys {
 
   /// bool — 프리미엄 entitlement 캐시 (B1: 구독 entitlement 캐시)
   static const premiumEntitlement = 'entitlement.premium';
+
+  /// String — 화면 테마 ('system' | 'light' | 'dark', S10)
+  static const themeMode = 'theme_mode';
 }

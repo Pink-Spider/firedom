@@ -124,7 +124,9 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              '예시 구성이에요 — 비중은 직접 바꿀 수 있어요',
+              isPremium
+                  ? '예시 구성이에요 — 비중은 직접 바꿀 수 있어요'
+                  : '예시 구성을 골라 결과를 체험해보세요',
               style: theme.textTheme.bodySmall!.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
