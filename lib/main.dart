@@ -7,10 +7,12 @@ import 'app/app.dart';
 import 'data/bootstrap.dart';
 import 'data/db/database.dart';
 import 'data/db/providers.dart';
+import 'data/entitlements.dart';
 import 'data/home_widget_sync.dart';
 import 'data/notifications/reminder_scheduler.dart';
 import 'data/prefs.dart';
 import 'data/reminders.dart';
+import 'data/repositories/settings_store.dart';
 import 'features/lock/app_lock.dart';
 
 Future<void> main() async {
@@ -18,6 +20,10 @@ Future<void> main() async {
   final prefs = await SharedPreferences.getInstance();
   final db = AppDatabase(driftDatabase(name: 'firedom'));
   final bootstrap = await bootstrapApp(db, prefs);
+
+  // RevenueCat 구성 (API 키가 있을 때만) — CustomerInfo를 캐시에 동기화.
+  // 실패해도 기동을 막지 않는다 (내부에서 try/catch, 스텁 폴백).
+  await EntitlementService(SettingsStore(db)).configure();
 
   // 리마인더 재예약·위젯 갱신 — 실패해도 기동을 막지 않는다
   await rescheduleReminders(

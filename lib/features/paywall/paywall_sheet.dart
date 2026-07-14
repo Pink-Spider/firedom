@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 
 import '../../data/entitlements.dart';
 
 /// S9. 페이월 (PRD)
 ///
-/// 유저의 실제 숫자(성공 확률)로 미리보기. 구매/복원은 EntitlementService를
-/// 통해 동작하며, RevenueCat 연동 전에는 안내만 표시한다.
+/// 유저의 실제 숫자(성공 확률)로 미리보기. RevenueCat 구성 시 스토어 가격으로
+/// 플랜(연/월)을 선택해 실제 결제하고, 미구성(연동 전) 시 안내만 표시한다.
 Future<void> showPaywallSheet(BuildContext context, {double? successRate}) {
   return showModalBottomSheet<void>(
     context: context,
@@ -15,13 +16,54 @@ Future<void> showPaywallSheet(BuildContext context, {double? successRate}) {
   );
 }
 
-class PaywallSheet extends ConsumerWidget {
+class PaywallSheet extends ConsumerStatefulWidget {
   final double? successRate;
 
   const PaywallSheet({super.key, this.successRate});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PaywallSheet> createState() => _PaywallSheetState();
+}
+
+class _PaywallSheetState extends ConsumerState<PaywallSheet> {
+  List<Package> _packages = const [];
+  Package? _selected;
+  bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final svc = ref.read(entitlementServiceProvider);
+    if (svc.isConfigured) _loadPackages(svc);
+  }
+
+  Future<void> _loadPackages(EntitlementService svc) async {
+    final pkgs = await svc.availablePackages();
+    if (!mounted) return;
+    setState(() {
+      _packages = pkgs;
+      _selected = _preferAnnual(pkgs);
+    });
+  }
+
+  /// 연간을 기본 선택 (없으면 첫 패키지) — PRD S9 연간 우선
+  Package? _preferAnnual(List<Package> pkgs) {
+    for (final p in pkgs) {
+      if (p.packageType == PackageType.annual) return p;
+    }
+    return pkgs.isEmpty ? null : pkgs.first;
+  }
+
+  String _planLabel(Package p) => switch (p.packageType) {
+        PackageType.annual => '연간',
+        PackageType.monthly => '월간',
+        PackageType.weekly => '주간',
+        PackageType.lifetime => '평생',
+        _ => p.storeProduct.title,
+      };
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isPremium = ref.watch(isPremiumProvider).value ?? false;
 
@@ -38,9 +80,9 @@ class PaywallSheet extends ConsumerWidget {
                 style: theme.textTheme.bodyMedium),
           ] else ...[
             Text(
-              successRate == null
+              widget.successRate == null
                   ? '내 계획의 리스크까지 확인해보세요'
-                  : '회원님 계획의 성공 확률 ${(successRate! * 100).toStringAsFixed(0)}% — '
+                  : '회원님 계획의 성공 확률 ${(widget.successRate! * 100).toStringAsFixed(0)}% — '
                       '상세 분포와 자산 고갈 리스크를 확인해보세요',
               style: theme.textTheme.bodyMedium,
             ),
@@ -54,26 +96,64 @@ class PaywallSheet extends ConsumerWidget {
                 comingSoon: true),
             const _FeatureRow('연금 · 세제 뷰', comingSoon: true),
             const SizedBox(height: 16),
-            // 연간 우선 노출 (월 1회 앱 특성상 연간이 리텐션에 유리 — PRD S9)
-            Center(
-              child: Text(
-                '연 39,000원 — 월 3,250원꼴 · 34% 할인\n월 4,900원 · 7일 무료 체험',
-                textAlign: TextAlign.center,
-                style: theme.textTheme.titleMedium!
-                    .copyWith(fontWeight: FontWeight.w600),
+            if (_packages.isNotEmpty) ...[
+              // 스토어 실제 가격으로 플랜 선택 (연간 기본)
+              RadioGroup<Package>(
+                groupValue: _selected,
+                onChanged: (v) {
+                  if (_busy) return;
+                  setState(() => _selected = v);
+                },
+                child: Column(
+                  children: [
+                    for (final p in _packages)
+                      RadioListTile<Package>(
+                        key: ValueKey('plan-${p.packageType.name}'),
+                        contentPadding: EdgeInsets.zero,
+                        value: p,
+                        title: Text(
+                            '${_planLabel(p)} · ${p.storeProduct.priceString}'),
+                      ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () => _purchase(context, ref),
-                child: const Text('구독 시작하기'),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed:
+                      _busy || _selected == null ? null : _purchaseSelected,
+                  child: _busy
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('구독 시작하기'),
+                ),
               ),
-            ),
+            ] else ...[
+              // 미구성(연동/상품 준비 전) — 안내 가격 + 준비 중 버튼
+              Center(
+                child: Text(
+                  '연 39,000원 — 월 3,250원꼴 · 34% 할인\n월 4,900원 · 7일 무료 체험',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.titleMedium!
+                      .copyWith(fontWeight: FontWeight.w600),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: _purchaseStub,
+                  child: const Text('구독 시작하기'),
+                ),
+              ),
+            ],
             Center(
               child: TextButton(
-                onPressed: () => _restore(context, ref),
+                onPressed: _restore,
                 child: const Text('구매 복원'),
               ),
             ),
@@ -93,9 +173,25 @@ class PaywallSheet extends ConsumerWidget {
     );
   }
 
-  Future<void> _purchase(BuildContext context, WidgetRef ref) async {
+  Future<void> _purchaseSelected() async {
+    final pkg = _selected;
+    if (pkg == null) return;
+    setState(() => _busy = true);
+    final ok = await ref.read(entitlementServiceProvider).purchasePackage(pkg);
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (ok) {
+      Navigator.pop(context);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('결제가 완료되지 않았어요')),
+      );
+    }
+  }
+
+  Future<void> _purchaseStub() async {
     final ok = await ref.read(entitlementServiceProvider).purchase();
-    if (!context.mounted) return;
+    if (!mounted) return;
     if (!ok) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('스토어 결제 연동 준비 중이에요 — 곧 열려요')),
@@ -105,9 +201,9 @@ class PaywallSheet extends ConsumerWidget {
     Navigator.pop(context);
   }
 
-  Future<void> _restore(BuildContext context, WidgetRef ref) async {
+  Future<void> _restore() async {
     final ok = await ref.read(entitlementServiceProvider).restore();
-    if (!context.mounted) return;
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(ok ? '구매를 복원했어요' : '복원할 구매 내역이 없어요 (연동 준비 중)'),
