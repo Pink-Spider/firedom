@@ -2,6 +2,7 @@ import 'package:firedom/core/ym.dart';
 import 'package:firedom/data/db/database.dart';
 import 'package:firedom/data/repositories/plan_repository.dart';
 import 'package:firedom/data/repositories/scenario_repository.dart';
+import 'package:firedom/data/repositories/settings_store.dart';
 import 'package:firedom/engine/engine.dart';
 import 'package:firedom/features/simulation/monte_carlo_runner.dart';
 import 'package:flutter/material.dart';
@@ -161,5 +162,47 @@ void main() {
     expect(scenario, isNotNull);
     final rows = await db.select(db.scenarios).get();
     expect(rows.where((r) => r.deletedAt == null).length, 1);
+  });
+
+  appTest('S4 프리미엄: 시나리오 여러 개 저장 + 목록 불러오기/삭제', (tester) async {
+    final db = await pumpApp(tester, seed: (db) async {
+      await seedPlan(db);
+      await SettingsStore(db).set(SettingKeys.premiumEntitlement, true);
+    });
+    await openSimulationTab(tester);
+
+    Future<void> saveAs(String name) async {
+      await tester.scrollUntilVisible(find.text('시나리오 저장'), 200,
+          scrollable: find.byType(Scrollable).first);
+      await tester.tap(find.text('시나리오 저장'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+          find.byKey(const ValueKey('scenario-name')), name);
+      await tester.tap(find.text('저장')); // 다이얼로그 확인
+      await tester.pumpAndSettle();
+    }
+
+    await saveAs('공격형');
+    await saveAs('안정형');
+
+    // 프리미엄은 덮어쓰지 않고 2개 유지
+    final kept =
+        (await db.select(db.scenarios).get()).where((r) => r.deletedAt == null);
+    expect(kept.length, 2);
+
+    // 불러오기 목록에 둘 다 표시
+    await tester.scrollUntilVisible(find.textContaining('불러오기'), 200,
+        scrollable: find.byType(Scrollable).first);
+    await tester.tap(find.textContaining('불러오기'));
+    await tester.pumpAndSettle();
+    expect(find.text('공격형'), findsOneWidget);
+    expect(find.text('안정형'), findsOneWidget);
+
+    // 하나 삭제하면 1개만 남는다
+    await tester.tap(find.byIcon(Icons.delete_outline).first);
+    await tester.pumpAndSettle();
+    final after =
+        (await db.select(db.scenarios).get()).where((r) => r.deletedAt == null);
+    expect(after.length, 1);
   });
 }

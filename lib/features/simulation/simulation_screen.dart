@@ -8,6 +8,7 @@ import '../../core/money_format.dart';
 import '../../data/db/providers.dart';
 import '../../data/entitlements.dart';
 import '../../data/repositories/plan_repository.dart';
+import '../../data/repositories/scenario_repository.dart';
 import '../../engine/engine.dart';
 import '../paywall/paywall_sheet.dart';
 import 'monte_carlo_detail_screen.dart';
@@ -39,7 +40,8 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
   int? _volatilityBp;
   MonteCarloResult? _mcResult;
   bool _mcRunning = false;
-  bool _hasScenario = false;
+  List<ScenarioEntry> _scenarios = const [];
+  bool get _hasScenario => _scenarios.isNotEmpty;
 
   /// 기대수익률(실질) 슬라이더 상한 (bp) — 놀이터라 공격적 시나리오까지 허용.
   /// 0.25%(25bp) 스텝 유지.
@@ -52,8 +54,8 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
   @override
   void initState() {
     super.initState();
-    ref.read(scenarioRepositoryProvider).loadSingle().then((scenario) {
-      if (mounted) setState(() => _hasScenario = scenario != null);
+    ref.read(scenarioRepositoryProvider).list().then((list) {
+      if (mounted) setState(() => _scenarios = list);
     });
   }
 
@@ -222,8 +224,10 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
                 const SizedBox(width: 8),
                 if (_hasScenario)
                   TextButton(
-                    onPressed: _loadScenario,
-                    child: const Text('불러오기'),
+                    onPressed: _openScenarios,
+                    child: Text(_scenarios.length > 1
+                        ? '불러오기 (${_scenarios.length})'
+                        : '불러오기'),
                   ),
               ],
             ),
@@ -284,26 +288,135 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
     });
   }
 
-  Future<void> _saveScenario(PlanInput input) async {
-    await ref.read(scenarioRepositoryProvider).saveSingle(
-          name: '내 시나리오',
-          input: input,
-        );
+  Future<void> _reloadScenarios() async {
+    final list = await ref.read(scenarioRepositoryProvider).list();
+    if (mounted) setState(() => _scenarios = list);
+  }
+
+  void _snack(String message) {
     if (!mounted) return;
-    setState(() => _hasScenario = true);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('시나리오를 저장했어요 (무료는 1개까지)')),
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _saveScenario(PlanInput input) async {
+    final isPremium = ref.read(isPremiumProvider).value ?? false;
+    var name = '내 시나리오';
+    if (isPremium) {
+      final entered = await _askScenarioName('시나리오 ${_scenarios.length + 1}');
+      if (entered == null) return; // 취소
+      name = entered.trim().isEmpty
+          ? '시나리오 ${_scenarios.length + 1}'
+          : entered.trim();
+    }
+    await ref
+        .read(scenarioRepositoryProvider)
+        .save(name: name, input: input, keepExisting: isPremium);
+    await _reloadScenarios();
+    _snack(isPremium
+        ? '시나리오 "$name"를 저장했어요'
+        : '시나리오를 저장했어요 (무료는 1개까지)');
+  }
+
+  /// 프리미엄 저장 시 이름 입력
+  Future<String?> _askScenarioName(String hint) {
+    final controller = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('시나리오 이름'),
+        content: TextField(
+          key: const ValueKey('scenario-name'),
+          controller: controller,
+          autofocus: true,
+          decoration: InputDecoration(hintText: hint),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('취소'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, controller.text),
+            child: const Text('저장'),
+          ),
+        ],
+      ),
     );
   }
 
-  Future<void> _loadScenario() async {
-    final scenario = await ref.read(scenarioRepositoryProvider).loadSingle();
-    if (scenario == null || !mounted) return;
+  /// 저장된 시나리오 목록 — 탭해서 불러오기, 삭제 가능
+  void _openScenarios() {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheet) => SafeArea(
+          child: _scenarios.isEmpty
+              ? const Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Text('저장된 시나리오가 없어요'),
+                )
+              : ListView(
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.only(bottom: 16),
+                  children: [
+                    for (final s in _scenarios)
+                      ListTile(
+                        key: ValueKey('scenario-${s.id}'),
+                        title: Text(s.name),
+                        subtitle: Text(_summaryOf(s.input)),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete_outline),
+                          tooltip: '삭제',
+                          onPressed: () async {
+                            await ref
+                                .read(scenarioRepositoryProvider)
+                                .delete(s.id);
+                            await _reloadScenarios();
+                            setSheet(() {});
+                            if (_scenarios.isEmpty && sheetContext.mounted) {
+                              Navigator.pop(sheetContext);
+                            }
+                          },
+                        ),
+                        onTap: () {
+                          Navigator.pop(sheetContext);
+                          _applyScenario(s.input);
+                          _snack('시나리오 "${s.name}"를 불러왔어요');
+                        },
+                      ),
+                  ],
+                ),
+        ),
+      ),
+    );
+  }
+
+  /// 시나리오 요약 (FIRE 나이) — 목록 부제
+  String _summaryOf(PlanInput s) {
+    final r = solvePlan(s);
+    if (r.monthsToFire == null) return '100년 내 도달 어려움';
+    if (r.monthsToFire == 0) return '이미 FIRE 도달';
+    return 'FIRE 나이 ${s.age0 + r.monthsToFire! ~/ 12}세';
+  }
+
+  /// 시나리오 값을 슬라이더에 반영 (나이·순자산·변동성까지 전부 복원)
+  void _applyScenario(PlanInput s) {
+    final plan = ref.read(activePlanRowProvider).value;
+    final baseline = plan == null ? s : planInputOf(plan);
+    final ageMin = baseline.age0 < 19 ? baseline.age0 : 19;
+    final ageMax = baseline.lifeExpectancy - 1;
+    final assetsMax = baseline.currentAssets <= _assetsMaxDefault
+        ? _assetsMaxDefault
+        : (baseline.currentAssets / _assetsStep).ceil() * _assetsStep;
     setState(() {
-      _monthlySaving = scenario.input.monthlySaving.clamp(0, 10000000);
-      _returnBp = scenario.input.realReturnBp.clamp(0, _returnMaxBp);
-      _monthlySpend =
-          scenario.input.monthlySpendRetire.clamp(500000, 10000000);
+      _age0 = s.age0.clamp(ageMin, ageMax);
+      _currentAssets = s.currentAssets.clamp(0, assetsMax);
+      _monthlySaving = s.monthlySaving.clamp(0, 10000000);
+      _returnBp = s.realReturnBp.clamp(0, _returnMaxBp);
+      _monthlySpend = s.monthlySpendRetire.clamp(500000, 10000000);
+      _volatilityBp = s.volatilityBp;
       _invalidateMc();
     });
   }

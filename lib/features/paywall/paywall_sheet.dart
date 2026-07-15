@@ -90,8 +90,9 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
             // 지금 제공되는 프리미엄 기능만 체크로 명시 (오인 구매 방지)
             const _FeatureRow('몬테카를로 상세 분포 · 자산 고갈 나이 분포'),
             const _FeatureRow('포트폴리오 비중 자유 편집'),
+            const _FeatureRow('시나리오 무제한 저장'),
             // 아직 미출시 — '출시 예정' 배지로 구분 (스토어 심사·오인 방지)
-            const _FeatureRow('시나리오 무제한 저장 · 나란히 비교', comingSoon: true),
+            const _FeatureRow('시나리오 나란히 비교', comingSoon: true),
             const _FeatureRow('은퇴 직후 폭락(시퀀스 리스크) 스트레스 테스트',
                 comingSoon: true),
             const _FeatureRow('연금 · 세제 뷰', comingSoon: true),
