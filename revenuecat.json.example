@@ -1,0 +1,7 @@
+{
+  "_comment": "이 파일을 revenuecat.json 으로 복사한 뒤 실제 키를 넣으세요 (revenuecat.json은 git에 안 올라감).",
+  "_comment_test_store": "RevenueCat Test Store 키는 플랫폼 구분 없는 단일 키입니다 — 같은 값을 두 필드에 넣거나, 테스트하는 플랫폼 필드에만 넣어도 됩니다.",
+  "_comment_prod": "정식 출시용은 iOS=appl_..., Android=goog_... 로 각각 다릅니다.",
+  "REVENUECAT_IOS_KEY": "여기에_키",
+  "REVENUECAT_ANDROID_KEY": "여기에_키"
+}

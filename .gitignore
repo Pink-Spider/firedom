@@ -46,3 +46,5 @@ app.*.map.json
 
 # FVM Version Cache
 .fvm/
+# RevenueCat 실제 키 (커밋 금지)
+/revenuecat.json
