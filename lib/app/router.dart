@@ -15,14 +15,16 @@ import '../features/snapshot/snapshot_flow_screen.dart';
 import '../features/snapshot/snapshot_result_screen.dart';
 import 'shell.dart';
 
-final _rootNavigatorKey = GlobalKey<NavigatorState>();
+/// go_router 루트 네비게이터 키 — 인앱 업데이트 알림 등 라우터 밖에서
+/// 다이얼로그를 띄울 때 참조한다.
+final rootNavigatorKey = GlobalKey<NavigatorState>();
 
 final routerProvider = Provider<GoRouter>((ref) {
   // 시작 위치는 앱 기동 시 1회 결정: 활성 계획이 없으면 온보딩부터 (S0 역할)
   final hasPlan = ref.watch(hasActivePlanAtLaunchProvider);
 
   return GoRouter(
-    navigatorKey: _rootNavigatorKey,
+    navigatorKey: rootNavigatorKey,
     initialLocation: hasPlan ? HomeScreen.path : OnboardingScreen.path,
     routes: [
       // 하단 탭 셸: 홈 · 시뮬레이션 · 자산 (기록은 push)
