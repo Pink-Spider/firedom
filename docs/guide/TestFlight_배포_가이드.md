@@ -87,3 +87,27 @@ open ios/Runner.xcworkspace
 TestFlight 빌드에 결제를 붙여 테스트하려면 `revenuecat.json`(git 제외)에 키를
 넣고 `--dart-define-from-file`로 주입한다. **Test Store 키를 정식 출시 빌드에는
 넣지 말 것** — 프로덕션은 `appl_`/`goog_` 키. (자세한 건 `revenuecat.json.example`)
+
+## 9. QA용 IPA 빌드 (테스터가 결제 없이 프리미엄 테스트) ★
+
+테스터가 **결제 없이 유료 게이트를 켜서** 확인할 수 있는 빌드. 두 플래그를
+넣어 IPA를 만든다:
+
+```bash
+# 1) 빌드번호 먼저 +1 (pubspec.yaml: version: 0.1.0+1 → +2 …)
+# 2) QA 플래그 + RevenueCat 키 주입해서 빌드
+fvm flutter build ipa \
+  --dart-define-from-file=revenuecat.json \
+  --dart-define=FIREDOM_QA=true
+```
+→ `build/ios/ipa/firedom.ipa` 생성 → Transporter/Organizer로 업로드(§3).
+
+- **`--dart-define=FIREDOM_QA=true`**: 설정 화면에 "프리미엄 시뮬레이션 (QA)"
+  토글이 나타나 결제 없이 유료 기능을 테스트할 수 있다.
+- **`--dart-define-from-file=revenuecat.json`**: RevenueCat 키를 주입해 결제
+  흐름(Test Store)까지 테스트. 키가 없거나 비면 스텁으로 폴백(QA 토글만 동작).
+- QA 토글 없이 순수 릴리스로 만들려면 두 플래그를 빼고 `fvm flutter build ipa`.
+
+⚠️ **이 QA 빌드(QA 토글·Test Store 키 포함)는 TestFlight 베타 전용 —
+App Store 정식 심사/출시로 승격하지 말 것.** 정식 출시는 플래그 없이,
+프로덕션 RevenueCat 키(`appl_`/`goog_`)로 다시 빌드한다.
