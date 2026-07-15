@@ -29,6 +29,31 @@ Future<Plan> seedPlan(AppDatabase db, {required int startedYm}) {
 }
 
 void main() {
+  appTest('S3 → 지난 기록 탭 → 그 월 스냅샷 수정 화면 진입 (소급 편집)', (tester) async {
+    final pastYm = ymAddMonths(nowYm(), -1);
+    await pumpApp(tester, seed: (db) async {
+      await seedPlan(db, startedYm: ymAddMonths(nowYm(), -2));
+      final repo = SnapshotRepository(db);
+      final accounts = await repo.ensureDefaultAccounts();
+      await repo.saveSnapshot(
+        ym: pastYm,
+        amountsByAccountId: {accounts.first.id: 50000000},
+      );
+    });
+
+    // 홈 리스트 끝까지 스크롤 → "지난 기록"이 하단 탭바 위로 올라온다
+    await tester.drag(
+        find.byType(Scrollable).first, const Offset(0, -1000));
+    await tester.pumpAndSettle();
+    expect(find.text('지난 기록'), findsOneWidget);
+    await tester.tap(find.byKey(ValueKey('record-$pastYm')));
+    await tester.pumpAndSettle();
+
+    // 그 월 스냅샷 수정 화면으로 진입 (월 헤더 + 저장 버튼)
+    expect(find.text('자산 기록'), findsOneWidget);
+    expect(find.text(formatYm(pastYm)), findsOneWidget);
+  });
+
   appTest('S3: 계획만 있으면 D-day + 기록 유도 + 첫 기록 안내', (tester) async {
     await pumpApp(tester, seed: (db) async {
       await seedPlan(db, startedYm: nowYm());

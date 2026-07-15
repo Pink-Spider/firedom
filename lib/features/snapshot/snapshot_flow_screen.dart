@@ -23,7 +23,10 @@ import 'snapshot_result_screen.dart';
 class SnapshotFlowScreen extends ConsumerStatefulWidget {
   static const path = '/snapshot';
 
-  const SnapshotFlowScreen({super.key});
+  /// 수정할 월 (yyyymm). null이면 현재월로 시작 — 홈의 "지난 기록"에서 넘긴다.
+  final int? initialYm;
+
+  const SnapshotFlowScreen({super.key, this.initialYm});
 
   @override
   ConsumerState<SnapshotFlowScreen> createState() =>
@@ -31,7 +34,7 @@ class SnapshotFlowScreen extends ConsumerStatefulWidget {
 }
 
 class _SnapshotFlowScreenState extends ConsumerState<SnapshotFlowScreen> {
-  int _ym = nowYm();
+  late int _ym;
   bool _loading = true;
   bool _saving = false;
   List<Account> _accounts = const [];
@@ -47,6 +50,7 @@ class _SnapshotFlowScreenState extends ConsumerState<SnapshotFlowScreen> {
   @override
   void initState() {
     super.initState();
+    _ym = widget.initialYm ?? nowYm();
     _incomeController.addListener(_writeDraft);
     _expenseController.addListener(_writeDraft);
     _load();

@@ -165,6 +165,10 @@ class _Dashboard extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
             _SavingRateCard(summaries: summaries),
+            if (summaries.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _PastRecordsCard(summaries: summaries, masked: masked),
+            ],
             if (hasCurrentMonthRecord) ...[
               const SizedBox(height: 16),
               Center(
@@ -176,6 +180,45 @@ class _Dashboard extends ConsumerWidget {
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// 지난 기록 목록 — 탭하면 그 월 스냅샷 수정 화면으로 (S3 → S5 소급 편집)
+class _PastRecordsCard extends StatelessWidget {
+  final List<SnapshotSummary> summaries;
+  final bool masked;
+
+  const _PastRecordsCard({required this.summaries, required this.masked});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final items = [...summaries]
+      ..sort((a, b) => b.snapshot.ym.compareTo(a.snapshot.ym));
+    return Card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: Text('지난 기록', style: theme.textTheme.titleMedium),
+          ),
+          for (final s in items)
+            ListTile(
+              key: ValueKey('record-${s.snapshot.ym}'),
+              title:
+                  Text('${s.snapshot.ym ~/ 100}년 ${s.snapshot.ym % 100}월'),
+              subtitle: const Text('탭해서 수정'),
+              trailing: Text(
+                _money(s.netWorth, masked),
+                style: theme.textTheme.titleSmall,
+              ),
+              onTap: () => context
+                  .push('${SnapshotFlowScreen.path}?ym=${s.snapshot.ym}'),
+            ),
+        ],
       ),
     );
   }

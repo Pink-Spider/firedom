@@ -63,7 +63,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: SnapshotFlowScreen.path,
-        builder: (context, state) => const SnapshotFlowScreen(),
+        builder: (context, state) => SnapshotFlowScreen(
+          initialYm: int.tryParse(state.uri.queryParameters['ym'] ?? ''),
+        ),
       ),
       GoRoute(
         path: SnapshotResultScreen.path,
