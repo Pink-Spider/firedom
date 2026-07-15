@@ -58,6 +58,38 @@ void main() {
     expect(find.textContaining('재정적 자유까지'), findsOneWidget);
   });
 
+  appTest('S4 나이·순자산 슬라이더: 계획 값 기본 표시 + 순자산 조절 시 재계산',
+      (tester) async {
+    await pumpApp(tester, seed: (db) async => seedPlan(db));
+    await openSimulationTab(tester);
+
+    // 온보딩 값(나이 35, 순자산 1억)이 슬라이더로 노출된다
+    expect(find.text('현재 나이'), findsOneWidget);
+    expect(find.text('현재 순자산'), findsOneWidget);
+    // 나이 슬라이더 기본값 = 계획의 35 (차트 축 라벨과 겹치니 위젯 값으로 확인)
+    await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('age-slider')), 200,
+        scrollable: find.byType(Scrollable).first);
+    expect(
+      tester.widget<Slider>(find.byKey(const ValueKey('age-slider'))).value,
+      35.0,
+    );
+
+    // 순자산 슬라이더 기본값 = 1억. 콜백으로 30억 반영 → 이미 도달로 재계산
+    await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('assets-slider')), 200,
+        scrollable: find.byType(Scrollable).first);
+    final assets =
+        tester.widget<Slider>(find.byKey(const ValueKey('assets-slider')));
+    expect(assets.value, 100000000.0);
+    assets.onChanged!(3000000000.0); // 30억
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(find.text('이미 FIRE 도달!'), -300,
+        scrollable: find.byType(Scrollable).first);
+    expect(find.text('이미 FIRE 도달!'), findsOneWidget);
+  });
+
   appTest('S4 슬라이더: 저축 최대(1,000만) → FIRE 나이 40세로 즉시 재계산', (tester) async {
     await pumpApp(tester, seed: (db) async => seedPlan(db));
     await openSimulationTab(tester);

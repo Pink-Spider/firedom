@@ -30,8 +30,10 @@ Future<Plan> seedPlan(AppDatabase db) {
 Future<void> openPortfolio(WidgetTester tester) async {
   await tester.tap(find.text('시뮬레이션'));
   await tester.pumpAndSettle();
+  // 시뮬 ListView는 lazy — 링크가 아래에 있어 스크롤해 빌드시킨 뒤 탭
   final link = find.text('포트폴리오로 구성하기');
-  await tester.ensureVisible(link); // 하단 탭바에 가려질 수 있어 스크롤
+  await tester.scrollUntilVisible(link, 200,
+      scrollable: find.byType(Scrollable).first);
   await tester.pumpAndSettle();
   await tester.tap(link);
   await tester.pumpAndSettle();

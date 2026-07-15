@@ -29,6 +29,8 @@ class SimulationScreen extends ConsumerStatefulWidget {
 }
 
 class _SimulationScreenState extends ConsumerState<SimulationScreen> {
+  int? _age0;
+  int? _currentAssets;
   int? _monthlySaving;
   int? _returnBp;
   int? _monthlySpend;
@@ -42,6 +44,10 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
   /// 기대수익률(실질) 슬라이더 상한 (bp) — 놀이터라 공격적 시나리오까지 허용.
   /// 0.25%(25bp) 스텝 유지.
   static const _returnMaxBp = 1500;
+
+  /// 현재 순자산 슬라이더 스텝 = 1천만원, 기본 상한 30억
+  static const _assetsStep = 10000000;
+  static const _assetsMaxDefault = 3000000000;
 
   @override
   void initState() {
@@ -66,11 +72,20 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
     }
 
     final baseline = planInputOf(plan);
+    final ageMin = baseline.age0 < 19 ? baseline.age0 : 19;
+    final ageMax = baseline.lifeExpectancy - 1;
+    final assetsMax = baseline.currentAssets <= _assetsMaxDefault
+        ? _assetsMaxDefault
+        : (baseline.currentAssets / _assetsStep).ceil() * _assetsStep;
+    _age0 ??= baseline.age0.clamp(ageMin, ageMax);
+    _currentAssets ??= baseline.currentAssets.clamp(0, assetsMax);
     _monthlySaving ??= baseline.monthlySaving.clamp(0, 10000000);
     _returnBp ??= baseline.realReturnBp.clamp(0, _returnMaxBp);
     _monthlySpend ??= baseline.monthlySpendRetire.clamp(500000, 10000000);
 
     final input = baseline.copyWith(
+      age0: _age0,
+      currentAssets: _currentAssets,
       monthlySaving: _monthlySaving,
       realReturnBp: _returnBp,
       monthlySpendRetire: _monthlySpend,
@@ -86,6 +101,8 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
             tooltip: '계획 값으로 되돌리기',
             icon: const Icon(Icons.restart_alt),
             onPressed: () => setState(() {
+              _age0 = null;
+              _currentAssets = null;
               _monthlySaving = null;
               _returnBp = null;
               _monthlySpend = null;
@@ -112,6 +129,32 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
               _SimChart(result: result, age0: input.age0),
             ],
             const SizedBox(height: 12),
+            _SliderCard(
+              sliderKey: const ValueKey('age-slider'),
+              title: '현재 나이',
+              valueLabel: '$_age0세',
+              value: _age0!.toDouble(),
+              min: ageMin.toDouble(),
+              max: ageMax.toDouble(),
+              divisions: ageMax - ageMin,
+              onChanged: (value) => setState(() {
+                _age0 = value.round();
+                _invalidateMc();
+              }),
+            ),
+            _SliderCard(
+              sliderKey: const ValueKey('assets-slider'),
+              title: '현재 순자산',
+              valueLabel: '${formatKoreanMoney(_currentAssets!)}원',
+              value: _currentAssets!.toDouble(),
+              min: 0,
+              max: assetsMax.toDouble(),
+              divisions: assetsMax ~/ _assetsStep,
+              onChanged: (value) => setState(() {
+                _currentAssets = value.round();
+                _invalidateMc();
+              }),
+            ),
             _SliderCard(
               sliderKey: const ValueKey('saving-slider'),
               title: '월 저축액',
