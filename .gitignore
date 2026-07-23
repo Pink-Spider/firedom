@@ -48,3 +48,6 @@ app.*.map.json
 .fvm/
 # RevenueCat 실제 키 (커밋 금지)
 /revenuecat.json
+
+# Claude Code 개인 로컬 설정
+.claude/settings.local.json

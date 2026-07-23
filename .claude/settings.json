@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/engine-tests.sh",
+            "timeout": 180,
+            "statusMessage": "엔진 골든 테스트 확인 중"
+          }
+        ]
+      }
+    ]
+  }
+}
