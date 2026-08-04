@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+<g id="inset-compensate" transform="translate(512,512) scale(1.2) translate(-512,-512)">
+  <path d="M 270 675 C 420 690 600 600 750 340"
+        stroke="#FFFFFF" stroke-width="44" fill="none" stroke-linecap="round"/>
+  <g transform="translate(640,520) scale(0.30) translate(-512,-766)">
+    <path fill="#FFFFFF" d="
+      M 512 158
+      C 610 272 712 396 712 566
+      A 200 200 0 0 1 312 566
+      C 312 396 414 272 512 158 Z"/>
+  </g>
+</g>
+</svg>
