@@ -17,6 +17,7 @@ class FiredomApp extends ConsumerWidget {
         ref.watch(themeModeProvider).value ?? ThemeMode.system;
     return MaterialApp.router(
       title: '파이어덤',
+      debugShowCheckedModeBanner: false,
       theme: buildTheme(),
       darkTheme: buildDarkTheme(),
       themeMode: themeMode,
