@@ -166,9 +166,42 @@ fvm flutter build appbundle --dart-define-from-file=revenuecat.prod.json
 
 - [ ] `fvm flutter analyze` / `fvm flutter test` 통과
 - [ ] `pubspec.yaml` 빌드번호 +1 (iOS·Android 공유)
-- [ ] 스토어 문구에 **미출시 기능**이 없는지 확인 — 페이월의 `comingSoon` 항목과 대조
-      (`docs/스토어_등록_문구.md`)
+- [ ] **스토어 문구의 모든 기능 주장을 빌드 산출물로 검증** (아래 §13)
 - [ ] 스크린샷이 최신 UI인지 (`store_assets/screenshots/`)
 - [ ] 배포 지역: 양대 스토어 모두 **대한민국**
 - [ ] 출시 후 RevenueCat 마무리 — 자격증명 재검증, Google developer notifications 연결,
       실기기 결제 1건 확인
+
+
+## 13. 스토어 문구 검증 — 기획서가 아니라 빌드로 확인한다 ★
+
+v1.0 준비 중 **같은 유형의 사고가 세 번** 났다. 전부 원인이 같다 —
+문구를 PRD/계획 기준으로 쓰고 실제 빌드와 대조하지 않았다.
+
+| 사고 | 내용 |
+|---|---|
+| 미출시 프리미엄 기능 | '시나리오 나란히 비교', '시퀀스 리스크 테스트'를 판매 문구에 기재 |
+| 전 세계 배포 | 한국어 단일 앱을 177개국으로 설정 |
+| iOS 홈 위젯 | Android만 동작하는데 양쪽 설명에 기재 |
+
+**규칙: 설명의 기능 한 줄마다 근거를 빌드에서 찾는다.** 못 찾으면 문구에서 뺀다.
+
+```bash
+# 1) 페이월의 미출시(coming soon) 항목 — 여기 있는 건 절대 판매 문구에 못 쓴다
+grep -n "comingSoon: true" -B2 lib/features/paywall/paywall_sheet.dart
+
+# 2) iOS 익스텐션(위젯 등)이 실제 IPA에 들어갔는지
+T=$(mktemp -d); unzip -q build/ios/ipa/firedom.ipa -d "$T"
+ls "$T"/Payload/Runner.app/PlugIns/ 2>/dev/null || echo "익스텐션 없음"
+codesign -d --entitlements - "$T"/Payload/Runner.app 2>/dev/null | grep -a application-groups
+
+# 3) Android 위젯이 실제 AAB에 들어갔는지
+unzip -l build/app/outputs/bundle/release/app-release.aab | grep -i firedom_widget
+
+# 4) 나머지 기능 주장은 코드에서 확인 (--include는 반드시 따옴표로 — zsh 글로빙 주의)
+grep -rn "국민연금" lib/ --include='*.dart'
+```
+
+**주의**: `grep -rn ... --include=*.dart`를 따옴표 없이 쓰면 zsh가 글로빙에 실패해
+*"못 찾음"이 거짓으로 뜬다.* 실제로 이 때문에 멀쩡한 기능을 미구현으로 오판한 적이 있다.
+없다는 결론을 내리기 전에 명령이 제대로 돌았는지부터 의심할 것.
