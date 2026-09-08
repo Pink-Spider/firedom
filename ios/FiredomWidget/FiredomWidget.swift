@@ -65,7 +65,6 @@ struct FiredomWidgetView: View {
     }
 }
 
-@main
 struct FiredomWidget: Widget {
     let kind: String = "FiredomWidget"
 
