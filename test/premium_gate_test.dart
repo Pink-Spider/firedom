@@ -58,9 +58,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('파이어덤 프리미엄'), findsOneWidget);
 
-    // 혜택 목록: 제공 중인 기능만 체크, 미출시는 '출시 예정' (오인 구매 방지)
+    // 혜택 목록에는 지금 제공되는 기능만 올린다.
+    // 미출시 기능을 올리면 '결제했는데 안 열린다'는 오인 구매가 된다.
     expect(find.text('포트폴리오 비중 자유 편집'), findsOneWidget);
-    expect(find.text('출시 예정'), findsWidgets);
+    expect(find.text('출시 예정'), findsNothing);
     // 연간 우선 표기
     expect(find.textContaining('연 39,000원'), findsOneWidget);
 

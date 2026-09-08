@@ -4,20 +4,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/money_format.dart';
 import '../../data/db/providers.dart';
-import '../../data/entitlements.dart';
 import '../../data/repositories/settings_store.dart';
 import '../../data/repositories/snapshot_repository.dart';
 import '../../engine/engine.dart';
 import '../common/asset_class_labels.dart';
-import '../paywall/paywall_sheet.dart';
 
-enum _AssetsTab { allocation, cashflow, pension }
+enum _AssetsTab { allocation, cashflow }
 
 /// S6. 자산 뷰 — 다중 관점 (PRD)
 ///
 /// 자산배분(무료): 자산군 도넛 + 목표 배분 대비 편차 — 사실 표시만,
 /// 행동 지시 문구 금지. 현금흐름(무료): 소득−지출=저축 막대 + 저축률.
-/// 연금·세제(유료, v1.1): 잠금.
+/// 연금·세제 뷰는 미구현이라 v1.0에서는 탭 자체를 노출하지 않는다.
+/// 구현 전까지 잠금·결제 유도를 두지 않는다 (CLAUDE.md: 미출시 기능 광고 금지).
 class AssetsScreen extends ConsumerStatefulWidget {
   static const path = '/assets';
 
@@ -44,8 +43,6 @@ class _AssetsScreenState extends ConsumerState<AssetsScreen> {
                     value: _AssetsTab.allocation, label: Text('자산배분')),
                 ButtonSegment(
                     value: _AssetsTab.cashflow, label: Text('현금흐름')),
-                ButtonSegment(
-                    value: _AssetsTab.pension, label: Text('연금·세제 🔒')),
               ],
               selected: {_tab},
               onSelectionChanged: (selection) =>
@@ -55,7 +52,6 @@ class _AssetsScreenState extends ConsumerState<AssetsScreen> {
             switch (_tab) {
               _AssetsTab.allocation => const _AllocationView(),
               _AssetsTab.cashflow => const _CashflowView(),
-              _AssetsTab.pension => const _PensionLockedView(),
             },
           ],
         ),
@@ -446,51 +442,6 @@ class _LegendDot extends StatelessWidget {
         const SizedBox(width: 4),
         Text(label, style: Theme.of(context).textTheme.labelMedium),
       ],
-    );
-  }
-}
-
-// ── 연금·세제 (유료, v1.1) ────────────────────────────────────
-
-class _PensionLockedView extends ConsumerWidget {
-  const _PensionLockedView();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final isPremium = ref.watch(isPremiumProvider).value ?? false;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 32),
-      child: Column(
-        children: [
-          Icon(isPremium ? Icons.schedule : Icons.lock_outline,
-              size: 40, color: theme.colorScheme.primary),
-          const SizedBox(height: 12),
-          Text('연금 · 세제 뷰', style: theme.textTheme.titleMedium),
-          const SizedBox(height: 4),
-          Text(
-            '연금저축·IRP 세액공제 한도 활용률과\n국민연금 브릿지 구간 시각화',
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodySmall!.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 16),
-          // 프리미엄 유저는 페이월 dead-end 대신 준비 중 안내
-          if (isPremium)
-            Text(
-              '곧 준비돼요 — 다음 업데이트에서 열려요',
-              style: theme.textTheme.bodySmall!.copyWith(
-                color: theme.colorScheme.primary,
-              ),
-            )
-          else
-            FilledButton.tonal(
-              onPressed: () => showPaywallSheet(context),
-              child: const Text('프리미엄 알아보기'),
-            ),
-        ],
-      ),
     );
   }
 }

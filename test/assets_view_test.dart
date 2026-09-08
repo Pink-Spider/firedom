@@ -1,7 +1,6 @@
 import 'package:firedom/core/ym.dart';
 import 'package:firedom/data/db/database.dart';
 import 'package:firedom/data/repositories/plan_repository.dart';
-import 'package:firedom/data/repositories/settings_store.dart';
 import 'package:firedom/data/repositories/snapshot_repository.dart';
 import 'package:firedom/engine/engine.dart';
 import 'package:flutter/material.dart';
@@ -108,36 +107,13 @@ void main() {
     expect(find.textContaining('소득/지출을 함께 적으면'), findsOneWidget);
   });
 
-  appTest('S6 연금·세제: 잠금 → 페이월', (tester) async {
+  appTest('S6 연금·세제 탭은 노출하지 않는다 (미구현 기능에 결제 유도 금지)',
+      (tester) async {
     await seedWithSnapshot(tester);
     await openAssetsTab(tester);
 
-    await tester.tap(find.text('연금·세제 🔒'));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('프리미엄 알아보기'));
-    await tester.pumpAndSettle();
-    expect(find.text('파이어덤 프리미엄'), findsOneWidget);
-  });
-
-  appTest('S6 연금·세제: 프리미엄은 페이월 대신 준비 중 안내 (dead-end 제거)',
-      (tester) async {
-    await pumpApp(tester, seed: (db) async {
-      final ym = nowYm();
-      await PlanRepository(db).createPlan(
-        input: _g1,
-        birthYm: birthYmFromAge(_g1.age0, ym),
-        startedYm: ym,
-      );
-      await SnapshotRepository(db).ensureDefaultAccounts();
-      await SettingsStore(db).set(SettingKeys.premiumEntitlement, true);
-    });
-    await openAssetsTab(tester);
-
-    await tester.tap(find.text('연금·세제 🔒'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('프리미엄 알아보기'), findsNothing);
-    expect(find.textContaining('곧 준비돼요'), findsOneWidget);
+    expect(find.textContaining('연금'), findsNothing);
+    expect(find.text('자산배분'), findsOneWidget);
+    expect(find.text('현금흐름'), findsOneWidget);
   });
 }

@@ -205,4 +205,58 @@ void main() {
         (await db.select(db.scenarios).get()).where((r) => r.deletedAt == null);
     expect(after.length, 1);
   });
+
+  appTest('S4 시나리오 비교: 프리미엄은 A/B 비교 시트, 무료는 페이월', (tester) async {
+    await pumpApp(tester, seed: (db) async {
+      await seedPlan(db);
+      await SettingsStore(db).set(SettingKeys.premiumEntitlement, true);
+      final repo = ScenarioRepository(db);
+      await repo.save(name: '공격형', input: _g1, keepExisting: true);
+      await repo.save(
+          name: '안정형',
+          input: const PlanInput(
+            age0: 35,
+            currentAssets: 100000000,
+            monthlySaving: 1000000,
+            realReturnBp: 250,
+            monthlySpendRetire: 3000000,
+          ),
+          keepExisting: true);
+    });
+    await openSimulationTab(tester);
+
+    await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('compare-scenarios')), 200,
+        scrollable: find.byType(Scrollable).first);
+    expect(find.text('비교'), findsOneWidget); // 프리미엄은 자물쇠 없음
+    await tester.tap(find.byKey(const ValueKey('compare-scenarios')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('시나리오 비교'), findsOneWidget);
+    expect(find.text('FIRE 나이'), findsOneWidget);
+    expect(find.text('필요 자산'), findsOneWidget);
+    // 저축이 큰 공격형이 더 빠르다는 사실만 표시 (행동 지시 문구 금지)
+    expect(find.textContaining('빨라요'), findsOneWidget);
+    expect(find.textContaining('투자 자문이 아닙니다'), findsOneWidget);
+  });
+
+  appTest('S4 시나리오 비교: 무료는 잠금 → 페이월', (tester) async {
+    await pumpApp(tester, seed: (db) async {
+      await seedPlan(db);
+      final repo = ScenarioRepository(db);
+      await repo.save(name: '공격형', input: _g1, keepExisting: true);
+      await repo.save(name: '안정형', input: _g1, keepExisting: true);
+    });
+    await openSimulationTab(tester);
+
+    await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('compare-scenarios')), 200,
+        scrollable: find.byType(Scrollable).first);
+    expect(find.text('비교 🔒'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('compare-scenarios')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('파이어덤 프리미엄'), findsOneWidget);
+    expect(find.text('시나리오 비교'), findsNothing);
+  });
 }

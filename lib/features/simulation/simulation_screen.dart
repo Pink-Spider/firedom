@@ -11,6 +11,7 @@ import '../../data/repositories/plan_repository.dart';
 import '../../data/repositories/scenario_repository.dart';
 import '../../engine/engine.dart';
 import '../paywall/paywall_sheet.dart';
+import 'scenario_compare_screen.dart';
 import 'monte_carlo_detail_screen.dart';
 import 'monte_carlo_runner.dart';
 import 'portfolio_screen.dart';
@@ -229,6 +230,18 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
                         ? '불러오기 (${_scenarios.length})'
                         : '불러오기'),
                   ),
+                // 비교는 시나리오가 2개 이상일 때만 의미가 있다.
+                // 무료는 1개까지만 저장되므로 자연히 프리미엄 전용이 되지만,
+                // 구독 해지 후 기존 시나리오가 남은 경우를 위해 게이트를 명시한다.
+                if (_scenarios.length > 1)
+                  TextButton(
+                    key: const ValueKey('compare-scenarios'),
+                    onPressed: _openCompare,
+                    child: Text(
+                        (ref.watch(isPremiumProvider).value ?? false)
+                            ? '비교'
+                            : '비교 🔒'),
+                  ),
               ],
             ),
             const SizedBox(height: 16),
@@ -342,6 +355,20 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  /// 시나리오 나란히 비교 (프리미엄). 무료는 페이월로 안내한다.
+  void _openCompare() {
+    if (!(ref.read(isPremiumProvider).value ?? false)) {
+      showPaywallSheet(context);
+      return;
+    }
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (_) => ScenarioCompareSheet(scenarios: _scenarios),
     );
   }
 

@@ -87,15 +87,11 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
               style: theme.textTheme.bodyMedium,
             ),
             const SizedBox(height: 16),
-            // 지금 제공되는 프리미엄 기능만 체크로 명시 (오인 구매 방지)
+            // 지금 제공되는 기능만 표시한다. 미출시 기능은 페이월에 올리지 않는다
+            // — '결제했는데 안 열린다'는 오인 구매·환불·심사 리스크를 만든다.
             const _FeatureRow('몬테카를로 상세 분포 · 자산 고갈 나이 분포'),
             const _FeatureRow('포트폴리오 비중 자유 편집'),
-            const _FeatureRow('시나리오 무제한 저장'),
-            // 아직 미출시 — '출시 예정' 배지로 구분 (스토어 심사·오인 방지)
-            const _FeatureRow('시나리오 나란히 비교', comingSoon: true),
-            const _FeatureRow('은퇴 직후 폭락(시퀀스 리스크) 스트레스 테스트',
-                comingSoon: true),
-            const _FeatureRow('연금 · 세제 뷰', comingSoon: true),
+            const _FeatureRow('시나리오 무제한 저장 · 나란히 비교'),
             const SizedBox(height: 16),
             if (_packages.isNotEmpty) ...[
               // 스토어 실제 가격으로 플랜 선택 (연간 기본)
@@ -216,38 +212,21 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
 class _FeatureRow extends StatelessWidget {
   final String label;
 
-  /// 미출시 기능 — 흐린 아이콘 + '출시 예정' 배지 (오인 구매 방지)
-  final bool comingSoon;
-
-  const _FeatureRow(this.label, {this.comingSoon = false});
+  /// 페이월에는 **지금 제공되는 기능만** 올린다. 미출시 기능을 '출시 예정'으로
+  /// 올려두면 결제 후 열리지 않아 오인 구매·환불·심사 리스크가 된다.
+  /// (자산 화면의 연금·세제 잠금도 같은 이유로 v1.0에서 제거했다)
+  const _FeatureRow(this.label);
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = comingSoon
-        ? theme.colorScheme.onSurfaceVariant
-        : theme.colorScheme.primary;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          Icon(comingSoon ? Icons.schedule : Icons.check_circle,
-              size: 18, color: color),
+          Icon(Icons.check_circle, size: 18, color: theme.colorScheme.primary),
           const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              label,
-              style: comingSoon
-                  ? theme.textTheme.bodyMedium!
-                      .copyWith(color: theme.colorScheme.onSurfaceVariant)
-                  : null,
-            ),
-          ),
-          if (comingSoon)
-            Text('출시 예정',
-                style: theme.textTheme.labelSmall!.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                )),
+          Expanded(child: Text(label)),
         ],
       ),
     );
