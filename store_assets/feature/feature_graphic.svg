@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="500" viewBox="0 0 1024 500">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"   stop-color="#2A1005"/>
+      <stop offset="52%"  stop-color="#512009"/>
+      <stop offset="100%" stop-color="#8A3B0B"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%"   stop-color="#FF9138" stop-opacity="0.55"/>
+      <stop offset="60%"  stop-color="#FF8A2A" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#FF8A2A" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="line" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#F0A468"/>
+      <stop offset="100%" stop-color="#FFA347"/>
+    </linearGradient>
+    <linearGradient id="area" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#FF8A2A" stop-opacity="0.26"/>
+      <stop offset="100%" stop-color="#FF8A2A" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="flame" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#FFDD82"/>
+      <stop offset="45%"  stop-color="#FF9E42"/>
+      <stop offset="100%" stop-color="#F2660C"/>
+    </linearGradient>
+    <clipPath id="frame"><rect width="1024" height="500"/></clipPath>
+  </defs>
+
+  <g clip-path="url(#frame)">
+    <rect width="1024" height="500" fill="url(#bg)"/>
+    <!-- 점화 지점 후광 -->
+    <circle cx="886" cy="180" r="255" fill="url(#glow)"/>
+
+    <!-- 자산 궤도: 상승 곡선이 불꽃으로 점화 (아이콘 '궤도 점화' 컨셉 계승).
+         면적 채움 없이 곡선+후광만 써서 썸네일 크기에서도 형태가 뭉개지지 않는다. -->
+    <path d="M 470 424 C 620 434 792 396 886 244"
+          stroke="url(#line)" stroke-width="14" stroke-linecap="round" fill="none"/>
+    <!-- 월 스냅샷 점 -->
+    <circle cx="556" cy="428" r="7.5" fill="#FFF3E8"/>
+    <circle cx="644" cy="424" r="7.5" fill="#FFF3E8"/>
+    <circle cx="734" cy="400" r="7.5" fill="#FFF3E8"/>
+    <circle cx="812" cy="344" r="7.5" fill="#FFF3E8"/>
+
+    <!-- 점화 불꽃: 밑동이 곡선의 끝점(886,244)에 놓이도록 정렬 -->
+    <g transform="translate(886,248) rotate(6) scale(0.235) translate(-512,-766)">
+      <path fill="url(#flame)" d="
+        M 512 158
+        C 610 272 712 396 712 566
+        A 200 200 0 0 1 312 566
+        C 312 396 414 272 512 158 Z"/>
+    </g>
+
+    <!-- 카피 -->
+    <text x="76" y="212" font-family="Apple SD Gothic Neo, Noto Sans KR, sans-serif"
+          font-size="70" font-weight="800" fill="#FFF4EA" letter-spacing="-1">파이어덤 Firedom</text>
+    <text x="78" y="284" font-family="Apple SD Gothic Neo, Noto Sans KR, sans-serif"
+          font-size="37" font-weight="600" fill="#FFCE9E">내 FIRE 나이, 60초 만에</text>
+    <text x="78" y="336" font-family="Apple SD Gothic Neo, Noto Sans KR, sans-serif"
+          font-size="25" font-weight="400" fill="#E3B694">파이어족 은퇴 계산기 · 월 자산 기록 · 궤도 비교</text>
+
+    <!-- 신뢰 배지 -->
+    <rect x="76" y="376" width="316" height="46" rx="23" fill="#FFFFFF" fill-opacity="0.10"/>
+    <text x="234" y="406" text-anchor="middle"
+          font-family="Apple SD Gothic Neo, Noto Sans KR, sans-serif"
+          font-size="21" font-weight="600" fill="#FFE0C4">회원가입 없음 · 데이터는 내 기기에만</text>
+  </g>
+</svg>
