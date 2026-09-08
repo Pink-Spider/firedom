@@ -1,10 +1,12 @@
-# TestFlight 임시 배포 가이드 (iOS 베타)
+# 배포 가이드 — TestFlight 베타 · App Store · Google Play
 
-지인·베타테스터에게 앱을 임시 배포하는 절차. `flutter run`(개발 기기 직접 설치,
-7일 만료)과 달리 **TestFlight는 서명·만료 신경 없이 스토어 경로로** 배포된다.
+§1~§9는 지인·베타테스터용 **TestFlight 임시 배포**(`flutter run`의 7일 만료 없이
+스토어 경로로 배포), §10~§12는 **정식 출시**(App Store / Google Play) 절차다.
+*파일명은 TestFlight로 시작하지만 정식 출시까지 다룬다.*
 
 전제: fvm으로 Flutter 고정 — 모든 명령은 프로젝트 루트에서 `fvm flutter ...`.
-서명은 Xcode 자동 서명(팀 `Z53YTTRR32`), 번들 `app.firedom.firedom`.
+서명은 iOS Xcode 자동 서명(팀 `Z53YTTRR32`), Android는 업로드 키스토어
+(`android/key.properties`). 번들/패키지 `app.firedom.firedom`.
 
 ## 0. 사전 준비 (최초 1회)
 
@@ -111,3 +113,62 @@ fvm flutter build ipa \
 ⚠️ **이 QA 빌드(QA 토글·Test Store 키 포함)는 TestFlight 베타 전용 —
 App Store 정식 심사/출시로 승격하지 말 것.** 정식 출시는 플래그 없이,
 프로덕션 RevenueCat 키(`appl_`/`goog_`)로 다시 빌드한다.
+
+## 10. 정식 출시(App Store 심사 제출)용 빌드 ★
+
+프로덕션 키는 `revenuecat.prod.json`(git 미포함)에 있다. QA 플래그 없이 빌드:
+
+```bash
+# 빌드번호 확인 후 (TestFlight에 이미 올라간 번호면 +1)
+fvm flutter build ipa --dart-define-from-file=revenuecat.prod.json
+```
+→ `build/ios/ipa/firedom.ipa` → Transporter/Organizer로 업로드(§3).
+
+- RevenueCat 공개 SDK 키는 iOS `appl_...`, Android `goog_...` 둘 다
+  `revenuecat.prod.json`에 들어 있다(2026-09-07 발급).
+
+## 11. Android 정식 출시 (Google Play) ★
+
+```bash
+# 빌드번호는 iOS와 공유한다 (pubspec.yaml의 +N). Play는 versionCode 중복을 거부한다
+fvm flutter build appbundle --dart-define-from-file=revenuecat.prod.json
+```
+→ `build/app/outputs/bundle/release/app-release.aab`
+
+**서명**: `android/key.properties`가 있으면 업로드 키스토어로 서명된다. 없으면
+디버그 서명으로 폴백하므로 Play가 거부한다. 빌드 후
+`keytool -printcert -jarfile <aab>`로 `CN=Firedom`인지 확인할 것.
+
+업로드·제출 순서 (Play Console):
+
+1. **테스트 및 출시 → 프로덕션 → 새 버전 만들기** — AAB 드래그 업로드.
+   업로드가 끝날 때까지 페이지를 벗어나지 말 것 (나가면 취소된다)
+2. 출시명·출시 노트(`<ko-KR>` 태그 안에) 입력 → **다음** → **저장**
+3. **국가/지역 탭에서 배포 지역 선택** — 기본값이 0개라 안 하면 제출이 막힌다.
+   파이어덤은 **대한민국만**
+4. **스토어 등록정보**는 파란 **「저장」**까지 눌러야 한다. 「임시보관함에 저장」만
+   하면 출시 검토에서 *"전체 설명을 추가하세요"* 오류가 난다
+5. **게시 개요 → 검토를 위해 변경사항 N개 제출**
+
+### 걸리기 쉬운 지점
+
+- **구독 상품은 AAB를 한 번 올린 뒤에야 만들 수 있다.** 그전에는 정기 결제 화면에
+  「새 APK 업로드」만 보이고 생성 버튼이 없다
+- 구독은 **기본 요금제를 활성화**해야 판매된다. 무료 체험은 기본 요금제에 붙는
+  별도 「혜택」이고, 이것도 따로 활성화해야 한다
+- 무료 체험 자격 기준은 **"구독한 적 없음"(앱 단위)** 로 잡는다. "이 구독을 이용한
+  적 없음"(상품 단위)으로 두면 연간·월간에서 체험을 두 번 받을 수 있다
+- 검토가 시작된 뒤 국가/지역을 바꿔도 **검토 중인 배치에는 반영되지 않는다.**
+  `변경사항 삭제`로 회수 → 수정 → 재제출해야 한다 (App Store는 배포 지역이
+  버전 심사와 독립적이라 심사 대기 중에도 그냥 바꿀 수 있다 — 스토어별로 다르다)
+
+## 12. 릴리스 체크리스트
+
+- [ ] `fvm flutter analyze` / `fvm flutter test` 통과
+- [ ] `pubspec.yaml` 빌드번호 +1 (iOS·Android 공유)
+- [ ] 스토어 문구에 **미출시 기능**이 없는지 확인 — 페이월의 `comingSoon` 항목과 대조
+      (`docs/스토어_등록_문구.md`)
+- [ ] 스크린샷이 최신 UI인지 (`store_assets/screenshots/`)
+- [ ] 배포 지역: 양대 스토어 모두 **대한민국**
+- [ ] 출시 후 RevenueCat 마무리 — 자격증명 재검증, Google developer notifications 연결,
+      실기기 결제 1건 확인
