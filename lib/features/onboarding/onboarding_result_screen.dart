@@ -313,20 +313,28 @@ class _TrajectoryChart extends StatelessWidget {
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 44,
-                getTitlesWidget: (value, meta) => Text(
-                  '${value.toInt()}억',
-                  style: theme.textTheme.labelSmall,
-                ),
+                getTitlesWidget: (value, meta) {
+                  // 끝점 라벨은 마지막 눈금과 겹치므로 생략 (fl_chart가 max에 별도로 그림)
+                  if (value == meta.max) return const SizedBox.shrink();
+                  return Text(
+                    '${value.toInt()}억',
+                    style: theme.textTheme.labelSmall,
+                  );
+                },
               ),
             ),
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
                 interval: 5,
-                getTitlesWidget: (value, meta) => Text(
-                  '${age0 + value.toInt()}세',
-                  style: theme.textTheme.labelSmall,
-                ),
+                getTitlesWidget: (value, meta) {
+                  // 끝점 라벨은 마지막 눈금과 겹치므로 생략 (fl_chart가 max에 별도로 그림)
+                  if (value == meta.max) return const SizedBox.shrink();
+                  return Text(
+                    '${age0 + value.toInt()}세',
+                    style: theme.textTheme.labelSmall,
+                  );
+                },
               ),
             ),
           ),
