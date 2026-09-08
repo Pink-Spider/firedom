@@ -51,3 +51,8 @@ app.*.map.json
 
 # Claude Code 개인 로컬 설정
 .claude/settings.local.json
+/revenuecat.prod.json
+
+# App Store Connect 인앱 구입 비밀키 (커밋 금지)
+*.p8
+/secret/
