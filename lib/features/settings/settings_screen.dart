@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../data/backup_service.dart';
 import '../../data/db/providers.dart';
@@ -273,6 +274,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               subtitle: const Text('현재 데이터를 백업 내용으로 전체 교체해요'),
               trailing: const Icon(Icons.download_outlined),
               onTap: _importBackup,
+            ),
+            ListTile(
+              key: const ValueKey('settings-terms-tile'),
+              title: const Text('이용약관'),
+              subtitle: const Text('Apple 표준 사용권 계약(EULA)'),
+              trailing: const Icon(Icons.open_in_new, size: 18),
+              onTap: () => launchUrl(
+                Uri.parse(paywallTermsUrl),
+                mode: LaunchMode.externalApplication,
+              ),
             ),
             ListTile(
               title: const Text('개인정보 처리방침'),

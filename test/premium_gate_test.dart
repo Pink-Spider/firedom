@@ -3,9 +3,13 @@ import 'package:firedom/data/db/database.dart';
 import 'package:firedom/data/repositories/plan_repository.dart';
 import 'package:firedom/data/repositories/settings_store.dart';
 import 'package:firedom/engine/engine.dart';
+import 'package:firedom/features/paywall/paywall_sheet.dart';
 import 'package:firedom/features/simulation/monte_carlo_runner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plugin_platform_interface/plugin_platform_interface.dart';
+import 'package:url_launcher_platform_interface/link.dart';
+import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 
 import 'helpers.dart';
 
@@ -47,6 +51,24 @@ Future<void> runTeaser(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
+/// url_launcher를 가로채 실제로 열린 URL을 기록한다.
+class _RecordingLauncher extends UrlLauncherPlatform
+    with MockPlatformInterfaceMixin {
+  final launched = <String>[];
+
+  @override
+  LinkDelegate? get linkDelegate => null;
+
+  @override
+  Future<bool> canLaunch(String url) async => true;
+
+  @override
+  Future<bool> launchUrl(String url, LaunchOptions options) async {
+    launched.add(url);
+    return true;
+  }
+}
+
 void main() {
   appTest('무료: 상세 분포 🔒 → 페이월, 구매는 연동 준비 안내', (tester) async {
     await pumpApp(tester,
@@ -64,6 +86,20 @@ void main() {
     expect(find.text('출시 예정'), findsNothing);
     // 연간 우선 표기
     expect(find.textContaining('연 39,000원'), findsOneWidget);
+
+    // App Store 심사 3.1.2(c): 구독 화면의 이용약관(EULA)·개인정보 링크는
+    // 렌더링만으로는 부족하고 **실제로 열려야** 한다.
+    final launcher = _RecordingLauncher();
+    final previous = UrlLauncherPlatform.instance;
+    UrlLauncherPlatform.instance = launcher;
+    addTearDown(() => UrlLauncherPlatform.instance = previous);
+
+    await tester.tap(find.byKey(const ValueKey('paywall-terms-link')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('paywall-privacy-link')));
+    await tester.pumpAndSettle();
+    expect(launcher.launched, [paywallTermsUrl, paywallPrivacyUrl]);
+    expect(paywallTermsUrl, contains('apple.com/legal'));
 
     await tester.tap(find.text('구독 시작하기'));
     await tester.pumpAndSettle();

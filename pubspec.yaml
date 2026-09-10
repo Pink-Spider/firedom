@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 0.1.0+6
+version: 0.1.0+7
 
 environment:
   sdk: ^3.12.2
@@ -68,6 +68,10 @@ dev_dependencies:
   drift_dev: ^2.34.0
   build_runner: ^2.15.0
   flutter_launcher_icons: ^0.14.4
+
+  # 페이월 이용약관·개인정보 링크가 실제로 열리는지(3.1.2(c)) 테스트에서 가로채기 위함
+  url_launcher_platform_interface: ^2.3.2
+  plugin_platform_interface: ^2.1.8
 
 # 앱 아이콘 생성 설정 — 원본은 assets/icon/*.svg, 수정 후 아래 명령으로 재생성:
 #   rsvg-convert -w 1024 -h 1024 assets/icon/<name>.svg -o assets/icon/<name>.png

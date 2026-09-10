@@ -1,8 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../data/entitlements.dart';
+
+/// 구독 화면에 반드시 노출해야 하는 법적 링크 (App Store 심사 지침 3.1.2(c)).
+///
+/// 자체 이용약관을 두지 않고 Apple 표준 EULA를 그대로 쓴다 — 그럴 때는
+/// 앱 안과 스토어 설명 양쪽에 이 링크가 있어야 한다.
+const paywallTermsUrl =
+    'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
+const paywallPrivacyUrl = 'https://pink-spider.github.io/firedom-privacy/';
 
 /// S9. 페이월 (PRD)
 ///
@@ -165,6 +174,8 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
               ),
             ),
           ],
+          const SizedBox(height: 4),
+          const Center(child: _LegalLinks()),
         ],
       ),
     );
@@ -205,6 +216,55 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
       SnackBar(
         content: Text(ok ? '구매를 복원했어요' : '복원할 구매 내역이 없어요 (연동 준비 중)'),
       ),
+    );
+  }
+}
+
+/// 이용약관(EULA)·개인정보 처리방침 링크.
+///
+/// 구독을 파는 화면에는 이 두 링크가 **실제로 열려야** 한다 — 텍스트만 두면
+/// 심사에서 3.1.2(c)로 리젝된다.
+class _LegalLinks extends StatelessWidget {
+  const _LegalLinks();
+
+  Future<void> _open(BuildContext context, String url) async {
+    final ok = await launchUrl(
+      Uri.parse(url),
+      mode: LaunchMode.externalApplication,
+    );
+    if (ok || !context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('브라우저를 열 수 없어요')),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final style = theme.textTheme.bodySmall!.copyWith(
+      color: theme.colorScheme.primary,
+      decoration: TextDecoration.underline,
+      decorationColor: theme.colorScheme.primary,
+    );
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 8,
+      children: [
+        InkWell(
+          key: const ValueKey('paywall-terms-link'),
+          onTap: () => _open(context, paywallTermsUrl),
+          child: Text('이용약관', style: style),
+        ),
+        Text('·',
+            style: theme.textTheme.bodySmall!
+                .copyWith(color: theme.colorScheme.onSurfaceVariant)),
+        InkWell(
+          key: const ValueKey('paywall-privacy-link'),
+          onTap: () => _open(context, paywallPrivacyUrl),
+          child: Text('개인정보 처리방침', style: style),
+        ),
+      ],
     );
   }
 }
