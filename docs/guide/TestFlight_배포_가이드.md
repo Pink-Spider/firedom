@@ -175,20 +175,25 @@ fvm flutter build appbundle --dart-define-from-file=revenuecat.prod.json
 
 ## 13. 스토어 문구 검증 — 기획서가 아니라 빌드로 확인한다 ★
 
-v1.0 준비 중 **같은 유형의 사고가 세 번** 났다. 전부 원인이 같다 —
+v1.0 준비 중 **같은 유형의 사고가 네 번** 났다. 전부 원인이 같다 —
 문구를 PRD/계획 기준으로 쓰고 실제 빌드와 대조하지 않았다.
 
-| 사고 | 내용 |
-|---|---|
-| 미출시 프리미엄 기능 | '시나리오 나란히 비교', '시퀀스 리스크 테스트'를 판매 문구에 기재 |
-| 전 세계 배포 | 한국어 단일 앱을 177개국으로 설정 |
-| iOS 홈 위젯 | Android만 동작하는데 양쪽 설명에 기재 |
+| 사고 | 내용 | 결과 |
+|---|---|---|
+| 미출시 프리미엄 기능 | '시나리오 나란히 비교', '시퀀스 리스크 테스트'를 판매 문구에 기재 | 심사 취소 후 재제출 |
+| 전 세계 배포 | 한국어 단일 앱을 177개국으로 설정 | Play 심사 배치 폐기 |
+| iOS 홈 위젯 | Android만 동작하는데 양쪽 설명에 기재 | 설명 수정 (이후 v1.1에서 실제 구현) |
+| 구독 필수 링크 누락 | 이용약관(EULA) 링크가 앱·메타데이터 양쪽에 없음 | **빌드 6 리젝** (3.1.2(c)) |
 
 **규칙: 설명의 기능 한 줄마다 근거를 빌드에서 찾는다.** 못 찾으면 문구에서 뺀다.
 
 ```bash
-# 1) 페이월의 미출시(coming soon) 항목 — 여기 있는 건 절대 판매 문구에 못 쓴다
-grep -n "comingSoon: true" -B2 lib/features/paywall/paywall_sheet.dart
+# 1) 페이월에 올린 기능은 전부 지금 동작해야 한다 (미출시 배지 메커니즘은 제거됨)
+grep -n "_FeatureRow(" lib/features/paywall/paywall_sheet.dart
+
+# 1-1) 구독 앱 필수 링크 — 이용약관(EULA)·개인정보가 앱 안에 있고 실제로 열리는지
+grep -n "paywallTermsUrl\|paywallPrivacyUrl\|launchUrl" \
+  lib/features/paywall/paywall_sheet.dart
 
 # 2) iOS 익스텐션(위젯 등)이 실제 IPA에 들어갔는지
 T=$(mktemp -d); unzip -q build/ios/ipa/firedom.ipa -d "$T"
@@ -205,3 +210,17 @@ grep -rn "국민연금" lib/ --include='*.dart'
 **주의**: `grep -rn ... --include=*.dart`를 따옴표 없이 쓰면 zsh가 글로빙에 실패해
 *"못 찾음"이 거짓으로 뜬다.* 실제로 이 때문에 멀쩡한 기능을 미구현으로 오판한 적이 있다.
 없다는 결론을 내리기 전에 명령이 제대로 돌았는지부터 의심할 것.
+
+**릴리스 바이너리에서 직접 확인**하고 싶으면 Dart 문자열의 저장 방식을 알아야 한다.
+ASCII 문자열(URL 등)은 그대로 박히지만 **한글은 UTF-16LE**(Dart TwoByteString)라
+`strings`/`grep`으로는 안 잡힌다 — 없다고 오판하기 쉬운 지점이다.
+
+```bash
+python3 - <<'EOF'
+p='<IPA 압축 해제 경로>/Payload/Runner.app/Frameworks/App.framework/App'
+b=open(p,'rb').read()
+for s in ['이용약관','개인정보 처리방침']:
+    print(s, b.count(s.encode('utf-16-le')))   # utf-8로 세면 0이 나온다
+print('EULA URL', b.count(b'apple.com/legal/internet-services/itunes/dev/stdeula/'))
+EOF
+```

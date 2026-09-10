@@ -9,7 +9,7 @@
 
 - **플랫폼**: Flutter (iOS / Android), 번들ID `app.firedom.firedom`
 - **아키텍처**: 로컬 우선, 서버리스 — 재무 데이터는 기기에만 저장되고 전송되지 않는다
-- **현재 버전**: `0.1.0+3` — v1.0으로 App Store·Google Play 심사 제출됨 (2026-09-07)
+- **현재 버전**: `0.1.0+7` — v1.0 심사 재제출 (App Store 3.1.2(c) 리젝 대응, 2026-09-10)
 - **배포 지역**: 대한민국 (한국어 단일 언어 앱)
 
 ## 기능
@@ -19,7 +19,7 @@
 - 결정론 시뮬레이션 차트 + What-if 슬라이더 (나이·순자산·저축액·수익률·은퇴 후 생활비)
 - 월간 자산 스냅샷 기록, 저축률 추이, 지난 월 소급 편집
 - 계획 vs 실제 궤도 비교, 마일스톤
-- 홈 화면 위젯 (D-day·진행률, 금액 비노출), 월간 기록 리마인더
+- 홈 화면 위젯 (iOS·Android, D-day·진행률, 금액 비노출), 월간 기록 리마인더
 - 암호화 백업/복원, 금액 가림(●●●), 생체인증 앱 잠금, 다크 모드
 
 **프리미엄 (구독)**
@@ -42,7 +42,7 @@ fvm flutter run
 ```
 
 - 에뮬레이터·시뮬레이터·실기기 실행: `docs/guide/로컬_실행_가이드.md`
-- iOS 홈 위젯은 Xcode에서 Extension 타겟을 1회 수동 추가해야 한다: `docs/W1_홈위젯_iOS_설정.md`
+- iOS 홈 위젯 익스텐션 타겟 설정 이력: `docs/W1_홈위젯_iOS_설정.md` (빌드 6부터 IPA에 포함)
 - 결제를 붙여 테스트하려면 `revenuecat.json`(git 제외)에 키를 넣고
   `--dart-define-from-file=revenuecat.json`로 주입한다. 예시는 `revenuecat.json.example`.
 
@@ -50,7 +50,7 @@ fvm flutter run
 
 ```bash
 fvm flutter analyze   # 통과 필수
-fvm flutter test      # 통과 필수 (156개)
+fvm flutter test      # 통과 필수 (157개)
 ```
 
 시뮬레이션 엔진(`lib/engine/`)은 순수 Dart 모듈이고, 엑셀 검증 기준 케이스에 대한
