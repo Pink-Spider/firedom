@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -243,6 +244,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   } else {
                     showPaywallSheet(context);
                   }
+                },
+              );
+            }),
+            // 구독 문의·프로모셔널 엔타이틀먼트 부여용 식별자 (익명, 설치 단위).
+            // RevenueCat 미구성(스텁) 빌드에서는 표시하지 않는다.
+            Builder(builder: (context) {
+              final customerId = ref.watch(customerIdProvider).value;
+              if (customerId == null) return const SizedBox.shrink();
+              return ListTile(
+                key: const ValueKey('customer-id-tile'),
+                title: const Text('고객 ID'),
+                subtitle: Text('$customerId\n구독 문의 시 알려주세요 · 탭하면 복사'),
+                isThreeLine: true,
+                trailing: const Icon(Icons.copy_outlined, size: 18),
+                onTap: () async {
+                  await Clipboard.setData(ClipboardData(text: customerId));
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('고객 ID를 복사했어요')),
+                  );
                 },
               );
             }),

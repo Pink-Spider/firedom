@@ -102,6 +102,19 @@ class EntitlementService {
     }
   }
 
+  /// RevenueCat 고객 식별자 (계정이 없으므로 설치 단위 익명 ID).
+  ///
+  /// 구독 문의 대응이나 대시보드에서 프로모셔널 엔타이틀먼트를 부여할 때
+  /// 고객을 찾는 키다. 재무 데이터와 무관하며, 미구성(스텁) 시 null.
+  Future<String?> customerId() async {
+    if (!_rcConfigured) return null;
+    try {
+      return await Purchases.appUserID;
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// QA 전용: 결제 없이 유료 게이트 켜기 (프로덕션 미노출)
   Future<void> setDebugPremium(bool value) =>
       _store.set(SettingKeys.premiumEntitlement, value);
@@ -113,4 +126,9 @@ final entitlementServiceProvider = Provider<EntitlementService>(
 
 final isPremiumProvider = StreamProvider<bool>(
   (ref) => ref.watch(entitlementServiceProvider).watchPremium(),
+);
+
+/// 설정 화면 표시용 고객 ID. 미구성 시 null → 타일 숨김.
+final customerIdProvider = FutureProvider<String?>(
+  (ref) => ref.watch(entitlementServiceProvider).customerId(),
 );

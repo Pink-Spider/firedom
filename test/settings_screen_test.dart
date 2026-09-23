@@ -1,5 +1,7 @@
 import 'package:firedom/core/ym.dart';
 import 'package:firedom/data/db/database.dart';
+import 'package:firedom/data/db/providers.dart';
+import 'package:firedom/data/entitlements.dart';
 import 'package:firedom/data/notifications/reminder_scheduler.dart';
 import 'package:firedom/data/reminders.dart';
 import 'package:firedom/data/repositories/plan_repository.dart';
@@ -8,6 +10,7 @@ import 'package:firedom/data/repositories/snapshot_repository.dart';
 import 'package:firedom/engine/engine.dart';
 import 'package:firedom/features/lock/biometric.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'helpers.dart';
@@ -33,6 +36,14 @@ class FakeScheduler implements ReminderScheduler {
   Future<void> cancelAll() async {
     cancelCount++;
   }
+}
+
+/// RevenueCat이 구성된 것처럼 고객 ID를 돌려주는 페이크
+class FakeEntitlementService extends EntitlementService {
+  FakeEntitlementService(super.store);
+
+  @override
+  Future<String?> customerId() async => r'$RCAnonymousID:test-1234';
 }
 
 class FakeAuthenticator implements BiometricAuthenticator {
@@ -207,5 +218,47 @@ void main() {
     await tester.tap(find.text('잠금 해제'));
     await tester.pumpAndSettle();
     expect(find.textContaining('재정적 자유까지'), findsOneWidget);
+  });
+
+  appTest('S10 구독: 고객 ID 타일 — 탭하면 클립보드 복사', (tester) async {
+    final copied = <String?>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') {
+          copied.add((call.arguments as Map)['text'] as String?);
+        }
+        return null;
+      },
+    );
+    addTearDown(() => tester.binding.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, null));
+
+    await pumpApp(
+      tester,
+      seed: (db) async => seedPlan(db),
+      overrides: [
+        entitlementServiceProvider.overrideWith(
+          (ref) => FakeEntitlementService(ref.watch(settingsStoreProvider)),
+        ),
+      ],
+    );
+    await openSettings(tester);
+
+    final tile = find.byKey(const ValueKey('customer-id-tile'));
+    await tester.scrollUntilVisible(tile, 200);
+    expect(find.textContaining(r'$RCAnonymousID:test-1234'), findsOneWidget);
+
+    await tester.tap(tile);
+    await tester.pumpAndSettle();
+
+    expect(copied, [r'$RCAnonymousID:test-1234']);
+    expect(find.text('고객 ID를 복사했어요'), findsOneWidget);
+  });
+
+  appTest('S10 구독: RevenueCat 미구성(스텁)이면 고객 ID 타일 없음', (tester) async {
+    await pumpApp(tester, seed: (db) async => seedPlan(db));
+    await openSettings(tester);
+    expect(find.byKey(const ValueKey('customer-id-tile')), findsNothing);
   });
 }
