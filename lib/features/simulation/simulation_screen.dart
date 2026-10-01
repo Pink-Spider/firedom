@@ -4,13 +4,15 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/money_format.dart';
 import '../../data/db/providers.dart';
 import '../../data/entitlements.dart';
 import '../../data/repositories/plan_repository.dart';
 import '../../data/repositories/scenario_repository.dart';
 import '../../engine/engine.dart';
+import '../../l10n/l10n.dart';
+import '../common/money.dart';
 import '../paywall/paywall_sheet.dart';
+import 'chart_axis.dart';
 import 'scenario_compare_screen.dart';
 import 'monte_carlo_detail_screen.dart';
 import 'monte_carlo_runner.dart';
@@ -48,9 +50,21 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
   /// 0.25%(25bp) 스텝 유지.
   static const _returnMaxBp = 1500;
 
-  /// 현재 순자산 슬라이더 스텝 = 1천만원, 기본 상한 30억
-  static const _assetsStep = 10000000;
-  static const _assetsMaxDefault = 3000000000;
+  /// 슬라이더 범위는 통화에 맞춘다 ([Currency.monthlyStep] 기준, KRW 10만원).
+  /// 월 저축 0 ~ 100칸, 은퇴 후 생활비 5 ~ 100칸.
+  /// 현재 순자산 스텝 = 100칸(KRW 1천만원), 기본 상한 30,000칸(KRW 30억)
+  static int _monthlyMax(int step) => 100 * step;
+  static int _spendMin(int step) => 5 * step;
+  static int _assetsStep(int step) => 100 * step;
+  static int _assetsMaxDefault(int step) => 30000 * step;
+
+  static int _assetsMaxFor(PlanInput baseline, int step) {
+    final assetsStep = _assetsStep(step);
+    final maxDefault = _assetsMaxDefault(step);
+    return baseline.currentAssets <= maxDefault
+        ? maxDefault
+        : (baseline.currentAssets / assetsStep).ceil() * assetsStep;
+  }
 
   @override
   void initState() {
@@ -65,26 +79,28 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final plan = ref.watch(activePlanRowProvider).value;
 
     if (plan == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('시뮬레이션')),
-        body: const Center(child: Text('먼저 홈에서 계획을 만들어 주세요')),
+        appBar: AppBar(title: Text(l10n.simTitle)),
+        body: Center(child: Text(l10n.needPlanFirst)),
       );
     }
 
+    final money = moneyFormatOf(context, ref);
+    final step = currencyOf(ref).monthlyStep;
     final baseline = planInputOf(plan);
     final ageMin = baseline.age0 < 19 ? baseline.age0 : 19;
     final ageMax = baseline.lifeExpectancy - 1;
-    final assetsMax = baseline.currentAssets <= _assetsMaxDefault
-        ? _assetsMaxDefault
-        : (baseline.currentAssets / _assetsStep).ceil() * _assetsStep;
+    final assetsMax = _assetsMaxFor(baseline, step);
     _age0 ??= baseline.age0.clamp(ageMin, ageMax);
     _currentAssets ??= baseline.currentAssets.clamp(0, assetsMax);
-    _monthlySaving ??= baseline.monthlySaving.clamp(0, 10000000);
+    _monthlySaving ??= baseline.monthlySaving.clamp(0, _monthlyMax(step));
     _returnBp ??= baseline.realReturnBp.clamp(0, _returnMaxBp);
-    _monthlySpend ??= baseline.monthlySpendRetire.clamp(500000, 10000000);
+    _monthlySpend ??=
+        baseline.monthlySpendRetire.clamp(_spendMin(step), _monthlyMax(step));
 
     final input = baseline.copyWith(
       age0: _age0,
@@ -98,10 +114,10 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('시뮬레이션'),
+        title: Text(l10n.simTitle),
         actions: [
           IconButton(
-            tooltip: '계획 값으로 되돌리기',
+            tooltip: l10n.simResetTooltip,
             icon: const Icon(Icons.restart_alt),
             onPressed: () => setState(() {
               _age0 = null;
@@ -120,7 +136,7 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
           padding: const EdgeInsets.all(16),
           children: [
             Text(
-              '여기서 바꾼 가정은 계획에 반영되지 않아요 — 마음껏 실험해보세요',
+              l10n.simIntro,
               style: theme.textTheme.bodySmall!.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -134,8 +150,8 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
             const SizedBox(height: 12),
             _SliderCard(
               sliderKey: const ValueKey('age-slider'),
-              title: '현재 나이',
-              valueLabel: '$_age0세',
+              title: l10n.simSliderAge,
+              valueLabel: l10n.ageLabel(_age0!),
               value: _age0!.toDouble(),
               min: ageMin.toDouble(),
               max: ageMax.toDouble(),
@@ -147,12 +163,12 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
             ),
             _SliderCard(
               sliderKey: const ValueKey('assets-slider'),
-              title: '현재 순자산',
-              valueLabel: '${formatKoreanMoney(_currentAssets!)}원',
+              title: l10n.simSliderAssets,
+              valueLabel: money.compact(_currentAssets!),
               value: _currentAssets!.toDouble(),
               min: 0,
               max: assetsMax.toDouble(),
-              divisions: assetsMax ~/ _assetsStep,
+              divisions: assetsMax ~/ _assetsStep(step),
               onChanged: (value) => setState(() {
                 _currentAssets = value.round();
                 _invalidateMc();
@@ -160,11 +176,11 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
             ),
             _SliderCard(
               sliderKey: const ValueKey('saving-slider'),
-              title: '월 저축액',
-              valueLabel: '${formatKoreanMoney(_monthlySaving!)}원',
+              title: l10n.simSliderSaving,
+              valueLabel: money.compact(_monthlySaving!),
               value: _monthlySaving!.toDouble(),
               min: 0,
-              max: 10000000,
+              max: _monthlyMax(step).toDouble(),
               divisions: 100,
               onChanged: (value) => setState(() {
                 _monthlySaving = value.round();
@@ -173,7 +189,7 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
             ),
             _SliderCard(
               sliderKey: const ValueKey('return-slider'),
-              title: '기대수익률 (실질, 연)',
+              title: l10n.simSliderReturn,
               valueLabel: '${(_returnBp! / 100).toStringAsFixed(2)}%',
               value: _returnBp!.toDouble(),
               min: 0,
@@ -187,16 +203,16 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
               footer: TextButton.icon(
                 onPressed: () => _openPortfolio(input),
                 icon: const Icon(Icons.pie_chart_outline, size: 18),
-                label: const Text('포트폴리오로 구성하기'),
+                label: Text(l10n.simOpenPortfolio),
               ),
             ),
             _SliderCard(
               sliderKey: const ValueKey('spend-slider'),
-              title: '은퇴 후 월 생활비',
-              valueLabel: '${formatKoreanMoney(_monthlySpend!)}원',
+              title: l10n.simSliderSpend,
+              valueLabel: money.compact(_monthlySpend!),
               value: _monthlySpend!.toDouble(),
-              min: 500000,
-              max: 10000000,
+              min: _spendMin(step).toDouble(),
+              max: _monthlyMax(step).toDouble(),
               divisions: 95,
               onChanged: (value) => setState(() {
                 _monthlySpend = value.round();
@@ -220,15 +236,15 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
                 OutlinedButton.icon(
                   onPressed: () => _saveScenario(input),
                   icon: const Icon(Icons.bookmark_add_outlined),
-                  label: const Text('시나리오 저장'),
+                  label: Text(l10n.simSaveScenario),
                 ),
                 const SizedBox(width: 8),
                 if (_hasScenario)
                   TextButton(
                     onPressed: _openScenarios,
                     child: Text(_scenarios.length > 1
-                        ? '불러오기 (${_scenarios.length})'
-                        : '불러오기'),
+                        ? l10n.simLoadScenarioCount(_scenarios.length)
+                        : l10n.simLoadScenario),
                   ),
                 // 비교는 시나리오가 2개 이상일 때만 의미가 있다.
                 // 무료는 1개까지만 저장되므로 자연히 프리미엄 전용이 되지만,
@@ -239,14 +255,14 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
                     onPressed: _openCompare,
                     child: Text(
                         (ref.watch(isPremiumProvider).value ?? false)
-                            ? '비교'
-                            : '비교 🔒'),
+                            ? l10n.simCompare
+                            : l10n.simCompareLocked),
                   ),
               ],
             ),
             const SizedBox(height: 16),
             Text(
-              '본 시뮬레이션은 정보 제공 목적이며 투자 자문이 아닙니다.',
+              l10n.disclaimerSimulation,
               style: theme.textTheme.bodySmall!.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -313,22 +329,22 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
   }
 
   Future<void> _saveScenario(PlanInput input) async {
+    final l10n = context.l10n;
     final isPremium = ref.read(isPremiumProvider).value ?? false;
-    var name = '내 시나리오';
+    var name = l10n.simDefaultScenarioName;
     if (isPremium) {
-      final entered = await _askScenarioName('시나리오 ${_scenarios.length + 1}');
+      final hint = l10n.simScenarioNameHint(_scenarios.length + 1);
+      final entered = await _askScenarioName(hint);
       if (entered == null) return; // 취소
-      name = entered.trim().isEmpty
-          ? '시나리오 ${_scenarios.length + 1}'
-          : entered.trim();
+      name = entered.trim().isEmpty ? hint : entered.trim();
     }
     await ref
         .read(scenarioRepositoryProvider)
         .save(name: name, input: input, keepExisting: isPremium);
     await _reloadScenarios();
     _snack(isPremium
-        ? '시나리오 "$name"를 저장했어요'
-        : '시나리오를 저장했어요 (무료는 1개까지)');
+        ? l10n.simScenarioSaved(name)
+        : l10n.simScenarioSavedFree);
   }
 
   /// 프리미엄 저장 시 이름 입력
@@ -337,7 +353,7 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
     return showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('시나리오 이름'),
+        title: Text(context.l10n.simScenarioNameTitle),
         content: TextField(
           key: const ValueKey('scenario-name'),
           controller: controller,
@@ -347,11 +363,11 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('취소'),
+            child: Text(context.l10n.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, controller.text),
-            child: const Text('저장'),
+            child: Text(context.l10n.commonSave),
           ),
         ],
       ),
@@ -380,9 +396,9 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
       builder: (sheetContext) => StatefulBuilder(
         builder: (sheetContext, setSheet) => SafeArea(
           child: _scenarios.isEmpty
-              ? const Padding(
-                  padding: EdgeInsets.all(24),
-                  child: Text('저장된 시나리오가 없어요'),
+              ? Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(sheetContext.l10n.simNoScenarios),
                 )
               : ListView(
                   shrinkWrap: true,
@@ -392,10 +408,10 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
                       ListTile(
                         key: ValueKey('scenario-${s.id}'),
                         title: Text(s.name),
-                        subtitle: Text(_summaryOf(s.input)),
+                        subtitle: Text(_summaryOf(sheetContext, s.input)),
                         trailing: IconButton(
                           icon: const Icon(Icons.delete_outline),
-                          tooltip: '삭제',
+                          tooltip: sheetContext.l10n.commonDelete,
                           onPressed: () async {
                             await ref
                                 .read(scenarioRepositoryProvider)
@@ -410,7 +426,7 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
                         onTap: () {
                           Navigator.pop(sheetContext);
                           _applyScenario(s.input);
-                          _snack('시나리오 "${s.name}"를 불러왔어요');
+                          _snack(context.l10n.simScenarioLoaded(s.name));
                         },
                       ),
                   ],
@@ -421,11 +437,12 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
   }
 
   /// 시나리오 요약 (FIRE 나이) — 목록 부제
-  String _summaryOf(PlanInput s) {
+  String _summaryOf(BuildContext context, PlanInput s) {
+    final l10n = context.l10n;
     final r = solvePlan(s);
-    if (r.monthsToFire == null) return '100년 내 도달 어려움';
-    if (r.monthsToFire == 0) return '이미 FIRE 도달';
-    return 'FIRE 나이 ${s.age0 + r.monthsToFire! ~/ 12}세';
+    if (r.monthsToFire == null) return l10n.simSummaryUnreachable;
+    if (r.monthsToFire == 0) return l10n.simSummaryReached;
+    return l10n.simFireAge(s.age0 + r.monthsToFire! ~/ 12);
   }
 
   /// 시나리오 값을 슬라이더에 반영 (나이·순자산·변동성까지 전부 복원)
@@ -434,39 +451,42 @@ class _SimulationScreenState extends ConsumerState<SimulationScreen> {
     final baseline = plan == null ? s : planInputOf(plan);
     final ageMin = baseline.age0 < 19 ? baseline.age0 : 19;
     final ageMax = baseline.lifeExpectancy - 1;
-    final assetsMax = baseline.currentAssets <= _assetsMaxDefault
-        ? _assetsMaxDefault
-        : (baseline.currentAssets / _assetsStep).ceil() * _assetsStep;
+    final step =
+        (ref.read(currencyProvider).value ?? Currency.fallback).monthlyStep;
+    final assetsMax = _assetsMaxFor(baseline, step);
     setState(() {
       _age0 = s.age0.clamp(ageMin, ageMax);
       _currentAssets = s.currentAssets.clamp(0, assetsMax);
-      _monthlySaving = s.monthlySaving.clamp(0, 10000000);
+      _monthlySaving = s.monthlySaving.clamp(0, _monthlyMax(step));
       _returnBp = s.realReturnBp.clamp(0, _returnMaxBp);
-      _monthlySpend = s.monthlySpendRetire.clamp(500000, 10000000);
+      _monthlySpend =
+          s.monthlySpendRetire.clamp(_spendMin(step), _monthlyMax(step));
       _volatilityBp = s.volatilityBp;
       _invalidateMc();
     });
   }
 }
 
-class _ResultHeadline extends StatelessWidget {
+class _ResultHeadline extends ConsumerWidget {
   final PlanInput input;
   final FireResult result;
 
   const _ResultHeadline({required this.input, required this.result});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final money = moneyFormatOf(context, ref);
     final months = result.monthsToFire;
 
     final String headline;
     if (months == null) {
-      headline = '100년 안에 도달이 어려워요';
+      headline = l10n.simHeadlineUnreachable;
     } else if (months == 0) {
-      headline = '이미 FIRE 도달!';
+      headline = l10n.simHeadlineReached;
     } else {
-      headline = 'FIRE 나이 ${input.age0 + months ~/ 12}세';
+      headline = l10n.simFireAge(input.age0 + months ~/ 12);
     }
 
     return Card(
@@ -484,8 +504,10 @@ class _ResultHeadline extends StatelessWidget {
             ),
             if (months != null && months > 0)
               Text(
-                '${months ~/ 12}년 ${months % 12}개월 후 · '
-                '필요 자산 ${formatKoreanMoney(result.fireNumber)}원',
+                l10n.simHeadlineDetail(
+                  l10n.yearsMonthsLabel(months ~/ 12, months % 12),
+                  money.compact(result.fireNumber),
+                ),
                 style: theme.textTheme.bodyMedium!.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -583,6 +605,7 @@ class _MonteCarloCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final mc = mcResult;
 
     return Card(
@@ -591,28 +614,23 @@ class _MonteCarloCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('시장 변동성 속에서도 성공할까?',
-                style: theme.textTheme.titleSmall),
+            Text(l10n.simMcTitle, style: theme.textTheme.titleSmall),
             const SizedBox(height: 8),
             if (running) ...[
               const LinearProgressIndicator(),
               const SizedBox(height: 8),
-              Text(
-                '5,000가지 시장 시나리오를 계산하고 있어요…',
-                style: theme.textTheme.bodySmall,
-              ),
+              Text(l10n.simMcRunning, style: theme.textTheme.bodySmall),
             ] else if (mc != null) ...[
               // 티저는 무료에게도 정확한 값 (가짜 블러 금지 — PRD S4)
               Text(
-                '이 계획의 성공 확률 ${(mc.successRate * 100).toStringAsFixed(0)}%',
+                l10n.simMcSuccess((mc.successRate * 100).toStringAsFixed(0)),
                 style: theme.textTheme.titleLarge!.copyWith(
                   color: theme.colorScheme.primary,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               Text(
-                '기대수명 ${input.lifeExpectancy}세까지 자산이 남아있을 확률 · '
-                '${mc.runs}회 시뮬레이션',
+                l10n.simMcCaption(input.lifeExpectancy, mc.runs),
                 style: theme.textTheme.bodySmall!.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -620,12 +638,13 @@ class _MonteCarloCard extends StatelessWidget {
               const SizedBox(height: 4),
               TextButton(
                 onPressed: () => onShowDetail(mc, isPremium),
-                child: Text(isPremium ? '상세 분포 보기' : '상세 분포 보기 🔒'),
+                child: Text(
+                    isPremium ? l10n.simMcDetail : l10n.simMcDetailLocked),
               ),
             ] else
               FilledButton.tonal(
                 onPressed: result.isReachable ? onRun : null,
-                child: const Text('성공 확률 계산하기'),
+                child: Text(l10n.simMcRun),
               ),
           ],
         ),
@@ -634,20 +653,23 @@ class _MonteCarloCard extends StatelessWidget {
   }
 }
 
-class _SimChart extends StatelessWidget {
+class _SimChart extends ConsumerWidget {
   final FireResult result;
   final int age0;
 
   const _SimChart({required this.result, required this.age0});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final money = moneyFormatOf(context, ref);
+    final unit = chartAmountUnit(money.currency);
     final trajectory = result.assetsByMonth;
     final spots = <FlSpot>[
       for (var m = 0; m < trajectory.length; m += 12)
-        FlSpot(m / 12, trajectory[m] / 100000000),
-      FlSpot((trajectory.length - 1) / 12, trajectory.last / 100000000),
+        FlSpot(m / 12, trajectory[m] / unit),
+      FlSpot((trajectory.length - 1) / 12, trajectory.last / unit),
     ];
 
     return SizedBox(
@@ -670,7 +692,7 @@ class _SimChart extends StatelessWidget {
                   // 끝점 라벨은 마지막 눈금과 겹치므로 생략 (fl_chart가 max에 별도로 그림)
                   if (value == meta.max) return const SizedBox.shrink();
                   return Text(
-                    '${value.toInt()}억',
+                    chartAmountLabel(money, value, unit),
                     style: theme.textTheme.labelSmall,
                   );
                 },
@@ -684,7 +706,7 @@ class _SimChart extends StatelessWidget {
                   // 끝점 라벨은 마지막 눈금과 겹치므로 생략 (fl_chart가 max에 별도로 그림)
                   if (value == meta.max) return const SizedBox.shrink();
                   return Text(
-                    '${age0 + value.toInt()}세',
+                    l10n.simAxisAge(age0 + value.toInt()),
                     style: theme.textTheme.labelSmall,
                   );
                 },

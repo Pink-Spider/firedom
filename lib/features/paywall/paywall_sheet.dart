@@ -4,6 +4,7 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../data/entitlements.dart';
+import '../../l10n/l10n.dart';
 
 /// 구독 화면에 반드시 노출해야 하는 법적 링크 (App Store 심사 지침 3.1.2(c)).
 ///
@@ -63,17 +64,18 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
     return pkgs.isEmpty ? null : pkgs.first;
   }
 
-  String _planLabel(Package p) => switch (p.packageType) {
-        PackageType.annual => '연간',
-        PackageType.monthly => '월간',
-        PackageType.weekly => '주간',
-        PackageType.lifetime => '평생',
+  String _planLabel(AppLocalizations l10n, Package p) => switch (p.packageType) {
+        PackageType.annual => l10n.paywallPlanAnnual,
+        PackageType.monthly => l10n.paywallPlanMonthly,
+        PackageType.weekly => l10n.paywallPlanWeekly,
+        PackageType.lifetime => l10n.paywallPlanLifetime,
         _ => p.storeProduct.title,
       };
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final isPremium = ref.watch(isPremiumProvider).value ?? false;
 
     return SingleChildScrollView(
@@ -82,25 +84,25 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('파이어덤 프리미엄', style: theme.textTheme.titleLarge),
+          Text(l10n.paywallTitle, style: theme.textTheme.titleLarge),
           const SizedBox(height: 8),
           if (isPremium) ...[
-            Text('이미 프리미엄을 이용 중이에요 🎉',
+            Text(l10n.paywallAlreadyPremium,
                 style: theme.textTheme.bodyMedium),
           ] else ...[
             Text(
               widget.successRate == null
-                  ? '내 계획의 리스크까지 확인해보세요'
-                  : '회원님 계획의 성공 확률 ${(widget.successRate! * 100).toStringAsFixed(0)}% — '
-                      '상세 분포와 자산 고갈 리스크를 확인해보세요',
+                  ? l10n.paywallTeaserGeneric
+                  : l10n.paywallTeaserWithRate(
+                      (widget.successRate! * 100).toStringAsFixed(0)),
               style: theme.textTheme.bodyMedium,
             ),
             const SizedBox(height: 16),
             // 지금 제공되는 기능만 표시한다. 미출시 기능은 페이월에 올리지 않는다
             // — '결제했는데 안 열린다'는 오인 구매·환불·심사 리스크를 만든다.
-            const _FeatureRow('몬테카를로 상세 분포 · 자산 고갈 나이 분포'),
-            const _FeatureRow('포트폴리오 비중 자유 편집'),
-            const _FeatureRow('시나리오 무제한 저장 · 나란히 비교'),
+            _FeatureRow(l10n.paywallFeatureMonteCarlo),
+            _FeatureRow(l10n.paywallFeaturePortfolio),
+            _FeatureRow(l10n.paywallFeatureScenarios),
             const SizedBox(height: 16),
             if (_packages.isNotEmpty) ...[
               // 스토어 실제 가격으로 플랜 선택 (연간 기본)
@@ -117,8 +119,9 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
                         key: ValueKey('plan-${p.packageType.name}'),
                         contentPadding: EdgeInsets.zero,
                         value: p,
-                        title: Text(
-                            '${_planLabel(p)} · ${p.storeProduct.priceString}'),
+                        // 가격은 스토어(RevenueCat) localized price 문자열 그대로
+                        title: Text(l10n.paywallPlanPrice(
+                            _planLabel(l10n, p), p.storeProduct.priceString)),
                       ),
                   ],
                 ),
@@ -135,14 +138,14 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
                           width: 20,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('구독 시작하기'),
+                      : Text(l10n.paywallSubscribe),
                 ),
               ),
             ] else ...[
               // 미구성(연동/상품 준비 전) — 안내 가격 + 준비 중 버튼
               Center(
                 child: Text(
-                  '연 39,000원 — 월 3,250원꼴 · 34% 할인\n월 4,900원 · 7일 무료 체험',
+                  l10n.paywallFallbackPricing,
                   textAlign: TextAlign.center,
                   style: theme.textTheme.titleMedium!
                       .copyWith(fontWeight: FontWeight.w600),
@@ -153,20 +156,19 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
                 width: double.infinity,
                 child: FilledButton(
                   onPressed: _purchaseStub,
-                  child: const Text('구독 시작하기'),
+                  child: Text(l10n.paywallSubscribe),
                 ),
               ),
             ],
             Center(
               child: TextButton(
                 onPressed: _restore,
-                child: const Text('구매 복원'),
+                child: Text(l10n.paywallRestore),
               ),
             ),
             Center(
               child: Text(
-                '무료 체험 종료 후 선택한 플랜으로 자동 갱신되며, 언제든 '
-                '스토어 계정에서 해지할 수 있어요.',
+                l10n.paywallAutoRenewNote,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodySmall!.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
@@ -192,7 +194,7 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
       Navigator.pop(context);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('결제가 완료되지 않았어요')),
+        SnackBar(content: Text(context.l10n.paywallPurchaseFailed)),
       );
     }
   }
@@ -202,7 +204,7 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
     if (!mounted) return;
     if (!ok) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('스토어 결제 연동 준비 중이에요 — 곧 열려요')),
+        SnackBar(content: Text(context.l10n.paywallStoreNotReady)),
       );
       return;
     }
@@ -214,7 +216,9 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(ok ? '구매를 복원했어요' : '복원할 구매 내역이 없어요 (연동 준비 중)'),
+        content: Text(ok
+            ? context.l10n.paywallRestored
+            : context.l10n.paywallNothingToRestore),
       ),
     );
   }
@@ -234,13 +238,14 @@ class _LegalLinks extends StatelessWidget {
     );
     if (ok || !context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('브라우저를 열 수 없어요')),
+      SnackBar(content: Text(context.l10n.paywallBrowserFailed)),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final style = theme.textTheme.bodySmall!.copyWith(
       color: theme.colorScheme.primary,
       decoration: TextDecoration.underline,
@@ -254,7 +259,7 @@ class _LegalLinks extends StatelessWidget {
         InkWell(
           key: const ValueKey('paywall-terms-link'),
           onTap: () => _open(context, paywallTermsUrl),
-          child: Text('이용약관', style: style),
+          child: Text(l10n.paywallTerms, style: style),
         ),
         Text('·',
             style: theme.textTheme.bodySmall!
@@ -262,7 +267,7 @@ class _LegalLinks extends StatelessWidget {
         InkWell(
           key: const ValueKey('paywall-privacy-link'),
           onTap: () => _open(context, paywallPrivacyUrl),
-          child: Text('개인정보 처리방침', style: style),
+          child: Text(l10n.paywallPrivacy, style: style),
         ),
       ],
     );

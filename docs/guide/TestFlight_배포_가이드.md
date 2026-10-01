@@ -168,7 +168,9 @@ fvm flutter build appbundle --dart-define-from-file=revenuecat.prod.json
 - [ ] `pubspec.yaml` 빌드번호 +1 (iOS·Android 공유)
 - [ ] **스토어 문구의 모든 기능 주장을 빌드 산출물로 검증** (아래 §13)
 - [ ] 스크린샷이 최신 UI인지 (`store_assets/screenshots/`)
-- [ ] 배포 지역: 양대 스토어 모두 **대한민국**
+- [ ] 배포 지역: 다국어 빌드(ko·en·ja) 이전 버전은 **대한민국만**. 다국어 빌드부터는
+      `docs/스토어_등록_문구.md` §5-4의 국가 목록 (아래 §14)
+- [ ] 다국어 빌드라면 `fvm flutter test test/l10n_smoke_test.dart` 통과 (en·ja 화면에 한글 누락 없음)
 - [ ] 출시 후 RevenueCat 마무리 — 자격증명 재검증, Google developer notifications 연결,
       실기기 결제 1건 확인
 
@@ -224,3 +226,45 @@ for s in ['이용약관','개인정보 처리방침']:
 print('EULA URL', b.count(b'apple.com/legal/internet-services/itunes/dev/stdeula/'))
 EOF
 ```
+
+## 14. 글로벌 배포 절차 — 다국어 빌드부터 ★
+
+앱이 ko·en·ja 3개 언어와 KRW/USD/JPY 통화를 지원하는 빌드가 되기 전에는 **절대 국가를 넓히지
+않는다** (§13의 "전 세계 배포" 사고 참조 — 한국어 단일 앱을 177개국에 풀었다가 폐기됐다).
+
+### 14-1. 빌드에서 확인할 것
+
+```bash
+# 언어 리소스가 전부 들어갔는지
+python3 tool/merge_l10n.py && fvm flutter gen-l10n && fvm flutter analyze
+fvm flutter test test/l10n_smoke_test.dart test/core/currency_test.dart
+
+# iOS: 앱 이름·Face ID 문구의 언어별 리소스가 IPA에 들어갔는지
+T=$(mktemp -d); unzip -q build/ios/ipa/firedom.ipa -d "$T"
+ls "$T"/Payload/Runner.app/*.lproj                  # ko.lproj en.lproj ja.lproj
+ls "$T"/Payload/Runner.app/PlugIns/FiredomWidgetExtension.appex/*.lproj
+plutil -p "$T"/Payload/Runner.app/Info.plist | grep -i "DisplayName\|NonExempt"
+
+# Android: 언어별 strings.xml이 AAB에 들어갔는지 (resources.pb 안에 values-ko/values-ja)
+unzip -l build/app/outputs/bundle/release/app-release.aab | grep -i "values-ko\|values-ja" || echo "resources.pb에 포함 — bundletool로 확인"
+```
+
+실기기 확인: 기기 언어를 영어·일본어로 바꾸고 온보딩 → 홈 → 시뮬레이션 → 기록 → 설정 → 페이월을
+한 바퀴 돈다. 홈 위젯과 월간 리마인더 알림 문구도 기기 언어를 따르는지 본다.
+온보딩에서 통화를 USD로 고르면 금액 입력이 달러 단위(센트 저장)로 바뀌고, 차트 축이 `$100K`
+단위가 되는지 확인한다.
+
+### 14-2. 스토어 콘솔 순서
+
+1. **등록정보 언어 추가** — ASC: 앱 정보 → 현지화 추가(en-US, ja). Play: 스토어 설정 → 기본 언어
+   유지(ko-KR) + 번역 추가(en-US, ja-JP). 문구는 `docs/스토어_등록_문구.md` §5.
+2. **스크린샷** — 언어별 세트 업로드 (en: USD 데이터, ja: JPY 데이터).
+3. **가격** — 구독 상품은 그대로, 국가별 가격은 자동 환산 확인 후 필요 시 수동 조정 (§5-4).
+   RevenueCat은 상품 ID가 같으니 변경 없음.
+4. **개인정보 처리방침·지원 URL** — 영어·일본어 페이지가 올라간 뒤에 국가를 연다.
+5. **국가 추가** — ASC: 가격 및 배포 가능 여부 → 국가 선택. Play: 프로덕션 트랙 → 국가/지역.
+   1차는 §5-4 목록만. 양쪽 모두 **새 빌드 없이** 국가만 추가할 수 있지만, 다국어 빌드가
+   이미 심사 통과한 상태여야 한다.
+6. **리뷰 노트** — 영어 리뷰 노트(§5-1) 추가. 로그인 불필요·계좌 연동 없음을 명시.
+7. 출시 후 `docs/스토어_등록_문구.md` 공용 URL의 "`/us/` 404" 주의와 CLAUDE.md의 배포 지역 항목을 갱신한다.
+

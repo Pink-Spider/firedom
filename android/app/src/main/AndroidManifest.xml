@@ -5,7 +5,7 @@
     <!-- 생체인증 앱 잠금 (local_auth) -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
     <application
-        android:label="파이어덤"
+        android:label="@string/app_name"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

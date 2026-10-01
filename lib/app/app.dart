@@ -3,7 +3,9 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../features/lock/app_lock.dart';
+import '../l10n/l10n.dart';
 import 'app_upgrade.dart';
+import 'locale.dart';
 import 'router.dart';
 import 'theme.dart';
 
@@ -15,16 +17,19 @@ class FiredomApp extends ConsumerWidget {
     final locked = ref.watch(appLockedProvider);
     final themeMode =
         ref.watch(themeModeProvider).value ?? ThemeMode.system;
+    // 언어: 설정값이 있으면 고정, 없으면(null) 기기  ㅑ언어 → 미지원이면 supportedLocales 첫 항목(ko)
+    final locale = ref.watch(localeProvider).value;
     return MaterialApp.router(
-      title: '파이어덤',
+      onGenerateTitle: (context) => context.l10n.appTitle,
       debugShowCheckedModeBanner: false,
       theme: buildTheme(),
       darkTheme: buildDarkTheme(),
       themeMode: themeMode,
       routerConfig: ref.watch(routerProvider),
-      locale: const Locale('ko'),
-      supportedLocales: const [Locale('ko'), Locale('en')],
+      locale: locale,
+      supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: const [
+        AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,

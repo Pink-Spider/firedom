@@ -7,8 +7,10 @@ import 'package:home_widget/home_widget.dart';
 
 import '../core/ym.dart';
 import '../engine/engine.dart';
+import '../l10n/l10n.dart';
 import 'db/database.dart';
 import 'repositories/plan_repository.dart';
+import 'repositories/settings_store.dart';
 import 'repositories/snapshot_repository.dart';
 
 /// iOS 위젯과 데이터를 공유하는 App Group ID (Xcode 타겟 설정과 일치해야 함)
@@ -28,14 +30,17 @@ class WidgetPayload {
   });
 }
 
+/// [l10n]은 BuildContext 없이 얻는다 — `l10nFromSettings` 또는
+/// `lookupAppLocalizations(resolveLocale(code))`.
 WidgetPayload buildWidgetPayload({
   required Plan? plan,
   required List<SnapshotSummary> summaries,
   required int currentYm,
+  required AppLocalizations l10n,
 }) {
   if (plan == null) {
-    return const WidgetPayload(
-      ddayText: '계획을 만들어보세요',
+    return WidgetPayload(
+      ddayText: l10n.widgetNoPlan,
       progressPercent: 0,
       deviationText: '',
     );
@@ -52,18 +57,18 @@ WidgetPayload buildWidgetPayload({
   final String ddayText;
   final months = result.monthsToFire;
   if (months == null) {
-    ddayText = '가정 점검이 필요해요';
+    ddayText = l10n.widgetCheckAssumptions;
   } else {
     final elapsed = math.max(0, ymDiffMonths(plan.startedYm, currentYm));
     final remaining = math.max(0, months - elapsed);
     if (remaining == 0 || currentAssets >= result.fireNumber) {
-      ddayText = '목표 도달!';
+      ddayText = l10n.widgetGoalReached;
     } else {
       final years = remaining ~/ 12;
       final remainMonths = remaining % 12;
-      ddayText = years == 0
-          ? '자유까지 $remainMonths개월'
-          : '자유까지 $years년 $remainMonths개월';
+      ddayText = l10n.widgetUntilFree(years == 0
+          ? l10n.monthsLabel(remainMonths)
+          : l10n.yearsMonthsLabel(years, remainMonths));
     }
   }
 
@@ -76,14 +81,14 @@ WidgetPayload buildWidgetPayload({
       monthsElapsed: math.max(0, ymDiffMonths(plan.startedYm, latest.ym)),
     );
     if (deviation == null) {
-      deviationText = '목표 도달!';
+      deviationText = l10n.widgetGoalReached;
     } else {
       final rounded = deviation.round();
       deviationText = rounded >= 1
-          ? '계획보다 $rounded개월 앞'
+          ? l10n.widgetAheadOfPlan(rounded)
           : rounded <= -1
-              ? '계획보다 ${-rounded}개월 뒤'
-              : '계획대로 진행 중';
+              ? l10n.widgetBehindPlan(-rounded)
+              : l10n.widgetOnTrack;
     }
   }
 
@@ -108,10 +113,12 @@ Future<void> syncHomeWidget(AppDatabase db) async {
   try {
     final plan = await PlanRepository(db).getActivePlan();
     final summaries = await SnapshotRepository(db).getSummaries();
+    final l10n = await l10nFromSettings(SettingsStore(db));
     final payload = buildWidgetPayload(
       plan: plan,
       summaries: summaries,
       currentYm: nowYm(),
+      l10n: l10n,
     );
 
     if (!kIsWeb && Platform.isIOS) {

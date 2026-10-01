@@ -1,13 +1,15 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/money_format.dart';
 import '../../engine/engine.dart';
+import '../../l10n/l10n.dart';
+import '../common/money.dart';
 
 /// 몬테카를로 상세 분포 (S4 유료 본체)
 ///
 /// 기대수명 시점 자산 분포 밴드(p10/p50/p90)와 자산 고갈 나이 분포.
-class MonteCarloDetailScreen extends StatelessWidget {
+class MonteCarloDetailScreen extends ConsumerWidget {
   final PlanInput plan;
   final MonteCarloResult result;
 
@@ -18,27 +20,28 @@ class MonteCarloDetailScreen extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final money = moneyFormatOf(context, ref);
     final successPercent = (result.successRate * 100).toStringAsFixed(0);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('성공 확률 상세')),
+      appBar: AppBar(title: Text(l10n.mcTitle)),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
             Text(
-              '성공 확률 $successPercent%',
+              l10n.mcHeadline(successPercent),
               style: theme.textTheme.headlineMedium!.copyWith(
                 color: theme.colorScheme.primary,
                 fontWeight: FontWeight.bold,
               ),
             ),
             Text(
-              '${result.runs}가지 시장 시나리오 중 '
-              '${result.successes}번, 기대수명 ${plan.lifeExpectancy}세까지 '
-              '자산이 유지됐어요',
+              l10n.mcSummary(
+                  result.runs, result.successes, plan.lifeExpectancy),
               style: theme.textTheme.bodyMedium!.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -50,21 +53,21 @@ class MonteCarloDetailScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('기대수명 시점 자산 분포 (오늘 돈 가치)',
+                    Text(l10n.mcEndingAssetsTitle,
                         style: theme.textTheme.titleSmall),
                     const SizedBox(height: 12),
                     _PercentileRow(
-                      label: '어려운 경우 (하위 10%)',
-                      value: result.endingAssetsPercentile(0.1),
+                      label: l10n.mcP10,
+                      value: money.compact(result.endingAssetsPercentile(0.1)),
                     ),
                     _PercentileRow(
-                      label: '중간 (p50)',
-                      value: result.endingAssetsPercentile(0.5),
+                      label: l10n.mcP50,
+                      value: money.compact(result.endingAssetsPercentile(0.5)),
                       emphasized: true,
                     ),
                     _PercentileRow(
-                      label: '잘 풀린 경우 (상위 10%)',
-                      value: result.endingAssetsPercentile(0.9),
+                      label: l10n.mcP90,
+                      value: money.compact(result.endingAssetsPercentile(0.9)),
                     ),
                   ],
                 ),
@@ -77,12 +80,12 @@ class MonteCarloDetailScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('자산 고갈 나이 분포', style: theme.textTheme.titleSmall),
+                    Text(l10n.mcDepletionTitle,
+                        style: theme.textTheme.titleSmall),
                     const SizedBox(height: 12),
                     if (result.depletionMonths.isEmpty)
                       Text(
-                        '기대수명(${plan.lifeExpectancy}세)까지 자산이 고갈된 '
-                        '시나리오가 없어요 👏',
+                        l10n.mcNoDepletion(plan.lifeExpectancy),
                         style: theme.textTheme.bodyMedium,
                       )
                     else
@@ -93,7 +96,7 @@ class MonteCarloDetailScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              '본 시뮬레이션은 정보 제공 목적이며 투자 자문이 아닙니다.',
+              l10n.disclaimerSimulation,
               style: theme.textTheme.bodySmall!.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -107,7 +110,9 @@ class MonteCarloDetailScreen extends StatelessWidget {
 
 class _PercentileRow extends StatelessWidget {
   final String label;
-  final int value;
+
+  /// 이미 통화 표기로 만든 금액 문자열
+  final String value;
   final bool emphasized;
 
   const _PercentileRow({
@@ -125,7 +130,7 @@ class _PercentileRow extends StatelessWidget {
         children: [
           Expanded(child: Text(label, style: theme.textTheme.bodyMedium)),
           Text(
-            '${formatKoreanMoney(value)}원',
+            value,
             style: (emphasized
                     ? theme.textTheme.titleMedium
                     : theme.textTheme.bodyMedium)!
@@ -183,7 +188,7 @@ class _DepletionHistogram extends StatelessWidget {
                   if (index < 0 || index >= keys.length) {
                     return const SizedBox.shrink();
                   }
-                  return Text('${keys[index]}세',
+                  return Text(context.l10n.simAxisAge(keys[index]),
                       style: theme.textTheme.labelSmall);
                 },
               ),

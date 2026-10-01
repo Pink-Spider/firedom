@@ -20,7 +20,7 @@ class FiredomWidgetProvider : AppWidgetProvider() {
             val views = RemoteViews(context.packageName, R.layout.firedom_widget).apply {
                 setTextViewText(
                     R.id.widget_dday,
-                    prefs.getString("dday_text", "계획을 만들어보세요")
+                    prefs.getString("dday_text", context.getString(R.string.widget_placeholder))
                 )
                 setTextViewText(
                     R.id.widget_deviation,

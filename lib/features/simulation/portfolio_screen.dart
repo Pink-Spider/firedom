@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/money_format.dart';
 import '../../data/entitlements.dart';
 import '../../engine/engine.dart';
+import '../../l10n/l10n.dart';
+import '../common/money.dart';
+import '../common/portfolio_labels.dart';
 import '../paywall/paywall_sheet.dart';
 
 /// S4-2 CTA 결과 — S4가 슬라이더/몬테카를로에 반영할 축약 값
@@ -134,7 +136,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
     final a = PortfolioAsset.values.firstWhere((e) => e.key == key);
     return _AssetSpec(
       key: key,
-      label: a.label,
+      label: portfolioAssetLabel(context.l10n, a),
       realReturnBp: a.realReturnBp,
       volatilityBp: a.volatilityBp,
       verified: a.verified,
@@ -242,6 +244,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
   /// 자산군 추가 시트 — 직접 입력 + 담기지 않은 프리셋 (프리미엄)
   void _showAddAsset(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -253,8 +256,8 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
             ListTile(
               key: const ValueKey('custom-add-tile'),
               leading: const Icon(Icons.edit_outlined),
-              title: const Text('직접 입력'),
-              subtitle: const Text('자산군 이름·가정 수익률을 직접 넣어요'),
+              title: Text(l10n.pfCustomInput),
+              subtitle: Text(l10n.pfCustomInputSubtitle),
               onTap: () {
                 Navigator.pop(sheetContext);
                 _showCustomDialog(context);
@@ -272,10 +275,15 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                   ),
                 ),
                 title: Text(
-                    asset.verified ? asset.label : '${asset.label} · 참고치'),
+                  asset.verified
+                      ? portfolioAssetLabel(l10n, asset)
+                      : l10n.pfAssetReference(portfolioAssetLabel(l10n, asset)),
+                ),
                 subtitle: Text(
-                  '가정 ${(asset.realReturnBp / 100).toStringAsFixed(1)}% · '
-                  '변동성 ${(asset.volatilityBp / 100).toStringAsFixed(0)}%',
+                  l10n.pfAssumedReturnVol(
+                    (asset.realReturnBp / 100).toStringAsFixed(1),
+                    (asset.volatilityBp / 100).toStringAsFixed(0),
+                  ),
                   style: theme.textTheme.bodySmall,
                 ),
                 onTap: () {
@@ -294,12 +302,13 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
     final nameCtrl = TextEditingController();
     final returnCtrl = TextEditingController();
     final volCtrl = TextEditingController(text: '15');
+    final l10n = context.l10n;
     String? error;
     showDialog<void>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, setDialog) => AlertDialog(
-          title: const Text('자산군 직접 입력'),
+          title: Text(l10n.pfCustomDialogTitle),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -308,7 +317,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                 controller: nameCtrl,
                 autofocus: true,
                 decoration: InputDecoration(
-                  labelText: '자산군 이름',
+                  labelText: l10n.pfCustomNameLabel,
                   errorText: error,
                 ),
               ),
@@ -318,8 +327,8 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                 controller: returnCtrl,
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(
-                  labelText: '가정 실질수익률',
+                decoration: InputDecoration(
+                  labelText: l10n.pfCustomReturnLabel,
                   suffixText: '%',
                 ),
               ),
@@ -329,14 +338,14 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                 controller: volCtrl,
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(
-                  labelText: '예상 변동성',
+                decoration: InputDecoration(
+                  labelText: l10n.pfCustomVolLabel,
                   suffixText: '%',
                 ),
               ),
               const SizedBox(height: 8),
               Text(
-                '직접 입력한 가정이에요 — 출처 없이 참고용으로만 쓰세요',
+                l10n.pfCustomNote,
                 style: Theme.of(dialogContext).textTheme.bodySmall,
               ),
             ],
@@ -344,21 +353,21 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('취소'),
+              child: Text(l10n.commonCancel),
             ),
             FilledButton(
               onPressed: () {
                 final name = nameCtrl.text.trim();
                 final ret = double.tryParse(returnCtrl.text);
                 if (name.isEmpty || ret == null) {
-                  setDialog(() => error = '이름과 가정 수익률을 입력해주세요');
+                  setDialog(() => error = l10n.pfCustomError);
                   return;
                 }
                 final vol = double.tryParse(volCtrl.text) ?? 15;
                 Navigator.pop(dialogContext);
                 _addCustom(name, (ret * 100).round(), (vol * 100).round());
               },
-              child: const Text('추가'),
+              child: Text(l10n.pfAdd),
             ),
           ],
         ),
@@ -369,13 +378,15 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final money = moneyFormatOf(context, ref);
     final isPremium = ref.watch(isPremiumProvider).value ?? false;
     final portfolio = _portfolio;
     final result =
         portfolio == null ? null : solvePlan(portfolio.applyTo(widget.base));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('포트폴리오 구성')),
+      appBar: AppBar(title: Text(l10n.pfTitle)),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
@@ -384,9 +395,10 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
             SizedBox(
               width: double.infinity,
               child: SegmentedButton<bool>(
-                segments: const [
-                  ButtonSegment(value: false, label: Text('단순')),
-                  ButtonSegment(value: true, label: Text('포트폴리오')),
+                segments: [
+                  ButtonSegment(value: false, label: Text(l10n.pfModeSimple)),
+                  ButtonSegment(
+                      value: true, label: Text(l10n.pfModePortfolio)),
                 ],
                 selected: const {true},
                 showSelectedIcon: false,
@@ -403,7 +415,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                 for (final example in PortfolioExample.values)
                   ChoiceChip(
                     key: ValueKey('example-${example.name}'),
-                    label: Text(example.label),
+                    label: Text(portfolioExampleLabel(l10n, example)),
                     selected: _example == example,
                     onSelected: (_) => setState(() => _applyExample(example)),
                   ),
@@ -411,9 +423,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              isPremium
-                  ? '예시 구성이에요 — 비중은 직접 바꿀 수 있어요 (합계는 100%로 자동 유지)'
-                  : '예시 구성을 골라 결과를 체험해보세요',
+              isPremium ? l10n.pfHintPremium : l10n.pfHintFree,
               style: theme.textTheme.bodySmall!.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -444,17 +454,22 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                   key: const ValueKey('add-asset'),
                   onPressed: () => _showAddAsset(context),
                   icon: const Icon(Icons.add, size: 18),
-                  label: const Text('자산군 추가'),
+                  label: Text(l10n.pfAddAsset),
                 ),
               ),
             const SizedBox(height: 12),
-            _ResultCard(base: widget.base, portfolio: portfolio, result: result),
+            _ResultCard(
+              base: widget.base,
+              portfolio: portfolio,
+              result: result,
+              money: money,
+            ),
             const SizedBox(height: 8),
             Align(
               alignment: Alignment.centerLeft,
               child: TextButton(
                 onPressed: () => _showAssumptions(context),
-                child: const Text('가정 보기'),
+                child: Text(l10n.pfShowAssumptions),
               ),
             ),
             const SizedBox(height: 4),
@@ -465,15 +480,14 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                         returnBp: portfolio.portfolioReturnBp,
                         volatilityBp: portfolio.portfolioVolatilityBp,
                       )),
-              child: const Padding(
-                padding: EdgeInsets.symmetric(vertical: 12),
-                child: Text('이 구성으로 시뮬레이션'),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text(l10n.pfApplyCta),
               ),
             ),
             const SizedBox(height: 12),
             Text(
-              '가정은 과거 장기 평균 기준(출처는 가정 보기) · '
-              '본 시뮬레이션은 정보 제공 목적이며 투자 자문이 아닙니다.',
+              l10n.pfFooterNote(l10n.disclaimerSimulation),
               style: theme.textTheme.bodySmall!.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -487,6 +501,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
   /// 자산별 가정·출처 공개 (PRD S4-2 수용 기준: "가정 보기"로 항상 공개)
   void _showAssumptions(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -498,12 +513,10 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
           controller: controller,
           padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
           children: [
-            Text('계산에 사용한 가정', style: theme.textTheme.titleLarge),
+            Text(l10n.pfAssumptionsTitle, style: theme.textTheme.titleLarge),
             const SizedBox(height: 4),
             Text(
-              '실질(인플레 차감)·연 기하평균 기준. 해외자산은 USD 기준으로 '
-              '원화 환변동이 반영되지 않았어요. 변동성은 자산 간 분산효과를 '
-              '뺀 보수적 간이 추정이에요.',
+              l10n.pfAssumptionsCaveat,
               style: theme.textTheme.bodySmall!.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -513,12 +526,16 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 title: Text(
-                  asset.verified ? asset.label : '${asset.label} · 참고치',
+                  asset.verified
+                      ? portfolioAssetLabel(l10n, asset)
+                      : l10n.pfAssetReference(portfolioAssetLabel(l10n, asset)),
                 ),
                 subtitle: Text(
-                  '실질 ${(asset.realReturnBp / 100).toStringAsFixed(1)}% · '
-                  '변동성 ${(asset.volatilityBp / 100).toStringAsFixed(0)}%\n'
-                  '${asset.source}',
+                  '${l10n.pfRealReturnVol(
+                    (asset.realReturnBp / 100).toStringAsFixed(1),
+                    (asset.volatilityBp / 100).toStringAsFixed(0),
+                  )}\n'
+                  '${portfolioAssetSource(l10n, asset)}',
                 ),
               ),
             // 직접 입력 자산군 (담긴 것만)
@@ -526,16 +543,18 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
               if (_weights.containsKey(key))
                 ListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: Text('${_customs[key]!.label} · 직접 입력'),
+                  title: Text(l10n.pfAssetCustom(_customs[key]!.label)),
                   subtitle: Text(
-                    '실질 ${(_customs[key]!.realReturnBp / 100).toStringAsFixed(1)}% · '
-                    '변동성 ${(_customs[key]!.volatilityBp / 100).toStringAsFixed(0)}%\n'
-                    '직접 입력한 가정 (출처 없음)',
+                    '${l10n.pfRealReturnVol(
+                      (_customs[key]!.realReturnBp / 100).toStringAsFixed(1),
+                      (_customs[key]!.volatilityBp / 100).toStringAsFixed(0),
+                    )}\n'
+                    '${l10n.pfCustomSource}',
                   ),
                 ),
             const SizedBox(height: 8),
             Text(
-              '본 시뮬레이션은 정보 제공 목적이며 투자 자문이 아닙니다.',
+              l10n.disclaimerSimulation,
               style: theme.textTheme.bodySmall!.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -569,7 +588,7 @@ class _PremiumBanner extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  '비중 편집·자산군 추가는 프리미엄 — 예시 구성은 자유롭게 체험해보세요',
+                  context.l10n.pfPremiumBanner,
                   style: theme.textTheme.bodySmall!.copyWith(
                     color: theme.colorScheme.onSecondaryContainer,
                   ),
@@ -614,10 +633,10 @@ class _TotalGauge extends StatelessWidget {
       children: [
         Row(
           children: [
-            Text('자산군 비중', style: theme.textTheme.titleSmall),
+            Text(context.l10n.pfWeightsTitle, style: theme.textTheme.titleSmall),
             const Spacer(),
             Text(
-              '합계 ${(totalBp / 100).toStringAsFixed(1)}%',
+              context.l10n.pfTotalPercent((totalBp / 100).toStringAsFixed(1)),
               style: theme.textTheme.titleSmall!.copyWith(
                 color: color,
                 fontWeight: FontWeight.w600,
@@ -669,12 +688,13 @@ class _AssetRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final color = spec.color;
     final tag = spec.custom
-        ? ' · 직접 입력'
+        ? l10n.pfTagCustom
         : spec.verified
             ? ''
-            : ' · 참고치';
+            : l10n.pfTagReference;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -694,7 +714,7 @@ class _AssetRow extends StatelessWidget {
                   children: [
                     TextSpan(
                       text:
-                          '  가정 ${(spec.realReturnBp / 100).toStringAsFixed(1)}%$tag',
+                          '  ${l10n.pfAssumedReturn((spec.realReturnBp / 100).toStringAsFixed(1))}$tag',
                       style: theme.textTheme.labelSmall!.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -714,7 +734,7 @@ class _AssetRow extends StatelessWidget {
               IconButton(
                 key: ValueKey('remove-${spec.key}'),
                 visualDensity: VisualDensity.compact,
-                tooltip: '이 자산군 빼기',
+                tooltip: l10n.pfRemoveAssetTooltip,
                 icon: Icon(Icons.close,
                     size: 18, color: theme.colorScheme.onSurfaceVariant),
                 onPressed: onRemove,
@@ -747,28 +767,31 @@ class _ResultCard extends StatelessWidget {
   final PlanInput base;
   final PortfolioInput? portfolio;
   final FireResult? result;
+  final MoneyFormat money;
 
   const _ResultCard({
     required this.base,
     required this.portfolio,
     required this.result,
+    required this.money,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final p = portfolio;
     final r = result;
 
     final String headline;
     if (p == null) {
-      headline = '합계를 100%로 맞추면 결과가 계산돼요';
+      headline = l10n.pfResultNeedTotal;
     } else if (r == null || r.monthsToFire == null) {
-      headline = '100년 안에 도달이 어려워요';
+      headline = l10n.pfResultUnreachable;
     } else if (r.monthsToFire == 0) {
-      headline = '이미 FIRE 도달!';
+      headline = l10n.pfResultAlreadyFire;
     } else {
-      headline = 'FIRE 나이 ${base.age0 + r.monthsToFire! ~/ 12}세';
+      headline = l10n.pfResultFireAge(base.age0 + r.monthsToFire! ~/ 12);
     }
 
     return Card(
@@ -779,7 +802,7 @@ class _ResultCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '이 구성이라면',
+              l10n.pfResultLead,
               style: theme.textTheme.labelMedium!.copyWith(
                 color: theme.colorScheme.onPrimaryContainer,
               ),
@@ -793,8 +816,11 @@ class _ResultCard extends StatelessWidget {
             ),
             if (p != null && r != null && r.isReachable && r.monthsToFire! > 0)
               Text(
-                '${r.monthsToFire! ~/ 12}년 ${r.monthsToFire! % 12}개월 후 · '
-                '필요 자산 ${formatKoreanMoney(r.fireNumber)}원',
+                l10n.pfResultDetail(
+                  l10n.yearsMonthsLabel(
+                      r.monthsToFire! ~/ 12, r.monthsToFire! % 12),
+                  money.compact(r.fireNumber),
+                ),
                 style: theme.textTheme.bodySmall!.copyWith(
                   color: theme.colorScheme.onPrimaryContainer,
                 ),
@@ -815,6 +841,7 @@ class _ReturnHeadline extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final p = portfolio;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -824,7 +851,7 @@ class _ReturnHeadline extends StatelessWidget {
       ),
       child: p == null
           ? Text(
-              '합계를 100%로 맞추면 기대수익률이 계산돼요',
+              l10n.pfHeadlineNeedTotal,
               style: theme.textTheme.bodyMedium!.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -835,7 +862,7 @@ class _ReturnHeadline extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('기대수익률(실질)',
+                    Text(l10n.pfExpectedReturn,
                         style: theme.textTheme.labelMedium!.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         )),
@@ -852,7 +879,7 @@ class _ReturnHeadline extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text('변동성(간이)',
+                    Text(l10n.pfVolatilitySimple,
                         style: theme.textTheme.labelSmall!.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         )),

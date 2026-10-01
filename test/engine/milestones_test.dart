@@ -84,4 +84,37 @@ void main() {
       expect(keys.where((k) => k.startsWith('fire_')), isEmpty);
     });
   });
+
+  group('netWorthThresholds — 통화별 기준 주입', () {
+    test('USD 기준(센트)으로 \$100k 돌파 판정', () {
+      final keys = evaluateMilestones(
+        netWorth: 10000000, // \$100,000
+        fireNumber: 0,
+        recordedYms: const [202607],
+        ym: 202607,
+        achievedKeys: const {},
+        netWorthThresholds: const [
+          5000000,
+          10000000,
+          25000000,
+          50000000,
+          100000000,
+        ],
+      );
+      expect(keys, containsAll(['net_worth_50m', 'net_worth_100m']));
+      expect(keys, isNot(contains('net_worth_300m')));
+    });
+
+    test('기본값은 원화 기준', () {
+      expect(defaultNetWorthThresholds.length, netWorthMilestoneKeys.length);
+      final keys = evaluateMilestones(
+        netWorth: 50000000,
+        fireNumber: 0,
+        recordedYms: const [202607],
+        ym: 202607,
+        achievedKeys: const {},
+      );
+      expect(keys, contains('net_worth_50m'));
+    });
+  });
 }

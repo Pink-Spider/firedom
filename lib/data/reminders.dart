@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 
+import '../l10n/l10n.dart';
 import 'db/database.dart';
 import 'notifications/reminder_scheduler.dart';
 import 'repositories/settings_store.dart';
@@ -69,7 +70,8 @@ Future<void> rescheduleReminders({
   DateTime? now,
 }) async {
   try {
-    final settings = await loadReminderSettings(SettingsStore(db));
+    final store = SettingsStore(db);
+    final settings = await loadReminderSettings(store);
     if (!settings.enabled) {
       await scheduler.cancelAll();
       return;
@@ -80,13 +82,17 @@ Future<void> rescheduleReminders({
       now: now ?? DateTime.now(),
       recordedYms: {for (final summary in summaries) summary.ym},
     );
+    // 알림 문구는 설정 언어(없으면 기기 언어)로 — BuildContext 없는 경로
+    final l10n = await l10nFromSettings(store);
     await scheduler.scheduleAll([
       for (final (index, time) in times.indexed)
         ReminderNotification(
           id: index + 1,
           when: time,
-          title: '이번 달 자산 기록, 잊지 않으셨죠?',
-          body: '3분이면 충분해요 — 계획 대비 어디쯤인지 확인해보세요',
+          title: l10n.reminderTitle,
+          body: l10n.reminderBody,
+          channelName: l10n.reminderChannelName,
+          channelDescription: l10n.reminderChannelDescription,
         ),
     ]);
   } catch (error) {

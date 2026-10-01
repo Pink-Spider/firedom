@@ -60,4 +60,11 @@ abstract final class SettingKeys {
 
   /// String — 화면 테마 ('system' | 'light' | 'dark', S10)
   static const themeMode = 'theme_mode';
+
+  /// String? — UI 언어 ('ko' | 'en' | 'ja'). 없으면 기기 언어를 따른다
+  static const locale = 'locale';
+
+  /// String — 통화 ISO 코드 ('KRW' | 'USD' | 'JPY'). 없으면 KRW (기존 설치 호환).
+  /// 금액은 이 통화의 최소 단위 정수로 저장된다 — 변경해도 환산하지 않는다
+  static const currency = 'currency';
 }

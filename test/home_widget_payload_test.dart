@@ -1,6 +1,8 @@
 import 'package:firedom/data/db/database.dart';
 import 'package:firedom/data/home_widget_sync.dart';
 import 'package:firedom/data/repositories/snapshot_repository.dart';
+import 'package:firedom/l10n/l10n.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Plan _plan({int currentAssets = 100000000, int startedYm = 202607}) {
@@ -43,12 +45,16 @@ SnapshotSummary _summary(int ym, int netWorth) {
 }
 
 void main() {
+  // 위젯 문구는 ko 기대값으로 검증 (설정 언어가 없으면 기기 언어 → 테스트는 ko 고정)
+  final ko = lookupAppLocalizations(const Locale('ko'));
+
   group('W1 위젯 페이로드', () {
     test('계획 없음 → 온보딩 유도 문구', () {
       final payload = buildWidgetPayload(
         plan: null,
         summaries: const [],
         currentYm: 202607,
+        l10n: ko,
       );
       expect(payload.ddayText, '계획을 만들어보세요');
       expect(payload.progressPercent, 0);
@@ -59,6 +65,7 @@ void main() {
         plan: _plan(),
         summaries: const [],
         currentYm: 202607,
+        l10n: ko,
       );
       expect(payload.ddayText, '자유까지 19년 3개월');
       expect(payload.progressPercent, 11); // 1억 / 9억
@@ -73,6 +80,7 @@ void main() {
           _summary(202607, 115000000), // 경과 2개월, 곡선 ~6개월 지점 수준
         ],
         currentYm: 202607,
+        l10n: ko,
       );
       expect(payload.deviationText, contains('계획보다'));
       expect(payload.deviationText, contains('앞'));
@@ -83,6 +91,7 @@ void main() {
         plan: _plan(),
         summaries: [_summary(202606, 105000000), _summary(202607, 110000000)],
         currentYm: 202607,
+        l10n: ko,
       );
       for (final text in [payload.ddayText, payload.deviationText]) {
         expect(text.contains('원'), isFalse);

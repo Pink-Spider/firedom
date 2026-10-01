@@ -5,6 +5,7 @@ import '../features/assets/assets_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/simulation/simulation_screen.dart';
 import '../features/snapshot/snapshot_flow_screen.dart';
+import '../l10n/l10n.dart';
 
 /// 하단 탭 셸 (PRD 화면 맵): 홈 · 시뮬레이션 · 기록(+) · 자산
 ///
@@ -16,6 +17,7 @@ class AppShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final location = GoRouterState.of(context).uri.path;
     final selectedIndex = switch (location) {
       SimulationScreen.path => 1,
@@ -27,25 +29,25 @@ class AppShell extends StatelessWidget {
       body: child,
       bottomNavigationBar: NavigationBar(
         selectedIndex: selectedIndex,
-        destinations: const [
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: '홈',
+            icon: const Icon(Icons.home_outlined),
+            selectedIcon: const Icon(Icons.home),
+            label: l10n.shellHome,
           ),
           NavigationDestination(
-            icon: Icon(Icons.query_stats),
-            label: '시뮬레이션',
+            icon: const Icon(Icons.query_stats),
+            label: l10n.shellSimulation,
           ),
           NavigationDestination(
-            icon: Icon(Icons.add_circle_outline),
-            selectedIcon: Icon(Icons.add_circle),
-            label: '기록',
+            icon: const Icon(Icons.add_circle_outline),
+            selectedIcon: const Icon(Icons.add_circle),
+            label: l10n.shellRecord,
           ),
           NavigationDestination(
-            icon: Icon(Icons.pie_chart_outline),
-            selectedIcon: Icon(Icons.pie_chart),
-            label: '자산',
+            icon: const Icon(Icons.pie_chart_outline),
+            selectedIcon: const Icon(Icons.pie_chart),
+            label: l10n.shellAssets,
           ),
         ],
         onDestinationSelected: (index) {

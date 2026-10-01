@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/prefs.dart';
 
-/// S1 온보딩 입력 초안. 금액은 원 단위 정수.
+/// S1 온보딩 입력 초안. 금액은 설정 통화의 최소 단위 정수(원·센트·엔).
 class OnboardingDraft {
   final int? age;
   final int? monthlyIncome;

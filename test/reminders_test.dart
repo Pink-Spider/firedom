@@ -1,5 +1,25 @@
+import 'package:drift/native.dart';
+import 'package:firedom/data/db/database.dart';
+import 'package:firedom/data/notifications/reminder_scheduler.dart';
 import 'package:firedom/data/reminders.dart';
+import 'package:firedom/data/repositories/settings_store.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+class _FakeScheduler implements ReminderScheduler {
+  final List<List<ReminderNotification>> batches = [];
+  int cancelCount = 0;
+
+  @override
+  Future<bool> ensurePermissions() async => true;
+
+  @override
+  Future<void> scheduleAll(List<ReminderNotification> notifications) async {
+    batches.add(notifications);
+  }
+
+  @override
+  Future<void> cancelAll() async => cancelCount++;
+}
 
 void main() {
   const defaults = ReminderSettings(enabled: true); // 말일 20:00
@@ -49,6 +69,56 @@ void main() {
         DateTime(2027, 1, 15, 9, 30),
         DateTime(2027, 2, 15, 9, 30),
       ]);
+    });
+  });
+
+  group('rescheduleReminders — 알림 문구는 설정 언어를 따른다', () {
+    late AppDatabase db;
+
+    setUp(() => db = AppDatabase(NativeDatabase.memory()));
+    tearDown(() => db.close());
+
+    Future<void> enable(String locale) async {
+      final store = SettingsStore(db);
+      await store.set(SettingKeys.reminderEnabled, true);
+      await store.set(SettingKeys.locale, locale);
+    }
+
+    test('ko: 제목·본문·Android 채널 문구', () async {
+      await enable('ko');
+      final scheduler = _FakeScheduler();
+      await rescheduleReminders(
+        db: db,
+        scheduler: scheduler,
+        now: DateTime(2026, 2, 10),
+      );
+      expect(scheduler.batches, hasLength(1));
+      final first = scheduler.batches.single.first;
+      expect(first.title, '이번 달 자산 기록, 잊지 않으셨죠?');
+      expect(first.body, '3분이면 충분해요 — 계획 대비 어디쯤인지 확인해보세요');
+      expect(first.channelName, '월간 기록 리마인더');
+      expect(first.channelDescription, '월 1회 자산 기록 알림 (미기록 월에만)');
+      expect(first.when, DateTime(2026, 2, 28, 20, 0));
+    });
+
+    test('en: 영어 문구로 예약', () async {
+      await enable('en');
+      final scheduler = _FakeScheduler();
+      await rescheduleReminders(
+        db: db,
+        scheduler: scheduler,
+        now: DateTime(2026, 2, 10),
+      );
+      final first = scheduler.batches.single.first;
+      expect(first.title, 'Your monthly asset record is waiting');
+      expect(first.channelName, 'Monthly record reminder');
+    });
+
+    test('꺼져 있으면 전부 취소하고 예약하지 않는다', () async {
+      final scheduler = _FakeScheduler();
+      await rescheduleReminders(db: db, scheduler: scheduler);
+      expect(scheduler.cancelCount, 1);
+      expect(scheduler.batches, isEmpty);
     });
   });
 }

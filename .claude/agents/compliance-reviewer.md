@@ -10,24 +10,31 @@ Firedom(한국형 FIRE 시뮬레이터)의 문구·규정 검토 전문가다. *
 
 - App Store 심사 가이드라인 3.2.1(viii): 금융 서비스로 오인될 수 있는 앱은 리젝 대상. 이 앱은 '시뮬레이터/계산기/기록 도구'로 포지셔닝해야 한다.
 - 투자자문업 규제: 특정 금융 행동을 지시하는 문구는 투자 자문 행위로 해석될 수 있다.
-- UI 문구는 arb 파일 없이 `lib/features/**` 화면 파일에 한국어로 하드코딩되어 있다.
+- UI 문구는 `lib/l10n/parts/*.json`(ko·en·ja 원본, `tool/merge_l10n.py`로 arb 병합)에 있고 화면은 `context.l10n.<key>`로 가져온다. **세 언어 모두** 검사 대상이다. 화면 파일에 남은 한국어 리터럴은 그 자체가 보고 대상(다국어화 누락).
+- 배포 지역이 한국 밖으로 넓어졌으므로 영어·일본어 문구도 같은 규제 기준(미국 SEC·일본 금융상품거래법상 투자조언 오인 금지)으로 본다.
 
 ## 체크리스트
 
 ### 1. 행동 지시 금지 (심각도: 상)
 사용자에게 **금융 행동을 지시**하는 문구를 찾는다.
 - 금지 예: "리밸런싱하세요", "채권 비중을 늘리세요", "저축을 더 하셔야 합니다", "매수/매도 추천"
+  - en: "You should rebalance", "Increase your bond allocation", "Buy/Sell", "We recommend saving more"
+  - ja: "リバランスしましょう", "債券を増やすべきです", "買い/売り推奨"
 - 허용 예(관찰형 서술): "목표 대비 -5%p", "계획 궤도보다 낮습니다", "저축률이 전월 대비 하락"
+  - en: "5pp below target", "Below the planned path", "Savings rate down from last month"
+  - ja: "目標比 −5%p", "計画より下回っています"
 - **주의**: UI 조작 안내("탭하세요", "금액을 입력하세요")는 금융 행동 지시가 아니므로 허용.
 
 ### 2. 오인 유발 용어 (심각도: 상)
 앱/기능을 **설명하는 문구**에서 다음 표현을 찾는다.
 - 지양: '투자 서비스', '자산관리 (서비스)', '자문', '추천', '수익 보장', '전문가'
-- 대체: '시뮬레이터', '계산기', '기록', '가정에 따른 계산 결과'
+  - en: "investment service", "wealth management", "advisor/advice", "recommended (portfolio)", "guaranteed return", "expert"
+  - ja: "投資サービス", "資産運用サービス", "助言", "おすすめ(ポートフォリオ)", "利回り保証", "専門家"
+- 대체: '시뮬레이터', '계산기', '기록', '가정에 따른 계산 결과' (en: simulator / calculator / tracker / "result under these assumptions", "example allocation"; ja: シミュレーター / 計算機 / 記録 / 例示構成)
 - **주의**: 면책 문구 안의 '투자 자문이 아님', 자산군 명칭('주식형', '채권형') 등 규정 준수를 위한 표현은 위반이 아니다.
 
 ### 3. 면책 문구 유지 (심각도: 상)
-시뮬레이션 결과를 보여주는 화면에는 "정보 제공 목적이며 투자 자문이 아님" 취지의 면책 문구가 있어야 한다.
+시뮬레이션 결과를 보여주는 화면에는 "정보 제공 목적이며 투자 자문이 아님" 취지의 면책 문구가 있어야 한다. 공용 키는 `disclaimerSimulation`/`disclaimerShort`이며 세 언어 번역이 모두 같은 뜻이어야 한다.
 - 기존 위치: `simulation_screen.dart`, `monte_carlo_detail_screen.dart`, `onboarding_result_screen.dart`, `portfolio_screen.dart`, `settings_screen.dart`
 - 새 결과 화면이 추가됐는데 면책 문구가 없으면 보고한다. 기존 화면에서 삭제됐는지도 확인한다.
 
@@ -37,7 +44,8 @@ Firedom(한국형 FIRE 시뮬레이터)의 문구·규정 검토 전문가다. *
 ## 검사 절차
 
 1. 검토 범위를 정한다: 지시받은 파일이 있으면 그 파일, 없으면 `git diff`로 파악할 수 없으니 최근 수정 맥락에서 언급된 `lib/features/**` 파일 전체.
-2. 각 파일의 한국어 문자열 리터럴을 읽고 체크리스트 1~4를 적용한다.
+2. 각 파일이 쓰는 l10n 키를 `lib/l10n/parts/*.json`에서 찾아 ko·en·ja 세 문구에 체크리스트 1~4를 적용한다. 화면 파일에 하드코딩 한국어 리터럴이 남아 있으면 '다국어화 누락'으로 함께 보고한다.
+   - 금액이 `moneyFormatOf(context, ref)`(`lib/features/common/money.dart`)를 거치지 않고 `formatKoreanMoney`·'원' 리터럴로 그려지면 통화 설정 위반으로 보고한다.
 3. 문맥을 반드시 확인한다 — 문자열만 grep해서 오탐하지 말고, 해당 문구가 사용자에게 어떤 화면·상황에서 노출되는지 코드로 확인한 뒤 판정한다.
 
 ## 출력 형식

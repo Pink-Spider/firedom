@@ -9,11 +9,16 @@
 
 - **플랫폼**: Flutter (iOS / Android), 번들ID `app.firedom.firedom`
 - **아키텍처**: 로컬 우선, 서버리스 — 재무 데이터는 기기에만 저장되고 전송되지 않는다
-- **현재 버전**: `0.1.0+8` — v1.0 심사 재제출 (App Store 3.1.2(c) 리젝 대응, 2026-09-10)
+- **릴리스 상태**: v1.0 양대 스토어 게시 완료 (App Store 빌드 8 / Google Play 버전 6).
+  현재 `pubspec.yaml`은 `1.0.0+10`(다국어·다통화 빌드, 미제출). 빌드 9는 Play 내부 테스트 트랙에만 있다
 - **최소 지원 OS**: iOS 15.0 / Android 7.0 (API 24 — Flutter 3.44 기본값)
-- **배포 지역**: 대한민국 (한국어 단일 언어 앱)
+- **언어·통화**: 한국어·영어·일본어 (기기 언어 또는 설정), KRW·USD·JPY (온보딩에서 선택)
+- **배포 지역**: 스토어 게시본은 아직 대한민국만. 다국어 빌드 심사 후 영어권·일본으로 확장
+  (`docs/guide/TestFlight_배포_가이드.md` §14)
 - **App Store**: https://apps.apple.com/kr/app/%ED%8C%8C%EC%9D%B4%EC%96%B4%EB%8D%A4-firedom/id6790997319
-  (국가 코드 `kr` 필수 — 한국 단일 배포라 `/us/` 등 다른 스토어프론트 링크는 404)
+  (국가 코드 `kr` 필수 — 한국 단일 배포라 `/us/` 등 다른 스토어프론트 링크는 404).
+  단축 링크·공식 배지는 `docs/스토어_등록_문구.md` '공용 URL' 참조
+- **구독**: `firedom_39000_1y`(₩39,000/년) · `firedom_4900_1m`(₩4,900/월), 각 7일 무료 체험
 
 ## 기능
 
@@ -24,6 +29,7 @@
 - 계획 vs 실제 궤도 비교, 마일스톤
 - 홈 화면 위젯 (iOS·Android, D-day·진행률, 금액 비노출), 월간 기록 리마인더
 - 암호화 백업/복원, 금액 가림(●●●), 생체인증 앱 잠금, 다크 모드
+- 공적연금(한국: 국민연금) 반영 브릿지 계산, 통화별 입력 단위·차트 축·마일스톤
 
 **프리미엄 (구독)**
 - 몬테카를로 시뮬레이션 — 성공 확률, 자산 고갈 나이 분포
@@ -48,12 +54,21 @@ fvm flutter run
 - iOS 홈 위젯 익스텐션 타겟 설정 이력: `docs/W1_홈위젯_iOS_설정.md` (빌드 6부터 IPA에 포함)
 - 결제를 붙여 테스트하려면 `revenuecat.json`(git 제외)에 키를 넣고
   `--dart-define-from-file=revenuecat.json`로 주입한다. 예시는 `revenuecat.json.example`.
+  키가 없으면 스텁 모드로 기동한다 (구매/복원 불가, 프리미엄 게이트는 로컬 캐시만 참조).
+- UI 문구는 `lib/l10n/parts/*.json`(ko·en·ja)이 원본이다. 고친 뒤
+  `python3 tool/merge_l10n.py && fvm flutter gen-l10n`으로 arb와 생성 코드를 갱신한다.
+- Drift 스키마를 바꾼 뒤에는 `fvm dart run build_runner build --delete-conflicting-outputs`로
+  `database.g.dart`를 재생성한다 (산출물이라 직접 수정 금지).
+- 릴리스 빌드·스토어 제출: `docs/guide/TestFlight_배포_가이드.md`
 
 ## 검증
 
 ```bash
 fvm flutter analyze   # 통과 필수
-fvm flutter test      # 통과 필수 (157개)
+fvm flutter test      # 통과 필수 (188개)
+fvm flutter test test/engine                               # 엔진 골든 테스트만
+fvm flutter test test/snapshot_flow_test.dart              # 파일 하나
+fvm flutter test test/engine/deterministic_golden_test.dart --plain-name "G1"   # 테스트 하나
 ```
 
 시뮬레이션 엔진(`lib/engine/`)은 순수 Dart 모듈이고, 엑셀 검증 기준 케이스에 대한
@@ -64,8 +79,9 @@ fvm flutter test      # 통과 필수 (157개)
 
 ```
 lib/
-  app/          앱 셸 — 테마, 라우터(go_router), 앱 잠금, 인앱 업데이트
-  core/         공용 유틸
+  app/          앱 셸 — 테마, 라우터(go_router), 언어 설정, 앱 잠금, 인앱 업데이트
+  core/         공용 유틸 — 통화(Currency)·금액 포맷(MoneyFormat)·연월
+  l10n/         parts/*.json(번역 원본) → app_*.arb → app_localizations*.dart(생성)
   data/         Drift(SQLite) 스키마·리포지토리, 알림, 홈 위젯 동기화
   engine/       ★ 순수 Dart 시뮬레이션 엔진 (Flutter 의존성 없음)
                 deterministic · monte_carlo · portfolio · tracking · milestones
@@ -84,7 +100,7 @@ store_assets/   스토어 제출용 스크린샷·피처 그래픽·아이콘 (g
 
 | 문서 | 내용 |
 |---|---|
-| `CLAUDE.md` | 아키텍처 결정·제품 원칙 — **작업 전 필독** |
+| `CLAUDE.md` | 아키텍처 결정·코드 구조·제품 원칙·릴리스 상태 — **작업 전 필독** |
 | `docs/PRD_FIRE시뮬레이터_MVP.md` | 화면 단위 스펙, 로드맵 |
 | `docs/엔진명세_스키마설계.md` | 시뮬레이션 수식·DB 스키마 |
 | `docs/경쟁분석_FIRE재무설계앱.md` | 포지셔닝 근거 |

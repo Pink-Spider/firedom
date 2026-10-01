@@ -261,4 +261,49 @@ void main() {
     await openSettings(tester);
     expect(find.byKey(const ValueKey('customer-id-tile')), findsNothing);
   });
+
+  appTest('S10 언어: 드롭다운에서 English 선택 → 설정 저장 + 즉시 영어 화면', (tester) async {
+    final db = await pumpApp(tester, seed: (db) async => seedPlan(db));
+    await openSettings(tester);
+
+    final dropdown = find.byKey(const ValueKey('language-dropdown'));
+    await tester.scrollUntilVisible(dropdown, 200,
+        scrollable: find.byType(Scrollable).first);
+    await tester.tap(dropdown);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('English').last);
+    await tester.pumpAndSettle();
+
+    expect(await SettingsStore(db).get<String>(SettingKeys.locale), 'en');
+    expect(find.text('Settings'), findsOneWidget);
+
+    // 시스템으로 되돌리면 설정값은 null (기기 언어 ko → 한국어 화면)
+    await tester.tap(find.byKey(const ValueKey('language-dropdown')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('System').last);
+    await tester.pumpAndSettle();
+    expect(await SettingsStore(db).get<String>(SettingKeys.locale), isNull);
+    expect(find.text('설정'), findsOneWidget);
+  });
+
+  appTest('S10 통화: USD 선택 → 확인 다이얼로그 → 설정 저장 (환산 없음 안내)', (tester) async {
+    final db = await pumpApp(tester, seed: (db) async => seedPlan(db));
+    await openSettings(tester);
+
+    final dropdown = find.byKey(const ValueKey('currency-dropdown'));
+    await tester.scrollUntilVisible(dropdown, 200,
+        scrollable: find.byType(Scrollable).first);
+    await tester.tap(dropdown);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('미국 달러 (USD)').last);
+    await tester.pumpAndSettle();
+
+    // 확인 전에는 저장되지 않는다
+    expect(find.textContaining('환산되지 않고'), findsOneWidget);
+    expect(await SettingsStore(db).get<String>(SettingKeys.currency), isNull);
+
+    await tester.tap(find.byKey(const ValueKey('currency-change-confirm')));
+    await tester.pumpAndSettle();
+    expect(await SettingsStore(db).get<String>(SettingKeys.currency), 'USD');
+  });
 }

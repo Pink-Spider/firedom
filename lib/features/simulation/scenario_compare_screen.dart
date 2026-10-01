@@ -1,9 +1,12 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/repositories/scenario_repository.dart';
 import '../../engine/engine.dart';
-import '../../core/money_format.dart';
+import '../../l10n/l10n.dart';
+import '../common/money.dart';
+import 'chart_axis.dart';
 
 /// S4. 시나리오 나란히 비교 (프리미엄)
 ///
@@ -13,16 +16,17 @@ import '../../core/money_format.dart';
 ///
 /// 사실 표시만 한다 — "A안이 낫다" 같은 행동 지시 문구를 넣지 않는다
 /// (CLAUDE.md 제품 원칙: 투자자문 규제).
-class ScenarioCompareSheet extends StatefulWidget {
+class ScenarioCompareSheet extends ConsumerStatefulWidget {
   final List<ScenarioEntry> scenarios;
 
   const ScenarioCompareSheet({super.key, required this.scenarios});
 
   @override
-  State<ScenarioCompareSheet> createState() => _ScenarioCompareSheetState();
+  ConsumerState<ScenarioCompareSheet> createState() =>
+      _ScenarioCompareSheetState();
 }
 
-class _ScenarioCompareSheetState extends State<ScenarioCompareSheet> {
+class _ScenarioCompareSheetState extends ConsumerState<ScenarioCompareSheet> {
   late String _leftId;
   late String _rightId;
 
@@ -39,6 +43,8 @@ class _ScenarioCompareSheetState extends State<ScenarioCompareSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final money = moneyFormatOf(context, ref);
     final left = _entry(_leftId);
     final right = _entry(_rightId);
     final leftResult = solvePlan(left.input);
@@ -49,7 +55,7 @@ class _ScenarioCompareSheetState extends State<ScenarioCompareSheet> {
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
         shrinkWrap: true,
         children: [
-          Text('시나리오 비교', style: theme.textTheme.titleMedium),
+          Text(l10n.cmpTitle, style: theme.textTheme.titleMedium),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -82,9 +88,10 @@ class _ScenarioCompareSheetState extends State<ScenarioCompareSheet> {
             right: right,
             leftResult: leftResult,
             rightResult: rightResult,
+            money: money,
           ),
           const SizedBox(height: 20),
-          Text('궤도', style: theme.textTheme.titleSmall),
+          Text(l10n.cmpTrajectory, style: theme.textTheme.titleSmall),
           const SizedBox(height: 8),
           SizedBox(
             height: 200,
@@ -93,11 +100,12 @@ class _ScenarioCompareSheetState extends State<ScenarioCompareSheet> {
               rightInput: right.input,
               leftResult: leftResult,
               rightResult: rightResult,
+              money: money,
             ),
           ),
           const SizedBox(height: 12),
           Text(
-            '정보 제공 목적이며 투자 자문이 아닙니다.',
+            l10n.disclaimerShort,
             style: theme.textTheme.bodySmall!
                 .copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),
@@ -175,53 +183,56 @@ class _CompareTable extends StatelessWidget {
   final ScenarioEntry right;
   final FireResult leftResult;
   final FireResult rightResult;
+  final MoneyFormat money;
 
   const _CompareTable({
     required this.left,
     required this.right,
     required this.leftResult,
     required this.rightResult,
+    required this.money,
   });
 
-  String _fireAge(ScenarioEntry e, FireResult r) {
+  String _fireAge(AppLocalizations l10n, ScenarioEntry e, FireResult r) {
     final months = r.monthsToFire;
-    if (months == null) return '도달 어려움';
-    if (months == 0) return '이미 도달';
-    return '${e.input.age0 + months ~/ 12}세';
+    if (months == null) return l10n.cmpUnreachable;
+    if (months == 0) return l10n.cmpReached;
+    return l10n.ageLabel(e.input.age0 + months ~/ 12);
   }
 
   /// FIRE 나이 차이 — 사실만 표시하고 우열은 판단하지 않는다.
-  String? _gapText() {
+  String? _gapText(AppLocalizations l10n) {
     final a = leftResult.monthsToFire;
     final b = rightResult.monthsToFire;
     if (a == null || b == null) return null;
     final ageA = left.input.age0 + a ~/ 12;
     final ageB = right.input.age0 + b ~/ 12;
     final diff = (ageA - ageB).abs();
-    if (diff == 0) return 'FIRE 나이가 같아요';
+    if (diff == 0) return l10n.cmpSameAge;
     final earlier = ageA < ageB ? 'A' : 'B';
-    return '$earlier가 $diff년 빨라요';
+    return l10n.cmpEarlier(earlier, diff);
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final gap = _gapText();
+    final l10n = context.l10n;
+    final gap = _gapText(l10n);
     return Column(
       children: [
         _row(context, '',
             left.name, right.name, header: true),
         const Divider(height: 1),
-        _row(context, 'FIRE 나이',
-            _fireAge(left, leftResult), _fireAge(right, rightResult),
+        _row(context, l10n.cmpRowFireAge,
+            _fireAge(l10n, left, leftResult), _fireAge(l10n, right, rightResult),
             emphasize: true),
-        _row(context, '필요 자산',
-            formatKoreanMoney(leftResult.fireNumber),
-            formatKoreanMoney(rightResult.fireNumber)),
-        _row(context, '월 저축액',
-            formatKoreanMoney(left.input.monthlySaving),
-            formatKoreanMoney(right.input.monthlySaving)),
-        _row(context, '기대수익률',
+        _row(context, l10n.cmpRowFireNumber,
+            money.compact(leftResult.fireNumber),
+            money.compact(rightResult.fireNumber)),
+        _row(context, l10n.simSliderSaving,
+            money.compact(left.input.monthlySaving),
+            money.compact(right.input.monthlySaving)),
+        _row(context, l10n.cmpRowReturn,
             '${(left.input.realReturnBp / 100).toStringAsFixed(1)}%',
             '${(right.input.realReturnBp / 100).toStringAsFixed(1)}%'),
         if (gap != null) ...[
@@ -270,26 +281,30 @@ class _CompareChart extends StatelessWidget {
   final PlanInput rightInput;
   final FireResult leftResult;
   final FireResult rightResult;
+  final MoneyFormat money;
 
   const _CompareChart({
     required this.leftInput,
     required this.rightInput,
     required this.leftResult,
     required this.rightResult,
+    required this.money,
   });
 
-  /// 연 단위로 다운샘플 — 억 원 단위 y값
-  List<FlSpot> _spots(FireResult r) {
+  /// 연 단위로 다운샘플 — y값은 통화별 차트 단위([chartAmountUnit])
+  List<FlSpot> _spots(FireResult r, int unit) {
     final assets = r.assetsByMonth;
     return [
       for (var m = 0; m < assets.length; m += 12)
-        FlSpot(m / 12, assets[m] / 100000000),
+        FlSpot(m / 12, assets[m] / unit),
     ];
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final unit = chartAmountUnit(money.currency);
     final age0 = leftInput.age0 < rightInput.age0
         ? leftInput.age0
         : rightInput.age0;
@@ -310,7 +325,7 @@ class _CompareChart extends StatelessWidget {
               getTitlesWidget: (value, meta) {
                 // 끝점 라벨은 마지막 눈금과 겹치므로 생략 (fl_chart가 max에 별도로 그림)
                 if (value == meta.max) return const SizedBox.shrink();
-                return Text('${value.toInt()}억',
+                return Text(chartAmountLabel(money, value, unit),
                     style: theme.textTheme.labelSmall);
               },
             ),
@@ -321,7 +336,7 @@ class _CompareChart extends StatelessWidget {
               interval: 5,
               getTitlesWidget: (value, meta) {
                 if (value == meta.max) return const SizedBox.shrink();
-                return Text('${age0 + value.toInt()}세',
+                return Text(l10n.simAxisAge(age0 + value.toInt()),
                     style: theme.textTheme.labelSmall);
               },
             ),
@@ -329,14 +344,14 @@ class _CompareChart extends StatelessWidget {
         ),
         lineBarsData: [
           LineChartBarData(
-            spots: _spots(leftResult),
+            spots: _spots(leftResult, unit),
             isCurved: false,
             color: theme.colorScheme.primary,
             barWidth: 2,
             dotData: const FlDotData(show: false),
           ),
           LineChartBarData(
-            spots: _spots(rightResult),
+            spots: _spots(rightResult, unit),
             isCurved: false,
             color: theme.colorScheme.tertiary,
             barWidth: 2,

@@ -9,6 +9,7 @@ import 'package:firedom/features/lock/app_lock.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// pumpApp을 쓰는 위젯 테스트용 testWidgets 래퍼.
@@ -38,6 +39,19 @@ Future<AppDatabase> pumpApp(
   // Riverpod 3은 Override 타입을 공개하지 않아 Object로 받고 cast()로 전달
   List<Object> overrides = const [],
 }) async {
+  // 테스트 기기 언어는 en_US라 ko로 고정한다 — 기존 테스트의 한국어 finder 유지.
+  // 영어·일본어 화면 검증은 pumpApp 뒤 platformDispatcher.localeTestValue로 바꾼다
+  tester.platformDispatcher.localeTestValue = const Locale('ko');
+  tester.platformDispatcher.localesTestValue = const [Locale('ko')];
+  addTearDown(tester.platformDispatcher.clearLocaleTestValue);
+  addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+  PackageInfo.setMockInitialValues(
+    appName: 'firedom',
+    packageName: 'app.firedom.firedom',
+    version: '1.0.0',
+    buildNumber: '10',
+    buildSignature: '',
+  );
   SharedPreferences.setMockInitialValues(prefsValues);
   final prefs = await SharedPreferences.getInstance();
   final db = AppDatabase(NativeDatabase.memory());

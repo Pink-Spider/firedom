@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Firedom</string>
+    <string name="widget_title">Firedom</string>
+    <string name="widget_placeholder">プランを作成しましょう</string>
+    <string name="widget_dday_default">自由まで</string>
+</resources>

@@ -2,20 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/money_format.dart';
 import '../../data/db/database.dart';
 import '../../data/db/providers.dart';
 import '../../data/home_widget_sync.dart';
 import '../../data/repositories/plan_repository.dart';
 import '../../engine/engine.dart';
+import '../../l10n/l10n.dart';
+import '../common/money.dart';
 
-const _fireTypeLabels = {
-  'lean': '린',
-  'fat': '팻',
-  'coast': '코스트',
-  'barista': '바리스타',
-  'custom': '직접 설정',
-};
+const _fireTypes = ['lean', 'fat', 'coast', 'barista', 'custom'];
+
+String _fireTypeLabel(AppLocalizations l10n, String type) => switch (type) {
+      'lean' => l10n.goalFireTypeLean,
+      'fat' => l10n.goalFireTypeFat,
+      'coast' => l10n.goalFireTypeCoast,
+      'barista' => l10n.goalFireTypeBarista,
+      _ => l10n.goalFireTypeCustom,
+    };
 
 enum _ReturnChoice { conservative, neutral, aggressive, custom }
 
@@ -62,12 +65,12 @@ class _GoalSettingsScreenState extends ConsumerState<GoalSettingsScreen> {
     super.dispose();
   }
 
-  void _initFrom(Plan plan) {
+  /// 금액 필드는 통화의 주 단위(원·$·円)로 입력받고 최소 단위로 저장한다
+  void _initFrom(Plan plan, Currency currency) {
     if (_initialized) return;
     _initialized = true;
-    _fireType = _fireTypeLabels.containsKey(plan.fireType)
-        ? plan.fireType
-        : 'custom';
+    final unit = currency.minorPerMajor;
+    _fireType = _fireTypes.contains(plan.fireType) ? plan.fireType : 'custom';
     _swrBp = plan.swrBp.clamp(300, 500);
     _volatilityBp = plan.volatilityBp;
     _returnChoice = switch ((plan.realReturnBp, plan.volatilityBp)) {
@@ -77,12 +80,12 @@ class _GoalSettingsScreenState extends ConsumerState<GoalSettingsScreen> {
       _ => _ReturnChoice.custom,
     };
     _customRealReturnBp = plan.realReturnBp;
-    _savingController.text = formatWithComma(plan.monthlySaving);
-    _spendController.text = formatWithComma(plan.monthlySpendRetire);
+    _savingController.text = formatWithComma(plan.monthlySaving ~/ unit);
+    _spendController.text = formatWithComma(plan.monthlySpendRetire ~/ unit);
     _lifeController.text = '${plan.lifeExpectancy}';
     if (plan.npsMonthly != null) {
       _npsEnabled = true;
-      _npsAmountController.text = formatWithComma(plan.npsMonthly!);
+      _npsAmountController.text = formatWithComma(plan.npsMonthly! ~/ unit);
       _npsAgeController.text = '${plan.npsStartAge ?? 65}';
     }
   }
@@ -117,8 +120,9 @@ class _GoalSettingsScreenState extends ConsumerState<GoalSettingsScreen> {
     });
   }
 
-  PlanInput? _buildInput(Plan plan) {
+  PlanInput? _buildInput(Plan plan, Currency currency) {
     final baseInput = planInputOf(plan);
+    final unit = currency.minorPerMajor;
     final saving = parseAmount(_savingController.text);
     final spend = parseAmount(_spendController.text);
     final life = int.tryParse(_lifeController.text);
@@ -130,15 +134,15 @@ class _GoalSettingsScreenState extends ConsumerState<GoalSettingsScreen> {
       final amount = parseAmount(_npsAmountController.text);
       final age = int.tryParse(_npsAgeController.text);
       if (amount == null || amount <= 0 || age == null) return null;
-      nps = NpsInput(monthlyAmount: amount, startAge: age);
+      nps = NpsInput(monthlyAmount: amount * unit, startAge: age);
     }
 
     return PlanInput(
       age0: baseInput.age0,
       currentAssets: plan.currentAssets,
-      monthlySaving: saving,
+      monthlySaving: saving * unit,
       realReturnBp: _realReturnBp(),
-      monthlySpendRetire: spend,
+      monthlySpendRetire: spend * unit,
       swrBp: _swrBp,
       lifeExpectancy: life,
       nps: nps,
@@ -146,8 +150,8 @@ class _GoalSettingsScreenState extends ConsumerState<GoalSettingsScreen> {
     );
   }
 
-  Future<void> _save(Plan plan) async {
-    final input = _buildInput(plan);
+  Future<void> _save(Plan plan, Currency currency) async {
+    final input = _buildInput(plan, currency);
     if (input == null) return;
     await ref.read(planRepositoryProvider).revisePlan(
           base: plan,
@@ -157,7 +161,7 @@ class _GoalSettingsScreenState extends ConsumerState<GoalSettingsScreen> {
     await ref.read(homeWidgetSyncProvider)(ref.read(databaseProvider));
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('계획을 업데이트했어요 — 궤도에 반영됩니다')),
+      SnackBar(content: Text(context.l10n.goalSavedSnack)),
     );
     context.pop();
   }
@@ -165,38 +169,48 @@ class _GoalSettingsScreenState extends ConsumerState<GoalSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final plan = ref.watch(activePlanRowProvider).value;
+    final currencyAsync = ref.watch(currencyProvider);
 
     if (plan == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('목표 설정')),
-        body: const Center(child: Text('활성 계획이 없어요')),
+        appBar: AppBar(title: Text(l10n.goalTitle)),
+        body: Center(child: Text(l10n.goalNoActivePlan)),
       );
     }
-    _initFrom(plan);
+    // 금액 필드 복원은 통화를 알아야 한다 — 설정 로드 전에는 빈 화면
+    if (!currencyAsync.hasValue) {
+      return Scaffold(appBar: AppBar(title: Text(l10n.goalTitle)));
+    }
+    final currency = currencyAsync.value!;
+    final money = moneyFormatOf(context, ref);
+    final prefix = money.inputPrefix.isEmpty ? null : money.inputPrefix;
+    final suffix = money.inputSuffix.isEmpty ? null : money.inputSuffix;
+    final ageSuffix = l10n.ageSuffix.isEmpty ? null : l10n.ageSuffix;
+    _initFrom(plan, currency);
 
-    final input = _buildInput(plan);
+    final input = _buildInput(plan, currency);
     final result = input == null ? null : solvePlan(input);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('목표 설정')),
+      appBar: AppBar(title: Text(l10n.goalTitle)),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
             _PreviewCard(input: input, result: result),
             const SizedBox(height: 16),
-            Text('FIRE 유형', style: theme.textTheme.titleSmall),
+            Text(l10n.goalFireType, style: theme.textTheme.titleSmall),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
               children: [
-                for (final entry in _fireTypeLabels.entries)
+                for (final type in _fireTypes)
                   ChoiceChip(
-                    label: Text(entry.value),
-                    selected: _fireType == entry.key,
-                    onSelected: (_) =>
-                        setState(() => _fireType = entry.key),
+                    label: Text(_fireTypeLabel(l10n, type)),
+                    selected: _fireType == type,
+                    onSelected: (_) => setState(() => _fireType = type),
                   ),
               ],
             ),
@@ -206,10 +220,11 @@ class _GoalSettingsScreenState extends ConsumerState<GoalSettingsScreen> {
               controller: _savingController,
               keyboardType: TextInputType.number,
               inputFormatters: [ThousandsSeparatorInputFormatter()],
-              decoration: const InputDecoration(
-                labelText: '월 저축액',
-                suffixText: '원',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.goalMonthlySaving,
+                prefixText: prefix,
+                suffixText: suffix,
+                border: const OutlineInputBorder(),
               ),
               onChanged: (_) => setState(() {}),
             ),
@@ -219,17 +234,18 @@ class _GoalSettingsScreenState extends ConsumerState<GoalSettingsScreen> {
               controller: _spendController,
               keyboardType: TextInputType.number,
               inputFormatters: [ThousandsSeparatorInputFormatter()],
-              decoration: const InputDecoration(
-                labelText: '은퇴 후 월 생활비',
-                suffixText: '원',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.goalRetireSpend,
+                prefixText: prefix,
+                suffixText: suffix,
+                border: const OutlineInputBorder(),
               ),
               onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 16),
             Row(
               children: [
-                Text('안전인출률', style: theme.textTheme.titleSmall),
+                Text(l10n.goalSwr, style: theme.textTheme.titleSmall),
                 const Spacer(),
                 Text(
                   '${(_swrBp / 100).toStringAsFixed(1)}%',
@@ -249,18 +265,22 @@ class _GoalSettingsScreenState extends ConsumerState<GoalSettingsScreen> {
               onChanged: (value) => setState(() => _swrBp = value.round()),
             ),
             const SizedBox(height: 8),
-            Text('기대수익률 (실질)', style: theme.textTheme.titleSmall),
+            Text(l10n.goalExpectedReturn, style: theme.textTheme.titleSmall),
             const SizedBox(height: 8),
             SegmentedButton<_ReturnChoice>(
-              segments: const [
+              segments: [
                 ButtonSegment(
-                    value: _ReturnChoice.conservative, label: Text('보수')),
+                    value: _ReturnChoice.conservative,
+                    label: Text(l10n.goalReturnConservative)),
                 ButtonSegment(
-                    value: _ReturnChoice.neutral, label: Text('중립')),
+                    value: _ReturnChoice.neutral,
+                    label: Text(l10n.goalReturnNeutral)),
                 ButtonSegment(
-                    value: _ReturnChoice.aggressive, label: Text('공격')),
+                    value: _ReturnChoice.aggressive,
+                    label: Text(l10n.goalReturnAggressive)),
                 ButtonSegment(
-                    value: _ReturnChoice.custom, label: Text('직접')),
+                    value: _ReturnChoice.custom,
+                    label: Text(l10n.goalReturnCustom)),
               ],
               selected: {_returnChoice},
               onSelectionChanged: (selection) =>
@@ -276,10 +296,10 @@ class _GoalSettingsScreenState extends ConsumerState<GoalSettingsScreen> {
                       controller: _nominalController,
                       keyboardType: const TextInputType.numberWithOptions(
                           decimal: true),
-                      decoration: const InputDecoration(
-                        labelText: '명목수익률',
+                      decoration: InputDecoration(
+                        labelText: l10n.goalNominalReturn,
                         suffixText: '%',
-                        border: OutlineInputBorder(),
+                        border: const OutlineInputBorder(),
                       ),
                       onChanged: (_) => _recomputeCustomReturn(),
                     ),
@@ -291,10 +311,10 @@ class _GoalSettingsScreenState extends ConsumerState<GoalSettingsScreen> {
                       controller: _inflationController,
                       keyboardType: const TextInputType.numberWithOptions(
                           decimal: true),
-                      decoration: const InputDecoration(
-                        labelText: '인플레이션',
+                      decoration: InputDecoration(
+                        labelText: l10n.goalInflation,
                         suffixText: '%',
-                        border: OutlineInputBorder(),
+                        border: const OutlineInputBorder(),
                       ),
                       onChanged: (_) => _recomputeCustomReturn(),
                     ),
@@ -304,14 +324,16 @@ class _GoalSettingsScreenState extends ConsumerState<GoalSettingsScreen> {
               const SizedBox(height: 4),
               Text(
                 // 피셔 방정식 (R4)
-                '실질수익률 ${(_customRealReturnBp / 100).toStringAsFixed(2)}% '
-                '(피셔 방정식으로 계산)',
+                l10n.goalRealReturnFisher(
+                    (_customRealReturnBp / 100).toStringAsFixed(2)),
                 style: theme.textTheme.bodySmall,
               ),
             ] else
               Text(
-                '실질 ${(_realReturnBp() / 100).toStringAsFixed(1)}% · '
-                '변동성 ${(_effectiveVolatilityBp() / 100).toStringAsFixed(0)}%',
+                l10n.goalReturnSummary(
+                  (_realReturnBp() / 100).toStringAsFixed(1),
+                  (_effectiveVolatilityBp() / 100).toStringAsFixed(0),
+                ),
                 style: theme.textTheme.bodySmall!.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -321,19 +343,18 @@ class _GoalSettingsScreenState extends ConsumerState<GoalSettingsScreen> {
               key: const ValueKey('life-field'),
               controller: _lifeController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: '기대수명',
-                suffixText: '세',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.goalLifeExpectancy,
+                suffixText: ageSuffix,
+                border: const OutlineInputBorder(),
               ),
               onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 16),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('국민연금 반영'),
-              subtitle: const Text(
-                  '예상 수령액은 통합연금포털(fss.or.kr)에서 확인할 수 있어요'),
+              title: Text(l10n.goalPensionToggle),
+              subtitle: Text(l10n.goalPensionHint),
               value: _npsEnabled,
               onChanged: (value) => setState(() => _npsEnabled = value),
             ),
@@ -347,10 +368,11 @@ class _GoalSettingsScreenState extends ConsumerState<GoalSettingsScreen> {
                       controller: _npsAmountController,
                       keyboardType: TextInputType.number,
                       inputFormatters: [ThousandsSeparatorInputFormatter()],
-                      decoration: const InputDecoration(
-                        labelText: '예상 월 수령액',
-                        suffixText: '원',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: l10n.goalPensionAmount,
+                        prefixText: prefix,
+                        suffixText: suffix,
+                        border: const OutlineInputBorder(),
                       ),
                       onChanged: (_) => setState(() {}),
                     ),
@@ -362,10 +384,10 @@ class _GoalSettingsScreenState extends ConsumerState<GoalSettingsScreen> {
                       key: const ValueKey('nps-age-field'),
                       controller: _npsAgeController,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: '수령 나이',
-                        suffixText: '세',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: l10n.goalPensionStartAge,
+                        suffixText: ageSuffix,
+                        border: const OutlineInputBorder(),
                       ),
                       onChanged: (_) => setState(() {}),
                     ),
@@ -375,15 +397,15 @@ class _GoalSettingsScreenState extends ConsumerState<GoalSettingsScreen> {
             ],
             const SizedBox(height: 24),
             FilledButton(
-              onPressed: input == null ? null : () => _save(plan),
+              onPressed: input == null ? null : () => _save(plan, currency),
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
-              child: const Text('저장하기'),
+              child: Text(l10n.goalSaveButton),
             ),
             const SizedBox(height: 8),
             Text(
-              '저장하면 새 리비전으로 기록되고, 홈 궤도 차트에 변경 시점이 표시돼요.',
+              l10n.goalSaveHint,
               style: theme.textTheme.bodySmall!.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -395,15 +417,17 @@ class _GoalSettingsScreenState extends ConsumerState<GoalSettingsScreen> {
   }
 }
 
-class _PreviewCard extends StatelessWidget {
+class _PreviewCard extends ConsumerWidget {
   final PlanInput? input;
   final FireResult? result;
 
   const _PreviewCard({required this.input, required this.result});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final money = moneyFormatOf(context, ref);
     final input = this.input;
     final result = this.result;
 
@@ -411,36 +435,35 @@ class _PreviewCard extends StatelessWidget {
       return Card(
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Text('입력값을 확인해주세요', style: theme.textTheme.bodyMedium),
+          child: Text(l10n.goalCheckInputs, style: theme.textTheme.bodyMedium),
         ),
       );
     }
 
     final months = result.monthsToFire;
     final headline = months == null
-        ? '100년 안에 도달이 어려워요'
+        ? l10n.onbHeadlineUnreachable
         : months == 0
-            ? '이미 FIRE 도달!'
-            : 'FIRE 나이 ${input.age0 + months ~/ 12}세';
+            ? l10n.goalAlreadyFire
+            : l10n.goalFireAge(input.age0 + months ~/ 12);
 
     final nps = input.nps;
     String? bridgeSummary;
     String? npsEffect;
     if (nps != null) {
       // 브릿지 구간 분리 계산 표시 (PRD S7 수용 기준)
-      final bridgeSpend = formatKoreanMoney(input.monthlySpendRetire);
+      final bridgeSpend = money.compact(input.monthlySpendRetire);
       final afterSpend =
-          formatKoreanMoney(input.monthlySpendRetire - nps.monthlyAmount);
-      bridgeSummary = '수령 전(~${nps.startAge - 1}세): 월 $bridgeSpend원 (생활비 전액)\n'
-          '수령 후(${nps.startAge}세~): 월 $afterSpend원 '
-          '(생활비 − 연금 ${formatKoreanMoney(nps.monthlyAmount)}원)';
+          money.compact(input.monthlySpendRetire - nps.monthlyAmount);
+      bridgeSummary = '${l10n.goalBridgeBefore(nps.startAge - 1, bridgeSpend)}\n'
+          '${l10n.goalBridgeAfter(nps.startAge, afterSpend, money.compact(nps.monthlyAmount))}';
 
       final withoutNps =
           solveFireByFeasibility(input.copyWith(clearNps: true));
       final withNps = result.monthsToFire;
       final without = withoutNps.monthsToFire;
       if (withNps != null && without != null && without > withNps) {
-        npsEffect = '연금 반영으로 은퇴가 ${without - withNps}개월 앞당겨져요';
+        npsEffect = l10n.goalPensionEffect(without - withNps);
       }
     }
 
@@ -451,7 +474,7 @@ class _PreviewCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('이 가정이라면', style: theme.textTheme.labelLarge),
+            Text(l10n.goalPreviewTitle, style: theme.textTheme.labelLarge),
             Text(
               headline,
               style: theme.textTheme.headlineSmall!.copyWith(
@@ -461,8 +484,10 @@ class _PreviewCard extends StatelessWidget {
             ),
             if (months != null && months > 0)
               Text(
-                '${months ~/ 12}년 ${months % 12}개월 후 · '
-                '목표 자산 ${formatKoreanMoney(result.fireNumber)}원',
+                l10n.goalPreviewSummary(
+                  l10n.yearsMonthsLabel(months ~/ 12, months % 12),
+                  money.compact(result.fireNumber),
+                ),
                 style: theme.textTheme.bodyMedium,
               ),
             if (bridgeSummary != null) ...[

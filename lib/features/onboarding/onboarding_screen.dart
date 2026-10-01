@@ -2,47 +2,40 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/money_format.dart';
+import '../../data/db/providers.dart';
+import '../../data/repositories/settings_store.dart';
+import '../../l10n/l10n.dart';
+import '../common/money.dart';
 import 'onboarding_draft.dart';
 import 'onboarding_result_screen.dart';
 
-enum _MoneyUnit { manwon, won }
+/// 금액 입력 단위 — [large]는 통화의 보조 단위(만원·万円), [base]는 주 단위(원·円·$)
+enum _MoneyUnit { large, base }
 
-class _StepConfig {
-  final String title;
-  final String subtitle;
-  final bool isMoney;
+const _stepCount = 4;
 
-  const _StepConfig({
-    required this.title,
-    required this.subtitle,
-    this.isMoney = true,
-  });
-}
+/// 0번 문항(나이)만 숫자, 나머지는 금액
+bool _isMoneyStep(int step) => step != 0;
 
-const _steps = [
-  _StepConfig(
-    title: '나이가 어떻게 되세요?',
-    subtitle: '만 나이 기준이에요',
-    isMoney: false,
-  ),
-  _StepConfig(
-    title: '세후 월소득은 얼마인가요?',
-    subtitle: '대략이면 충분해요 — 실수령액 기준',
-  ),
-  _StepConfig(
-    title: '한 달에 얼마나 쓰세요?',
-    subtitle: '대략이면 충분해요 — 고정비 포함 월 지출',
-  ),
-  _StepConfig(
-    title: '지금 순자산은 얼마쯤인가요?',
-    subtitle: '대략이면 충분해요 — 예금+투자−대출',
-  ),
-];
+String _stepTitle(AppLocalizations l10n, int step) => switch (step) {
+      0 => l10n.onbStepAgeTitle,
+      1 => l10n.onbStepIncomeTitle,
+      2 => l10n.onbStepExpenseTitle,
+      _ => l10n.onbStepAssetsTitle,
+    };
+
+String _stepSubtitle(AppLocalizations l10n, int step) => switch (step) {
+      0 => l10n.onbStepAgeSubtitle,
+      1 => l10n.onbStepIncomeSubtitle,
+      2 => l10n.onbStepExpenseSubtitle,
+      _ => l10n.onbStepAssetsSubtitle,
+    };
 
 /// S1. 온보딩 — 입력 (PRD)
 ///
 /// 4문항 1화면씩. 계정·권한 요청 없음. 이탈 시 값 보존, 재실행 시 재개.
+/// 첫 문항 위에서 통화를 고를 수 있다 — 선택 즉시 설정에 저장되므로
+/// 결과 화면·계획 생성은 항상 저장된 통화를 본다.
 class OnboardingScreen extends ConsumerStatefulWidget {
   static const path = '/onboarding';
 
@@ -54,16 +47,16 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _controller = TextEditingController();
-  _MoneyUnit _unit = _MoneyUnit.manwon;
+  _MoneyUnit _unit = _MoneyUnit.large;
   String? _error;
+
+  /// 설정에서 읽은(또는 기기 언어로 정한) 통화. 로드 전에는 null
+  Currency? _currency;
 
   @override
   void initState() {
     super.initState();
-    // 재개 시 진행 중이던 문항의 저장값을 복원
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadStepValue(ref.read(onboardingDraftProvider).step);
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _init());
   }
 
   @override
@@ -72,39 +65,89 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     super.dispose();
   }
 
+  /// 통화 결정 → 재개 시 진행 중이던 문항의 저장값 복원
+  Future<void> _init() async {
+    final store = ref.read(settingsStoreProvider);
+    final saved = await store.get<String>(SettingKeys.currency);
+    if (!mounted) return;
+    Currency currency;
+    if (saved != null) {
+      currency = Currency.fromCode(saved);
+    } else {
+      currency = Currency.defaultForLanguage(
+          Localizations.localeOf(context).languageCode);
+      // 계획 생성 전에 통화가 저장돼 있어야 한다 — 기본값도 바로 기록
+      await store.set(SettingKeys.currency, currency.code);
+      if (!mounted) return;
+    }
+    setState(() => _currency = currency);
+    _loadStepValue(ref.read(onboardingDraftProvider).step);
+  }
+
+  Currency get _effectiveCurrency =>
+      _currency ??
+      Currency.defaultForLanguage(
+          Localizations.localeOf(context).languageCode);
+
+  MoneyFormat get _money => MoneyFormat(
+      _effectiveCurrency, Localizations.localeOf(context).languageCode);
+
+  /// 보조 단위 1 = 최소 단위 몇 개 (KRW 만원 = 10,000원, JPY 万円 = 10,000엔)
+  int get _largeMinor =>
+      (_effectiveCurrency.largeUnit ?? 1) * _effectiveCurrency.minorPerMajor;
+
+  Future<void> _selectCurrency(Currency currency) async {
+    setState(() {
+      _currency = currency;
+      _unit = _MoneyUnit.large;
+    });
+    await ref
+        .read(settingsStoreProvider)
+        .set(SettingKeys.currency, currency.code);
+  }
+
   void _loadStepValue(int step) {
     final draft = ref.read(onboardingDraftProvider);
     final value = draft.valueAt(step);
+    final money = _money;
+    final minorPerMajor = _effectiveCurrency.minorPerMajor;
     setState(() {
       _error = null;
       if (value == null) {
         _controller.text = '';
-        _unit = _MoneyUnit.manwon;
-      } else if (!_steps[step].isMoney) {
+        _unit = _MoneyUnit.large;
+      } else if (!_isMoneyStep(step)) {
         _controller.text = '$value';
-      } else if (value > 0 && value % 10000 == 0) {
-        _unit = _MoneyUnit.manwon;
-        _controller.text = formatWithComma(value ~/ 10000);
+      } else if (money.hasLargeInputUnit &&
+          value > 0 &&
+          value % _largeMinor == 0) {
+        _unit = _MoneyUnit.large;
+        _controller.text = formatWithComma(value ~/ _largeMinor);
       } else {
-        _unit = _MoneyUnit.won;
-        _controller.text = formatWithComma(value);
+        _unit = _MoneyUnit.base;
+        _controller.text = formatWithComma(value ~/ minorPerMajor);
       }
     });
   }
 
+  /// 입력값 → 저장 단위(통화의 최소 단위) 정수
   int? _parsedValue(int step) {
     final raw = parseAmount(_controller.text);
     if (raw == null) return null;
-    if (!_steps[step].isMoney) return raw;
-    return _unit == _MoneyUnit.manwon ? raw * 10000 : raw;
+    if (!_isMoneyStep(step)) return raw;
+    final useLarge = _money.hasLargeInputUnit && _unit == _MoneyUnit.large;
+    return useLarge
+        ? raw * _largeMinor
+        : raw * _effectiveCurrency.minorPerMajor;
   }
 
   String? _validate(int step, int value) {
+    final l10n = context.l10n;
     if (step == 0 && (value < 1 || value > 85)) {
-      return '1~85 사이 나이를 입력해주세요';
+      return l10n.onbErrorAgeRange;
     }
     if (value > 1000000000000000) {
-      return '금액이 너무 커요';
+      return l10n.onbErrorTooLarge;
     }
     return null;
   }
@@ -119,7 +162,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
     final notifier = ref.read(onboardingDraftProvider.notifier);
     notifier.setValueAt(step, value);
-    if (step < _steps.length - 1) {
+    if (step < _stepCount - 1) {
       notifier.setStep(step + 1);
       _loadStepValue(step + 1);
     } else {
@@ -140,10 +183,19 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final step = ref.watch(onboardingDraftProvider).step;
-    final config = _steps[step];
+    final isMoney = _isMoneyStep(step);
     final theme = Theme.of(context);
-    final isLast = step == _steps.length - 1;
+    final isLast = step == _stepCount - 1;
+    final money = _money;
+    final showUnitToggle = isMoney && money.hasLargeInputUnit;
+    final suffix = isMoney
+        ? (showUnitToggle && _unit == _MoneyUnit.large
+            ? money.largeUnitWord
+            : money.inputSuffix)
+        : l10n.ageSuffix;
+    final prefix = isMoney ? money.inputPrefix : '';
 
     return Scaffold(
       appBar: AppBar(
@@ -153,12 +205,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 onPressed: () => _goBack(step),
               )
             : null,
-        title: Text('${step + 1} / ${_steps.length}'),
+        title: Text('${step + 1} / $_stepCount'),
         centerTitle: true,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(4),
           child: LinearProgressIndicator(
-            value: (step + 1) / _steps.length,
+            value: (step + 1) / _stepCount,
             backgroundColor: theme.colorScheme.surfaceContainerHighest,
           ),
         ),
@@ -169,11 +221,20 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 24),
-              Text(config.title, style: theme.textTheme.headlineMedium),
+              if (step == 0) ...[
+                const SizedBox(height: 8),
+                _CurrencyPicker(
+                  value: _effectiveCurrency,
+                  onChanged: _selectCurrency,
+                ),
+                const SizedBox(height: 16),
+              ] else
+                const SizedBox(height: 24),
+              Text(_stepTitle(l10n, step),
+                  style: theme.textTheme.headlineMedium),
               const SizedBox(height: 8),
               Text(
-                config.subtitle,
+                _stepSubtitle(l10n, step),
                 style: theme.textTheme.bodyMedium!.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -188,22 +249,26 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 style: theme.textTheme.headlineSmall,
                 decoration: InputDecoration(
                   border: const OutlineInputBorder(),
-                  suffixText: config.isMoney
-                      ? (_unit == _MoneyUnit.manwon ? '만원' : '원')
-                      : '세',
+                  prefixText: prefix.isEmpty ? null : prefix,
+                  suffixText: suffix.isEmpty ? null : suffix,
                   errorText: _error,
-                  helperText: config.isMoney ? _helperText(step) : null,
+                  helperText: isMoney ? _helperText(step) : null,
                 ),
                 onChanged: (_) => setState(() => _error = null),
                 onSubmitted: (_) => _goNext(step),
               ),
-              if (config.isMoney) ...[
+              if (showUnitToggle) ...[
                 const SizedBox(height: 12),
                 SegmentedButton<_MoneyUnit>(
-                  segments: const [
+                  segments: [
                     ButtonSegment(
-                        value: _MoneyUnit.manwon, label: Text('만원 단위')),
-                    ButtonSegment(value: _MoneyUnit.won, label: Text('원 단위')),
+                      value: _MoneyUnit.large,
+                      label: Text(l10n.onbUnitSegment(money.largeUnitWord)),
+                    ),
+                    ButtonSegment(
+                      value: _MoneyUnit.base,
+                      label: Text(l10n.onbUnitSegment(money.unitWord)),
+                    ),
                   ],
                   selected: {_unit},
                   onSelectionChanged: (selection) {
@@ -216,7 +281,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 width: double.infinity,
                 child: FilledButton(
                   onPressed: () => _goNext(step),
-                  child: Text(isLast ? '결과 보기' : '다음'),
+                  child: Text(isLast ? l10n.onbSeeResult : l10n.commonNext),
                 ),
               ),
             ],
@@ -229,6 +294,48 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   String? _helperText(int step) {
     final value = _parsedValue(step);
     if (value == null || value == 0) return null;
-    return '= ${formatKoreanMoney(value)}원';
+    return context.l10n.onbHelperEquals(_money.compact(value));
   }
+}
+
+/// 통화 선택 — 드롭다운(텍스트필드가 아니므로 문항 입력과 섞이지 않는다)
+class _CurrencyPicker extends StatelessWidget {
+  final Currency value;
+  final ValueChanged<Currency> onChanged;
+
+  const _CurrencyPicker({required this.value, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return InputDecorator(
+      decoration: InputDecoration(
+        labelText: l10n.onbCurrencyLabel,
+        border: const OutlineInputBorder(),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<Currency>(
+          key: const ValueKey('onboarding-currency'),
+          value: value,
+          isDense: true,
+          isExpanded: true,
+          items: [
+            for (final c in Currency.values)
+              DropdownMenuItem(value: c, child: Text(_label(l10n, c))),
+          ],
+          onChanged: (c) {
+            if (c != null) onChanged(c);
+          },
+        ),
+      ),
+    );
+  }
+
+  static String _label(AppLocalizations l10n, Currency c) => switch (c) {
+        Currency.krw => l10n.currencyKrw,
+        Currency.usd => l10n.currencyUsd,
+        Currency.jpy => l10n.currencyJpy,
+      };
 }

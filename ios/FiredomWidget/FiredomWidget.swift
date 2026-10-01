@@ -19,7 +19,7 @@ struct FiredomEntry: TimelineEntry {
 
 struct FiredomProvider: TimelineProvider {
     func placeholder(in context: Context) -> FiredomEntry {
-        FiredomEntry(date: Date(), ddayText: "자유까지 11년 3개월", progress: 34, deviationText: "계획보다 3개월 앞")
+        FiredomEntry(date: Date(), ddayText: NSLocalizedString("widget.sampleDday", comment: ""), progress: 34, deviationText: NSLocalizedString("widget.sampleDev", comment: ""))
     }
 
     func getSnapshot(in context: Context, completion: @escaping (FiredomEntry) -> Void) {
@@ -34,7 +34,7 @@ struct FiredomProvider: TimelineProvider {
         let defaults = UserDefaults(suiteName: appGroupId)
         return FiredomEntry(
             date: Date(),
-            ddayText: defaults?.string(forKey: "dday_text") ?? "계획을 만들어보세요",
+            ddayText: defaults?.string(forKey: "dday_text") ?? NSLocalizedString("widget.placeholder", comment: ""),
             progress: defaults?.integer(forKey: "progress") ?? 0,
             deviationText: defaults?.string(forKey: "deviation_text") ?? ""
         )
@@ -47,7 +47,7 @@ struct FiredomWidgetView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("파이어덤")
+            Text(NSLocalizedString("widget.title", comment: ""))
                 .font(.caption2)
                 .foregroundColor(.orange)
             Text(entry.ddayText)
@@ -73,7 +73,7 @@ struct FiredomWidget: Widget {
             FiredomWidgetView(entry: entry)
         }
         .configurationDisplayName("FIRE D-day")
-        .description("재정적 자유까지 남은 시간과 진행률 — 금액은 표시하지 않아요")
+        .description(NSLocalizedString("widget.desc", comment: ""))
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }

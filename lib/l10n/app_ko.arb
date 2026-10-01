@@ -1,0 +1,1177 @@
+{
+  "@@locale": "ko",
+  "acBond": "채권",
+  "acCash": "현금/예금",
+  "acEquity": "주식",
+  "acOther": "기타",
+  "acPension": "연금",
+  "acRealEstate": "부동산",
+  "ageLabel": "{age}세",
+  "@ageLabel": {
+    "placeholders": {
+      "age": {
+        "type": "int"
+      }
+    }
+  },
+  "ageSuffix": "세",
+  "@ageSuffix": {
+    "description": "나이 뒤 단위 — 영어는 없음"
+  },
+  "appTitle": "파이어덤",
+  "@appTitle": {
+    "description": "앱 이름 — 한국어만 한글 브랜드 표기"
+  },
+  "assetsAllocationEmpty": "자산을 기록하면 배분을 볼 수 있어요",
+  "assetsAllocationTab": "자산배분",
+  "assetsAsOf": "{ym} 기준",
+  "@assetsAsOf": {
+    "description": "ym은 formatYm 결과",
+    "placeholders": {
+      "ym": {
+        "type": "String"
+      }
+    }
+  },
+  "assetsCashflowEmpty": "기록할 때 소득/지출을 함께 적으면 현금흐름을 볼 수 있어요",
+  "assetsCashflowTab": "현금흐름",
+  "assetsEditTarget": "목표 배분 수정",
+  "assetsIncome": "소득",
+  "assetsSaving": "저축 {amount}",
+  "@assetsSaving": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "assetsSavingRate": "저축률 {percent}%",
+  "@assetsSavingRate": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "assetsSavingRateNone": "저축률 —",
+  "assetsSetTarget": "목표 배분 설정",
+  "assetsTargetDeviation": "목표 {target}% · {delta}%p",
+  "@assetsTargetDeviation": {
+    "description": "delta는 부호 포함 문자열(+10 / −10). 사실 표시만",
+    "placeholders": {
+      "target": {
+        "type": "int"
+      },
+      "delta": {
+        "type": "String"
+      }
+    }
+  },
+  "assetsTargetDialogTitle": "목표 배분 (%)",
+  "assetsTargetMatch": "목표 {target}% · 일치",
+  "@assetsTargetMatch": {
+    "description": "사실 표시만 — 행동 지시 금지",
+    "placeholders": {
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "assetsTitle": "자산",
+  "cmpEarlier": "{label}가 {years}년 빨라요",
+  "@cmpEarlier": {
+    "description": "사실만 표시 — 우열 판단 문구 금지",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "years": {
+        "type": "int"
+      }
+    }
+  },
+  "cmpReached": "이미 도달",
+  "cmpRowFireAge": "FIRE 나이",
+  "cmpRowFireNumber": "필요 자산",
+  "cmpRowReturn": "기대수익률",
+  "cmpSameAge": "FIRE 나이가 같아요",
+  "cmpTitle": "시나리오 비교",
+  "cmpTrajectory": "궤도",
+  "cmpUnreachable": "도달 어려움",
+  "commonCancel": "취소",
+  "commonClose": "닫기",
+  "commonConfirm": "확인",
+  "commonDelete": "삭제",
+  "commonMasked": "●●●",
+  "@commonMasked": {
+    "description": "금액 가림 표시 — 번역하지 않는다"
+  },
+  "commonNext": "다음",
+  "commonSave": "저장",
+  "currencyJpy": "엔 (JPY)",
+  "currencyKrw": "원 (KRW)",
+  "currencyUsd": "미국 달러 (USD)",
+  "devAhead": "계획보다 {months}개월 앞서는 중",
+  "@devAhead": {
+    "description": "관찰형 — 행동 지시 금지",
+    "placeholders": {
+      "months": {
+        "type": "int"
+      }
+    }
+  },
+  "devBehind": "계획보다 {months}개월 뒤 — 따라잡을 수 있어요",
+  "@devBehind": {
+    "description": "비난 톤 금지",
+    "placeholders": {
+      "months": {
+        "type": "int"
+      }
+    }
+  },
+  "devNeedsReview": "가정 점검 필요",
+  "devOnTrack": "계획대로 진행 중",
+  "devReached": "이미 목표 도달!",
+  "disclaimerShort": "정보 제공 목적이며 투자 자문이 아닙니다.",
+  "disclaimerSimulation": "본 시뮬레이션은 정보 제공 목적이며 투자 자문이 아닙니다.",
+  "@disclaimerSimulation": {
+    "description": "시뮬레이션 결과 화면 면책 — 반드시 유지"
+  },
+  "errorGeneric": "오류가 발생했어요: {error}",
+  "@errorGeneric": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "goalAlreadyFire": "이미 FIRE 도달!",
+  "goalBridgeAfter": "수령 후({age}세~): 월 {amount} (생활비 − 연금 {pension})",
+  "@goalBridgeAfter": {
+    "placeholders": {
+      "age": {
+        "type": "int"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "pension": {
+        "type": "String"
+      }
+    }
+  },
+  "goalBridgeBefore": "수령 전(~{age}세): 월 {amount} (생활비 전액)",
+  "@goalBridgeBefore": {
+    "placeholders": {
+      "age": {
+        "type": "int"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "goalCheckInputs": "입력값을 확인해주세요",
+  "goalExpectedReturn": "기대수익률 (실질)",
+  "goalFireAge": "FIRE 나이 {age}세",
+  "@goalFireAge": {
+    "placeholders": {
+      "age": {
+        "type": "int"
+      }
+    }
+  },
+  "goalFireType": "FIRE 유형",
+  "goalFireTypeBarista": "바리스타",
+  "goalFireTypeCoast": "코스트",
+  "goalFireTypeCustom": "직접 설정",
+  "goalFireTypeFat": "팻",
+  "goalFireTypeLean": "린",
+  "goalInflation": "인플레이션",
+  "goalLifeExpectancy": "기대수명",
+  "goalMonthlySaving": "월 저축액",
+  "goalNoActivePlan": "활성 계획이 없어요",
+  "goalNominalReturn": "명목수익률",
+  "goalPensionAmount": "예상 월 수령액",
+  "goalPensionEffect": "연금 반영으로 은퇴가 {months}개월 앞당겨져요",
+  "@goalPensionEffect": {
+    "placeholders": {
+      "months": {
+        "type": "int"
+      }
+    }
+  },
+  "goalPensionHint": "예상 수령액은 통합연금포털(fss.or.kr)에서 확인할 수 있어요",
+  "goalPensionStartAge": "수령 나이",
+  "goalPensionToggle": "국민연금 반영",
+  "goalPreviewSummary": "{period} 후 · 목표 자산 {amount}",
+  "@goalPreviewSummary": {
+    "description": "period는 yearsMonthsLabel",
+    "placeholders": {
+      "period": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "goalPreviewTitle": "이 가정이라면",
+  "goalRealReturnFisher": "실질수익률 {rate}% (피셔 방정식으로 계산)",
+  "@goalRealReturnFisher": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "goalRetireSpend": "은퇴 후 월 생활비",
+  "goalReturnAggressive": "공격",
+  "goalReturnConservative": "보수",
+  "goalReturnCustom": "직접",
+  "goalReturnNeutral": "중립",
+  "goalReturnSummary": "실질 {real}% · 변동성 {vol}%",
+  "@goalReturnSummary": {
+    "placeholders": {
+      "real": {
+        "type": "String"
+      },
+      "vol": {
+        "type": "String"
+      }
+    }
+  },
+  "goalSaveButton": "저장하기",
+  "goalSaveHint": "저장하면 새 리비전으로 기록되고, 홈 궤도 차트에 변경 시점이 표시돼요.",
+  "goalSavedSnack": "계획을 업데이트했어요 — 궤도에 반영됩니다",
+  "goalSwr": "안전인출률",
+  "goalTitle": "목표 설정",
+  "homeComeback": "다시 오셨네요 — 이번 달만 기록하면 돼요",
+  "@homeComeback": {
+    "description": "3개월 이상 비운 사용자 — 비난 톤 금지"
+  },
+  "homeCreatePlan": "60초 만에 계획 만들기",
+  "homeFireProgress": "FIRE 진행률 {percent}% · {current} / {target}",
+  "@homeFireProgress": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      },
+      "current": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "homeFirstRecordHint": "첫 기록을 남기면 궤도 위에 점이 찍혀요",
+  "homeGoalSettingsTooltip": "목표 설정",
+  "@homeGoalSettingsTooltip": {
+    "description": "홈 앱바 아이콘 툴팁"
+  },
+  "homeHideAmounts": "금액 가리기",
+  "homeMonthShort": "{month}월",
+  "@homeMonthShort": {
+    "description": "차트 축·목록용 짧은 월 라벨. month는 1~12 숫자 문자열",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "homeMoreMilestones": "외 {count}개 달성",
+  "@homeMoreMilestones": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeNoPlan": "아직 계획이 없어요",
+  "homePastRecords": "지난 기록",
+  "homeReached": "재정적 자유 목표에 도달했어요!",
+  "homeRecordButton": "기록하기",
+  "homeRecordPrompt": "{month}월 자산을 기록해볼까요?",
+  "@homeRecordPrompt": {
+    "description": "month는 1~12 숫자 문자열",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "homeRecordSubtitle": "한 달에 3분이면 충분해요",
+  "homeRecordedThisMonth": "이번 달 기록 완료 — 다음 기록은 다음 달에 만나요",
+  "homeSavingRate": "저축률",
+  "homeSavingRateHint": "기록할 때 소득/지출을 함께 적으면 저축률 추이를 볼 수 있어요",
+  "homeSavingRateThisMonth": "이번 달 저축률",
+  "homeSecondRecordHint": "2번째 기록부터 궤도 비교가 시작돼요",
+  "homeSettingsTooltip": "설정",
+  "homeShowAmounts": "금액 보이기",
+  "homeTapToEdit": "탭해서 수정",
+  "homeTrajectory": "궤도",
+  "homeUnreachable": "현재 가정으로는 도달이 어려워요",
+  "homeUntilFireMonths": "재정적 자유까지 {months}개월",
+  "@homeUntilFireMonths": {
+    "placeholders": {
+      "months": {
+        "type": "int"
+      }
+    }
+  },
+  "homeUntilFireYearsMonths": "재정적 자유까지 {years}년 {months}개월",
+  "@homeUntilFireYearsMonths": {
+    "placeholders": {
+      "years": {
+        "type": "int"
+      },
+      "months": {
+        "type": "int"
+      }
+    }
+  },
+  "languageEn": "English",
+  "languageJa": "日本語",
+  "languageKo": "한국어",
+  "@languageKo": {
+    "description": "언어 이름은 해당 언어로 고정"
+  },
+  "languageSystem": "시스템",
+  "lockBody": "재무 데이터 보호를 위해 인증이 필요해요",
+  "lockTitle": "파이어덤이 잠겨 있어요",
+  "lockUnlock": "잠금 해제",
+  "lockUnlockReason": "파이어덤 잠금을 해제합니다",
+  "@lockUnlockReason": {
+    "description": "OS 생체인증 프롬프트 사유"
+  },
+  "mcDepletionTitle": "자산 고갈 나이 분포",
+  "mcEndingAssetsTitle": "기대수명 시점 자산 분포 (오늘 돈 가치)",
+  "mcHeadline": "성공 확률 {pct}%",
+  "@mcHeadline": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "mcNoDepletion": "기대수명({age}세)까지 자산이 고갈된 시나리오가 없어요 👏",
+  "@mcNoDepletion": {
+    "placeholders": {
+      "age": {
+        "type": "int"
+      }
+    }
+  },
+  "mcP10": "어려운 경우 (하위 10%)",
+  "mcP50": "중간 (p50)",
+  "mcP90": "잘 풀린 경우 (상위 10%)",
+  "mcSummary": "{runs}가지 시장 시나리오 중 {successes}번, 기대수명 {age}세까지 자산이 유지됐어요",
+  "@mcSummary": {
+    "placeholders": {
+      "runs": {
+        "type": "int"
+      },
+      "successes": {
+        "type": "int"
+      },
+      "age": {
+        "type": "int"
+      }
+    }
+  },
+  "mcTitle": "성공 확률 상세",
+  "monthsLabel": "{count}개월",
+  "@monthsLabel": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "msFallback": "마일스톤 달성! 🎉",
+  "msFire100": "FIRE 목표 도달! 🏆",
+  "msFire25": "FIRE 목표 25% 달성! 🔥",
+  "msFire50": "FIRE 목표 절반 달성! 🔥",
+  "msFire75": "FIRE 목표 75% 달성! 🔥",
+  "msNetWorth": "순자산 {amount} 돌파! 🎉",
+  "@msNetWorth": {
+    "description": "amount는 통화별 축약 금액",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "msStreak12": "1년 연속 기록 🏆",
+  "msStreak3": "3개월 연속 기록 🔥",
+  "msStreak6": "6개월 연속 기록 🔥🔥",
+  "needPlanFirst": "먼저 홈에서 계획을 만들어 주세요",
+  "onbAdjustExpense": "지출 조정하기",
+  "onbAlreadyFire": "이미 FIRE에 도달했어요",
+  "onbAssumptionMoneyBasis": "금액 기준",
+  "onbAssumptionMoneyBasisValue": "모든 금액은 오늘 돈 가치(실질)",
+  "onbAssumptionRealReturn": "연 실질수익률",
+  "onbAssumptionRealReturnValue": "{rate}% (중립 프리셋)",
+  "@onbAssumptionRealReturnValue": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "onbAssumptionRetireSpendValue": "현재 월 지출과 동일",
+  "onbAssumptionSwr": "안전인출률 (4% 룰)",
+  "onbAssumptionsEditHint": "가정은 목표 설정 화면에서 언제든 바꿀 수 있어요.",
+  "@onbAssumptionsEditHint": {
+    "description": "면책(disclaimerSimulation) 뒤에 붙는 안내"
+  },
+  "onbAssumptionsTitle": "계산에 사용한 가정",
+  "onbAxisHundredMillion": "{n}억",
+  "@onbAxisHundredMillion": {
+    "description": "궤도 차트 세로축 눈금 (억/億 단위) — CJK UI + 만 단위 통화일 때만",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "onbCongrats": "축하해요!",
+  "onbCurrencyLabel": "통화",
+  "@onbCurrencyLabel": {
+    "description": "온보딩 첫 화면 통화 선택 라벨"
+  },
+  "onbErrorAgeRange": "1~85 사이 나이를 입력해주세요",
+  "onbErrorTooLarge": "금액이 너무 커요",
+  "onbFireNumberBasis": "월 지출 {spend} × {swr}% 룰 기준",
+  "@onbFireNumberBasis": {
+    "placeholders": {
+      "spend": {
+        "type": "String"
+      },
+      "swr": {
+        "type": "String"
+      }
+    }
+  },
+  "onbFireNumberTitle": "필요 자산 (FIRE Number)",
+  "onbHeadlineUnreachable": "100년 안에 도달이 어려워요",
+  "onbHeadlineUnreachableHint": "아래 슬라이더로 저축을 늘리면 얼마나 달라지는지 볼 수 있어요.",
+  "onbHeadlineUnreachablePrefix": "지금 조건으로는",
+  "onbHelperEquals": "= {amount}",
+  "@onbHelperEquals": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "onbNeedInputBack": "입력이 필요해요 — 돌아가기",
+  "onbNoSavingBody": "월 지출이 소득과 같거나 더 커요. 입력한 지출을 조금만 낮추면 계획이 만들어져요.",
+  "onbNoSavingTitle": "현재 저축이 없어\nFIRE 나이를 계산할 수 없어요",
+  "onbSeeResult": "결과 보기",
+  "onbShowAssumptions": "가정 보기",
+  "onbSliderPlus": "+{amount}",
+  "@onbSliderPlus": {
+    "description": "슬라이더 양끝 라벨",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "onbStartPlan": "이 계획 시작하기",
+  "onbStepAgeSubtitle": "만 나이 기준이에요",
+  "onbStepAgeTitle": "나이가 어떻게 되세요?",
+  "onbStepAssetsSubtitle": "대략이면 충분해요 — 예금+보유자산−대출",
+  "onbStepAssetsTitle": "지금 순자산은 얼마쯤인가요?",
+  "onbStepExpenseSubtitle": "대략이면 충분해요 — 고정비 포함 월 지출",
+  "onbStepExpenseTitle": "한 달에 얼마나 쓰세요?",
+  "onbStepIncomeSubtitle": "대략이면 충분해요 — 실수령액 기준",
+  "onbStepIncomeTitle": "세후 월소득은 얼마인가요?",
+  "onbUnitSegment": "{unit} 단위",
+  "@onbUnitSegment": {
+    "description": "금액 입력 단위 토글 — unit은 '만원'/'원'/'万円'",
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "onbWhatIfEffect": "+{amount} → {age}",
+  "@onbWhatIfEffect": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "age": {
+        "type": "String"
+      }
+    }
+  },
+  "onbWhatIfEffectShortened": "+{amount} → {age} ({shortened} 단축)",
+  "@onbWhatIfEffectShortened": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "age": {
+        "type": "String"
+      },
+      "shortened": {
+        "type": "String"
+      }
+    }
+  },
+  "onbWhatIfMoveSlider": "슬라이더를 움직여 보세요",
+  "onbWhatIfStillUnreachable": "아직 도달이 어려워요",
+  "onbWhatIfTitle": "매달 조금 더 저축한다면?",
+  "onbYearsLater": "약 {years}년 후",
+  "@onbYearsLater": {
+    "placeholders": {
+      "years": {
+        "type": "int"
+      }
+    }
+  },
+  "onbYearsMonthsLater": "약 {years}년 {months}개월 후",
+  "@onbYearsMonthsLater": {
+    "placeholders": {
+      "years": {
+        "type": "int"
+      },
+      "months": {
+        "type": "int"
+      }
+    }
+  },
+  "onbYourFireAge": "당신의 FIRE 나이",
+  "paywallAlreadyPremium": "이미 프리미엄을 이용 중이에요 🎉",
+  "paywallAutoRenewNote": "무료 체험 종료 후 선택한 플랜으로 자동 갱신되며, 언제든 스토어 계정에서 해지할 수 있어요.",
+  "paywallBrowserFailed": "브라우저를 열 수 없어요",
+  "paywallFallbackPricing": "연 39,000원 — 월 3,250원꼴 · 34% 할인\n월 4,900원 · 7일 무료 체험",
+  "@paywallFallbackPricing": {
+    "description": "RevenueCat 미구성 시 안내 가격 — 한국 스토어 정가(KRW). 구성 시엔 스토어 localized price를 쓴다"
+  },
+  "paywallFeatureMonteCarlo": "몬테카를로 상세 분포 · 자산 고갈 나이 분포",
+  "@paywallFeatureMonteCarlo": {
+    "description": "프리미엄 기능 1 — 실제 동작하는 기능만 올린다"
+  },
+  "paywallFeaturePortfolio": "포트폴리오 비중 자유 편집",
+  "@paywallFeaturePortfolio": {
+    "description": "프리미엄 기능 2"
+  },
+  "paywallFeatureScenarios": "시나리오 무제한 저장 · 나란히 비교",
+  "@paywallFeatureScenarios": {
+    "description": "프리미엄 기능 3"
+  },
+  "paywallNothingToRestore": "복원할 구매 내역이 없어요 (연동 준비 중)",
+  "paywallPlanAnnual": "연간",
+  "paywallPlanLifetime": "평생",
+  "paywallPlanMonthly": "월간",
+  "paywallPlanPrice": "{plan} · {price}",
+  "@paywallPlanPrice": {
+    "description": "플랜 라벨 + 스토어 localized price(RevenueCat priceString 그대로)",
+    "placeholders": {
+      "plan": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "paywallPlanWeekly": "주간",
+  "paywallPrivacy": "개인정보 처리방침",
+  "@paywallPrivacy": {
+    "description": "App Store 3.1.2(c) 필수 링크 — 링크 URL은 paywallPrivacyUrl 상수"
+  },
+  "paywallPurchaseFailed": "결제가 완료되지 않았어요",
+  "paywallRestore": "구매 복원",
+  "paywallRestored": "구매를 복원했어요",
+  "paywallStoreNotReady": "스토어 결제 연동 준비 중이에요 — 곧 열려요",
+  "paywallSubscribe": "구독 시작하기",
+  "paywallTeaserGeneric": "내 계획의 리스크까지 확인해보세요",
+  "@paywallTeaserGeneric": {
+    "description": "성공 확률이 없을 때 페이월 부제"
+  },
+  "paywallTeaserWithRate": "회원님 계획의 성공 확률 {rate}% — 상세 분포와 자산 고갈 리스크를 확인해보세요",
+  "@paywallTeaserWithRate": {
+    "description": "rate는 정수 퍼센트 문자열(소수 없음)",
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "paywallTerms": "이용약관",
+  "@paywallTerms": {
+    "description": "App Store 3.1.2(c) 필수 링크 — 링크 URL은 paywallTermsUrl 상수"
+  },
+  "paywallTitle": "파이어덤 프리미엄",
+  "@paywallTitle": {
+    "description": "페이월 시트 제목"
+  },
+  "pfAdd": "추가",
+  "pfAddAsset": "자산군 추가",
+  "pfApplyCta": "이 구성으로 시뮬레이션",
+  "pfAssetCommodities": "원자재",
+  "pfAssetCustom": "{label} · 직접 입력",
+  "@pfAssetCustom": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "pfAssetGlobalDmEm": "선진국·신흥국",
+  "pfAssetGold": "금",
+  "pfAssetKrEquity": "국내주식",
+  "pfAssetKrTreasury": "국고채",
+  "pfAssetKrwDeposit": "원화 예금",
+  "pfAssetReference": "{label} · 참고치",
+  "@pfAssetReference": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "pfAssetReits": "리츠",
+  "pfAssetSilver": "은",
+  "pfAssetUsDow": "다우존스",
+  "pfAssetUsNasdaq100": "나스닥100",
+  "pfAssetUsSp500": "S&P500",
+  "@pfAssetUsSp500": {
+    "description": "엔진 PortfolioAsset.label과 ko 동일"
+  },
+  "pfAssetUsTreasury": "미국채",
+  "pfAssetUsdCash": "달러(외환)",
+  "pfAssumedReturn": "가정 {ret}%",
+  "@pfAssumedReturn": {
+    "description": "자산 행의 가정 수익률",
+    "placeholders": {
+      "ret": {
+        "type": "String"
+      }
+    }
+  },
+  "pfAssumedReturnVol": "가정 {ret}% · 변동성 {vol}%",
+  "@pfAssumedReturnVol": {
+    "placeholders": {
+      "ret": {
+        "type": "String"
+      },
+      "vol": {
+        "type": "String"
+      }
+    }
+  },
+  "pfAssumptionsCaveat": "실질(인플레 차감)·연 기하평균 기준. 해외자산은 USD 기준으로 원화 환변동이 반영되지 않았어요. 변동성은 자산 간 분산효과를 뺀 보수적 간이 추정이에요.",
+  "pfAssumptionsTitle": "계산에 사용한 가정",
+  "pfCustomDialogTitle": "자산군 직접 입력",
+  "pfCustomError": "이름과 가정 수익률을 입력해주세요",
+  "pfCustomInput": "직접 입력",
+  "pfCustomInputSubtitle": "자산군 이름·가정 수익률을 직접 넣어요",
+  "pfCustomNameLabel": "자산군 이름",
+  "pfCustomNote": "직접 입력한 가정이에요 — 출처 없이 참고용으로만 쓰세요",
+  "pfCustomReturnLabel": "가정 실질수익률",
+  "pfCustomSource": "직접 입력한 가정 (출처 없음)",
+  "pfCustomVolLabel": "예상 변동성",
+  "pfExampleAllWeather": "올웨더",
+  "pfExampleBalanced": "균형형",
+  "pfExampleGrowth": "성장형",
+  "pfExampleStable": "안정형",
+  "@pfExampleStable": {
+    "description": "예시 구성 — '추천' 아님"
+  },
+  "pfExpectedReturn": "기대수익률(실질)",
+  "pfFooterNote": "가정은 과거 장기 평균 기준(출처는 가정 보기) · {disclaimer}",
+  "@pfFooterNote": {
+    "description": "하단 안내 — disclaimer에는 disclaimerSimulation을 넣는다",
+    "placeholders": {
+      "disclaimer": {
+        "type": "String"
+      }
+    }
+  },
+  "pfHeadlineNeedTotal": "합계를 100%로 맞추면 기대수익률이 계산돼요",
+  "pfHintFree": "예시 구성을 골라 결과를 체험해보세요",
+  "pfHintPremium": "예시 구성이에요 — 비중은 직접 바꿀 수 있어요 (합계는 100%로 자동 유지)",
+  "pfModePortfolio": "포트폴리오",
+  "pfModeSimple": "단순",
+  "@pfModeSimple": {
+    "description": "단순 ↔ 포트폴리오 세그먼트"
+  },
+  "pfPremiumBanner": "비중 편집·자산군 추가는 프리미엄 — 예시 구성은 자유롭게 체험해보세요",
+  "pfRealReturnVol": "실질 {ret}% · 변동성 {vol}%",
+  "@pfRealReturnVol": {
+    "placeholders": {
+      "ret": {
+        "type": "String"
+      },
+      "vol": {
+        "type": "String"
+      }
+    }
+  },
+  "pfRemoveAssetTooltip": "이 자산군 빼기",
+  "pfResultAlreadyFire": "이미 FIRE 도달!",
+  "pfResultDetail": "{duration} 후 · 필요 자산 {amount}",
+  "@pfResultDetail": {
+    "description": "duration=yearsMonthsLabel, amount=money.compact",
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "pfResultFireAge": "FIRE 나이 {age}세",
+  "@pfResultFireAge": {
+    "placeholders": {
+      "age": {
+        "type": "int"
+      }
+    }
+  },
+  "pfResultLead": "이 구성이라면",
+  "pfResultNeedTotal": "합계를 100%로 맞추면 결과가 계산돼요",
+  "pfResultUnreachable": "100년 안에 도달이 어려워요",
+  "pfShowAssumptions": "가정 보기",
+  "pfSourceCommodities": "잠정 — 후속 소싱 (BCOM)",
+  "pfSourceGlobalDmEm": "DMS World 1900–2010 실질 5.5% · MSCI World/EM 팩트시트 2026-06",
+  "pfSourceGold": "Damodaran 1928– 실질 2.5% · 자유변동기 1971– 4.9% (기간 민감)",
+  "pfSourceKrEquity": "잠정 — 변동성은 DMS 단일국 주식 실질 SD 계층(2,000~2,300bp)",
+  "pfSourceKrTreasury": "잠정 — DMS 국가평균(60~90bp)~미국(150bp) 보수 구간",
+  "pfSourceKrwDeposit": "잠정 — 실질 예금금리 보수 가정, 한국은행 통계 후속 소싱",
+  "pfSourceReits": "잠정 — 후속 소싱 (FTSE EPRA Nareit)",
+  "pfSourceSilver": "잠정 — 금 대비 저수익·고변동 가정",
+  "pfSourceUsDow": "잠정 — S&P500 근사",
+  "pfSourceUsNasdaq100": "잠정 — S&P500 검증치 + 성장주 스프레드 가정",
+  "pfSourceUsSp500": "Damodaran 1928–2025 · UBS/DMS 1900–2024 · Siegel 1802–2023",
+  "@pfSourceUsSp500": {
+    "description": "엔진 PortfolioAsset.source와 ko 동일"
+  },
+  "pfSourceUsTreasury": "Damodaran 10년물 1928–2025 실질 1.45% (USD 기준, 환노출 별도)",
+  "pfSourceUsdCash": "3개월 T-Bill 프록시, Damodaran·DMS (USD 기준, 환변동 미반영)",
+  "pfTagCustom": " · 직접 입력",
+  "@pfTagCustom": {
+    "description": "직접 입력 자산 꼬리표 (앞 구분점 포함)"
+  },
+  "pfTagReference": " · 참고치",
+  "@pfTagReference": {
+    "description": "미검증 프리셋 꼬리표 (앞 구분점 포함)"
+  },
+  "pfTitle": "포트폴리오 구성",
+  "@pfTitle": {
+    "description": "S4-2 앱바 제목"
+  },
+  "pfTotalPercent": "합계 {total}%",
+  "@pfTotalPercent": {
+    "placeholders": {
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "pfVolatilitySimple": "변동성(간이)",
+  "pfWeightsTitle": "자산군 비중",
+  "reminderBody": "3분이면 충분해요 — 계획 대비 어디쯤인지 확인해보세요",
+  "@reminderBody": {
+    "description": "로컬 알림 본문"
+  },
+  "reminderChannelDescription": "월 1회 자산 기록 알림 (미기록 월에만)",
+  "@reminderChannelDescription": {
+    "description": "Android 알림 채널 설명"
+  },
+  "reminderChannelName": "월간 기록 리마인더",
+  "@reminderChannelName": {
+    "description": "Android 알림 채널 이름"
+  },
+  "reminderTitle": "이번 달 자산 기록, 잊지 않으셨죠?",
+  "@reminderTitle": {
+    "description": "로컬 알림 제목"
+  },
+  "settingsAbout": "앱 정보",
+  "settingsAboutDisclaimer": "본 앱의 시뮬레이션은 정보 제공 목적이며 투자 자문이 아닙니다.",
+  "settingsAppName": "파이어덤 Firedom",
+  "@settingsAppName": {
+    "description": "앱 정보 다이얼로그의 앱 이름"
+  },
+  "settingsBackupErrorCorrupted": "백업 파일이 손상됐어요",
+  "settingsBackupErrorNewerVersion": "이 백업은 더 새 버전에서 만들어졌어요 — 앱을 업데이트해주세요",
+  "settingsBackupErrorNotFiredom": "파이어덤 백업 파일이 아니에요",
+  "settingsBackupErrorUnreadable": "백업 파일을 읽을 수 없어요",
+  "settingsBackupErrorWrongPassphrase": "패스프레이즈가 올바르지 않아요",
+  "settingsBackupExport": "백업 파일 내보내기",
+  "settingsBackupExportFailed": "백업 파일을 만들지 못했어요",
+  "settingsBackupExportSubtitle": "암호화(AES-256) 파일 — iCloud/Drive에 보관하세요 · 서버 없음",
+  "settingsBackupImport": "백업 가져오기",
+  "settingsBackupImportSubtitle": "현재 데이터를 백업 내용으로 전체 교체해요",
+  "settingsBackupOpenFailed": "파일을 열지 못했어요",
+  "settingsBiometricSetupReason": "앱 잠금을 설정합니다",
+  "@settingsBiometricSetupReason": {
+    "description": "OS 생체인증 프롬프트 사유"
+  },
+  "settingsBiometricSwitch": "생체인증 앱 잠금",
+  "settingsBiometricSwitchSubtitle": "앱을 열 때 Face ID/지문 인증",
+  "settingsBiometricUnsupported": "이 기기는 생체인증을 지원하지 않아요",
+  "settingsCurrency": "통화",
+  "settingsCurrencyChangeBody": "기존에 입력한 금액은 환산되지 않고 단위만 {currency}(으)로 바뀌어요. 계속할까요?",
+  "@settingsCurrencyChangeBody": {
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsCurrencyChangeConfirm": "변경하기",
+  "settingsCurrencyChangeTitle": "통화 변경",
+  "settingsCustomerId": "고객 ID",
+  "settingsCustomerIdCopied": "고객 ID를 복사했어요",
+  "settingsCustomerIdSubtitle": "{id}\n구독 문의 시 알려주세요 · 탭하면 복사",
+  "@settingsCustomerIdSubtitle": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLanguage": "언어",
+  "settingsMaskSwitch": "금액 가림(●●●) 기본값",
+  "settingsMaskSwitchSubtitle": "홈에서 눈 아이콘으로도 바꿀 수 있어요",
+  "settingsPassphraseConfirmLabel": "한 번 더 입력",
+  "settingsPassphraseCreateTitle": "백업 암호 만들기",
+  "settingsPassphraseEnterTitle": "백업 암호 입력",
+  "settingsPassphraseLabel": "패스프레이즈 (8자 이상)",
+  "settingsPassphraseMismatch": "암호가 서로 달라요",
+  "settingsPassphraseTooShort": "8자 이상 입력해주세요",
+  "settingsPassphraseWarning": "암호를 잊으면 복구할 수 없어요 — 안전한 곳에 보관하세요",
+  "settingsPremiumActive": "이용 중 🎉 — 플랜·해지는 구독 관리에서",
+  "settingsPremiumInactive": "몬테카를로 상세 분포 · 포트폴리오 비중 편집",
+  "settingsPremiumTitle": "파이어덤 프리미엄",
+  "settingsPrivacy": "개인정보 처리방침",
+  "settingsPrivacyBody": "모든 재무 데이터(자산·기록)는 회원가입·계좌 연동 없이 이 기기에만 저장되며, 어떤 경우에도 서버로 전송되지 않습니다. 앱을 삭제하면 데이터도 함께 삭제됩니다.\n\n알림은 기기 로컬 알림만 사용합니다 (푸시 서버 없음).\n\n구독을 이용하는 경우 결제·구독 상태 확인은 스토어(Apple/Google)를 통해 처리되며, 이때도 자산·기록 등 재무 데이터는 전송되지 않습니다.\n\n새 버전 안내를 위해 스토어의 공개 버전 정보만 조회하며, 이때도 개인·재무 데이터는 전송되지 않습니다.\n\n본 앱의 시뮬레이션 결과는 정보 제공 목적이며 투자 자문이 아닙니다.",
+  "settingsQaPremium": "프리미엄 시뮬레이션 (QA)",
+  "settingsQaPremiumSubtitle": "결제 없이 유료 게이트 테스트 — QA 빌드 전용",
+  "settingsReminderDay": "알림 날짜",
+  "settingsReminderDayOfMonth": "매월 {day}일",
+  "@settingsReminderDayOfMonth": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsReminderLastDay": "매월 말일",
+  "settingsReminderPermissionNeeded": "알림 권한이 필요해요 — 설정에서 허용해주세요",
+  "settingsReminderSwitch": "월간 기록 알림",
+  "settingsReminderSwitchSubtitle": "기록하지 않은 달에만 알려드려요 · 로컬 알림",
+  "settingsReminderTime": "알림 시간",
+  "settingsRestoreConfirmBody": "현재 기기의 모든 기록·계획·설정이 백업 내용으로 교체돼요. 계속할까요?",
+  "settingsRestoreConfirmButton": "교체하기",
+  "settingsRestoreConfirmTitle": "전체 교체 확인",
+  "settingsRestoreDone": "복원 완료 — 데이터가 교체됐어요",
+  "settingsRestoreFailed": "복원에 실패했어요 — 파일과 암호를 확인해주세요",
+  "settingsSectionData": "데이터 · 정보",
+  "settingsSectionDisplaySecurity": "표시 · 보안",
+  "settingsSectionReminder": "기록 리마인더",
+  "settingsSectionSubscription": "구독",
+  "settingsTerms": "이용약관",
+  "settingsTermsSubtitle": "Apple 표준 사용권 계약(EULA)",
+  "settingsTheme": "화면 테마",
+  "settingsThemeDark": "다크",
+  "settingsThemeLight": "라이트",
+  "settingsTitle": "설정",
+  "@settingsTitle": {
+    "description": "설정 화면 앱바"
+  },
+  "shellAssets": "자산",
+  "@shellAssets": {
+    "description": "하단 탭"
+  },
+  "shellHome": "홈",
+  "@shellHome": {
+    "description": "하단 탭"
+  },
+  "shellRecord": "기록",
+  "@shellRecord": {
+    "description": "하단 탭 — 기록 플로우 push"
+  },
+  "shellSimulation": "시뮬레이션",
+  "@shellSimulation": {
+    "description": "하단 탭"
+  },
+  "simAxisAge": "{age}세",
+  "@simAxisAge": {
+    "description": "차트 x축 나이 눈금 — 영어는 겹침 방지로 숫자만",
+    "placeholders": {
+      "age": {
+        "type": "int"
+      }
+    }
+  },
+  "simCompare": "비교",
+  "simCompareLocked": "비교 🔒",
+  "simDefaultScenarioName": "내 시나리오",
+  "@simDefaultScenarioName": {
+    "description": "무료 사용자 저장 시 자동 이름"
+  },
+  "simFireAge": "FIRE 나이 {age}세",
+  "@simFireAge": {
+    "description": "헤드라인·시나리오 부제 공용",
+    "placeholders": {
+      "age": {
+        "type": "int"
+      }
+    }
+  },
+  "simHeadlineDetail": "{period} 후 · 필요 자산 {amount}",
+  "@simHeadlineDetail": {
+    "description": "period = yearsMonthsLabel, amount = money.compact",
+    "placeholders": {
+      "period": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "simHeadlineReached": "이미 FIRE 도달!",
+  "simHeadlineUnreachable": "100년 안에 도달이 어려워요",
+  "simIntro": "여기서 바꾼 가정은 계획에 반영되지 않아요 — 마음껏 실험해보세요",
+  "simLoadScenario": "불러오기",
+  "simLoadScenarioCount": "불러오기 ({count})",
+  "@simLoadScenarioCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "simMcCaption": "기대수명 {age}세까지 자산이 남아있을 확률 · {runs}회 시뮬레이션",
+  "@simMcCaption": {
+    "placeholders": {
+      "age": {
+        "type": "int"
+      },
+      "runs": {
+        "type": "int"
+      }
+    }
+  },
+  "simMcDetail": "상세 분포 보기",
+  "simMcDetailLocked": "상세 분포 보기 🔒",
+  "simMcRun": "성공 확률 계산하기",
+  "simMcRunning": "5,000가지 시장 시나리오를 계산하고 있어요…",
+  "simMcSuccess": "이 계획의 성공 확률 {pct}%",
+  "@simMcSuccess": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "simMcTitle": "시장 변동성 속에서도 성공할까?",
+  "simNoScenarios": "저장된 시나리오가 없어요",
+  "simOpenPortfolio": "포트폴리오로 구성하기",
+  "simResetTooltip": "계획 값으로 되돌리기",
+  "simSaveScenario": "시나리오 저장",
+  "simScenarioLoaded": "시나리오 \"{name}\"를 불러왔어요",
+  "@simScenarioLoaded": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "simScenarioNameHint": "시나리오 {n}",
+  "@simScenarioNameHint": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "simScenarioNameTitle": "시나리오 이름",
+  "simScenarioSaved": "시나리오 \"{name}\"를 저장했어요",
+  "@simScenarioSaved": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "simScenarioSavedFree": "시나리오를 저장했어요 (무료는 1개까지)",
+  "simSliderAge": "현재 나이",
+  "simSliderAssets": "현재 순자산",
+  "simSliderReturn": "기대수익률 (실질, 연)",
+  "simSliderSaving": "월 저축액",
+  "@simSliderSaving": {
+    "description": "슬라이더 제목·비교표 행 라벨 공용"
+  },
+  "simSliderSpend": "은퇴 후 월 생활비",
+  "simSummaryReached": "이미 FIRE 도달",
+  "simSummaryUnreachable": "100년 내 도달 어려움",
+  "@simSummaryUnreachable": {
+    "description": "시나리오 목록 부제"
+  },
+  "simTitle": "시뮬레이션",
+  "@simTitle": {
+    "description": "S4 앱바 제목 (하단 탭 라벨과 동일 문구)"
+  },
+  "snapAccountName": "항목 이름",
+  "snapAccountsHeader": "자산 항목",
+  "snapAdd": "추가",
+  "snapAddAccount": "항목 추가",
+  "snapAssetClass": "자산군",
+  "snapCashflowHeader": "이번 달 소득 · 지출 (선택)",
+  "snapCashflowHint": "적으면 저축률 추이를 볼 수 있어요",
+  "snapDefaultDeposits": "예금",
+  "@snapDefaultDeposits": {
+    "description": "첫 셋업 기본 항목 이름"
+  },
+  "snapDefaultLoans": "대출",
+  "snapDefaultOther": "기타",
+  "snapDefaultPension": "연금계좌",
+  "snapDefaultRealEstate": "부동산",
+  "snapDefaultStocks": "주식",
+  "snapDeltaDown": "전월 대비 −{amount}",
+  "@snapDeltaDown": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "snapDeltaUp": "전월 대비 +{amount}",
+  "@snapDeltaUp": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "snapExpense": "지출",
+  "snapGoHome": "홈으로",
+  "snapIncome": "세후 소득",
+  "snapLiabilityHelper": "{assetClass} · 부채",
+  "@snapLiabilityHelper": {
+    "placeholders": {
+      "assetClass": {
+        "type": "String"
+      }
+    }
+  },
+  "snapLiabilitySwitch": "부채 (음수로 계산)",
+  "snapMilestonesHeader": "마일스톤 달성",
+  "snapNetWorth": "순자산",
+  "snapNextRecordHint": "다음 기록부터 궤도 비교가 시작돼요",
+  "snapPrefilledHint": "지난달 값이 채워져 있어요 — 바뀐 항목만 고치면 돼요",
+  "snapRename": "이름 변경",
+  "snapRenameConfirm": "변경",
+  "snapResultTitle": "{month}월 기록 완료!",
+  "@snapResultTitle": {
+    "description": "month는 1~12 숫자 문자열",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "snapTitle": "자산 기록",
+  "subActiveBody": "몬테카를로 상세 · 시나리오 비교 · 포트폴리오 편집",
+  "@subActiveBody": {
+    "description": "구독 활성 시 열려 있는 기능 — 실제 동작하는 3종만 (미출시 기능 노출 금지)"
+  },
+  "subActiveTitle": "파이어덤 프리미엄 이용 중 🎉",
+  "subInactiveBody": "스토어에서 결제한 이력이 있다면 아래에서 복원해보세요",
+  "subInactiveTitle": "구독이 확인되지 않아요",
+  "subManageInStore": "스토어에서 구독 관리",
+  "subManagedByStore": "구독은 스토어 계정으로 관리돼요 — 플랜 변경과 해지는 스토어에서 할 수 있고, 해지해도 남은 기간까지는 프리미엄이 유지돼요.",
+  "subPlanRenewal": "플랜 · 다음 갱신일",
+  "subPlanRenewalSubtitle": "스토어 구독 화면에서 확인할 수 있어요",
+  "subRestore": "구매 복원",
+  "subRestoreNotFound": "복원할 구매를 찾지 못했어요",
+  "subRestored": "구매를 복원했어요",
+  "subStoreOpenFailed": "스토어를 열 수 없어요 — 스토어 앱에서 구독을 확인해주세요",
+  "subTitle": "구독 관리",
+  "upgradeBody": "{appName}의 새 버전 {storeVersion}이 나왔어요. 지금 버전은 {installedVersion}이에요.",
+  "@upgradeBody": {
+    "description": "upgrader 템플릿 토큰({{appName}} 등)이 플레이스홀더로 들어온다",
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      },
+      "storeVersion": {
+        "type": "String"
+      },
+      "installedVersion": {
+        "type": "String"
+      }
+    }
+  },
+  "upgradeLater": "나중에",
+  "upgradePrompt": "지금 업데이트할까요?",
+  "upgradeReleaseNotes": "이번 업데이트 내용",
+  "upgradeTitle": "업데이트가 있어요",
+  "upgradeUpdate": "업데이트",
+  "widgetAheadOfPlan": "계획보다 {count}개월 앞",
+  "@widgetAheadOfPlan": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "widgetBehindPlan": "계획보다 {count}개월 뒤",
+  "@widgetBehindPlan": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "widgetCheckAssumptions": "가정 점검이 필요해요",
+  "@widgetCheckAssumptions": {
+    "description": "홈 위젯 — 목표 도달 불가"
+  },
+  "widgetGoalReached": "목표 도달!",
+  "widgetNoPlan": "계획을 만들어보세요",
+  "@widgetNoPlan": {
+    "description": "홈 위젯 — 계획 없음"
+  },
+  "widgetOnTrack": "계획대로 진행 중",
+  "widgetUntilFree": "자유까지 {duration}",
+  "@widgetUntilFree": {
+    "description": "duration은 yearsMonthsLabel/monthsLabel 결과. 위젯에 금액은 넣지 않는다",
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "yearsLabel": "{count}년",
+  "@yearsLabel": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "yearsMonthsLabel": "{years}년 {months}개월",
+  "@yearsMonthsLabel": {
+    "placeholders": {
+      "years": {
+        "type": "int"
+      },
+      "months": {
+        "type": "int"
+      }
+    }
+  }
+}

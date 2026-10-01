@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/money_format.dart';
 import '../../core/ym.dart';
 import '../../data/db/database.dart';
 import '../../data/db/providers.dart';
@@ -13,8 +12,11 @@ import '../../data/repositories/plan_repository.dart';
 import '../../data/repositories/settings_store.dart';
 import '../../data/repositories/snapshot_repository.dart';
 import '../../engine/engine.dart';
+import '../../l10n/l10n.dart';
+import '../simulation/chart_axis.dart';
 import '../common/deviation_badge.dart';
 import '../common/milestone_labels.dart';
+import '../common/money.dart';
 import '../goal/goal_settings_screen.dart';
 import '../onboarding/onboarding_screen.dart';
 import '../settings/settings_screen.dart';
@@ -36,7 +38,7 @@ class HomeScreen extends ConsumerWidget {
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (error, _) =>
-          Scaffold(body: Center(child: Text('오류가 발생했어요: $error'))),
+          Scaffold(body: Center(child: Text(context.l10n.errorGeneric('$error')))),
       data: (plan) =>
           plan == null ? const _EmptyHome() : _Dashboard(plan: plan),
     );
@@ -53,11 +55,11 @@ class _EmptyHome extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('아직 계획이 없어요'),
+            Text(context.l10n.homeNoPlan),
             const SizedBox(height: 12),
             FilledButton(
               onPressed: () => context.go(OnboardingScreen.path),
-              child: const Text('60초 만에 계획 만들기'),
+              child: Text(context.l10n.homeCreatePlan),
             ),
           ],
         ),
@@ -74,6 +76,8 @@ class _Dashboard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final money = moneyFormatOf(context, ref);
     final summaries =
         ref.watch(snapshotSummariesProvider).value ?? const <SnapshotSummary>[];
     final masked = ref.watch(maskAmountsProvider).value ?? false;
@@ -102,23 +106,23 @@ class _Dashboard extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('파이어덤'),
+        title: Text(l10n.appTitle),
         actions: [
           IconButton(
-            tooltip: '목표 설정',
+            tooltip: l10n.homeGoalSettingsTooltip,
             icon: const Icon(Icons.tune),
             onPressed: () => context.push(GoalSettingsScreen.path),
           ),
           // 금액 가림 토글 — 탭 1번 (지하철에서 여는 앱)
           IconButton(
-            tooltip: masked ? '금액 보이기' : '금액 가리기',
+            tooltip: masked ? l10n.homeShowAmounts : l10n.homeHideAmounts,
             icon: Icon(masked ? Icons.visibility_off : Icons.visibility),
             onPressed: () => ref
                 .read(settingsStoreProvider)
                 .set(SettingKeys.maskAmounts, !masked),
           ),
           IconButton(
-            tooltip: '설정',
+            tooltip: l10n.homeSettingsTooltip,
             icon: const Icon(Icons.settings_outlined),
             onPressed: () => context.push(SettingsScreen.path),
           ),
@@ -140,11 +144,12 @@ class _Dashboard extends ConsumerWidget {
                 child: ListTile(
                   leading: const Text('🏆', style: TextStyle(fontSize: 24)),
                   title: Text(
-                    milestoneLabel(latestMilestones.last.milestoneKey),
+                    milestoneLabel(l10n, money.currency,
+                        latestMilestones.last.milestoneKey),
                     style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                   subtitle: latestMilestones.length > 1
-                      ? Text('외 ${latestMilestones.length - 1}개 달성')
+                      ? Text(l10n.homeMoreMilestones(latestMilestones.length - 1))
                       : null,
                 ),
               ),
@@ -153,6 +158,7 @@ class _Dashboard extends ConsumerWidget {
               monthsElapsed: monthsElapsed,
               currentAssets: currentAssets,
               masked: masked,
+              money: money,
             ),
             const SizedBox(height: 12),
             _TrajectoryCard(
@@ -162,18 +168,20 @@ class _Dashboard extends ConsumerWidget {
               summaries: summaries,
               masked: masked,
               revisions: revisions,
+              money: money,
             ),
             const SizedBox(height: 12),
             _SavingRateCard(summaries: summaries),
             if (summaries.isNotEmpty) ...[
               const SizedBox(height: 12),
-              _PastRecordsCard(summaries: summaries, masked: masked),
+              _PastRecordsCard(
+                  summaries: summaries, masked: masked, money: money),
             ],
             if (hasCurrentMonthRecord) ...[
               const SizedBox(height: 16),
               Center(
                 child: Text(
-                  '이번 달 기록 완료 — 다음 기록은 다음 달에 만나요',
+                  l10n.homeRecordedThisMonth,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ),
@@ -189,12 +197,19 @@ class _Dashboard extends ConsumerWidget {
 class _PastRecordsCard extends StatelessWidget {
   final List<SnapshotSummary> summaries;
   final bool masked;
+  final MoneyFormat money;
 
-  const _PastRecordsCard({required this.summaries, required this.masked});
+  const _PastRecordsCard({
+    required this.summaries,
+    required this.masked,
+    required this.money,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final languageCode = Localizations.localeOf(context).languageCode;
     final items = [...summaries]
       ..sort((a, b) => b.snapshot.ym.compareTo(a.snapshot.ym));
     return Card(
@@ -203,16 +218,16 @@ class _PastRecordsCard extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            child: Text('지난 기록', style: theme.textTheme.titleMedium),
+            child: Text(l10n.homePastRecords, style: theme.textTheme.titleMedium),
           ),
           for (final s in items)
             ListTile(
               key: ValueKey('record-${s.snapshot.ym}'),
-              title:
-                  Text('${s.snapshot.ym ~/ 100}년 ${s.snapshot.ym % 100}월'),
-              subtitle: const Text('탭해서 수정'),
+              title: Text(
+                  formatYm(s.snapshot.ym, languageCode: languageCode)),
+              subtitle: Text(l10n.homeTapToEdit),
               trailing: Text(
-                _money(s.netWorth, masked),
+                _money(l10n, money, s.netWorth, masked),
                 style: theme.textTheme.titleSmall,
               ),
               onTap: () => context
@@ -233,6 +248,7 @@ class _RecordNudgeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     return Card(
       color: theme.colorScheme.primaryContainer,
       margin: const EdgeInsets.only(bottom: 12),
@@ -240,14 +256,14 @@ class _RecordNudgeCard extends StatelessWidget {
         // 복귀 유저에게 비난 톤 금지 (PRD S3, US8)
         title: Text(
           isComeback
-              ? '다시 오셨네요 — 이번 달만 기록하면 돼요'
-              : '${currentYm % 100}월 자산을 기록해볼까요?',
+              ? l10n.homeComeback
+              : l10n.homeRecordPrompt('${currentYm % 100}'),
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
-        subtitle: const Text('한 달에 3분이면 충분해요'),
+        subtitle: Text(l10n.homeRecordSubtitle),
         trailing: FilledButton(
           onPressed: () => context.push(SnapshotFlowScreen.path),
-          child: const Text('기록하기'),
+          child: Text(l10n.homeRecordButton),
         ),
       ),
     );
@@ -259,17 +275,20 @@ class _DdayCard extends StatelessWidget {
   final int monthsElapsed;
   final int currentAssets;
   final bool masked;
+  final MoneyFormat money;
 
   const _DdayCard({
     required this.result,
     required this.monthsElapsed,
     required this.currentAssets,
     required this.masked,
+    required this.money,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final progress = result.fireNumber <= 0
         ? 0.0
         : (currentAssets / result.fireNumber).clamp(0.0, 1.0);
@@ -277,17 +296,17 @@ class _DdayCard extends StatelessWidget {
     final String headline;
     final months = result.monthsToFire;
     if (months == null) {
-      headline = '현재 가정으로는 도달이 어려워요';
+      headline = l10n.homeUnreachable;
     } else {
       final remaining = math.max(0, months - monthsElapsed);
       if (remaining == 0 || currentAssets >= result.fireNumber) {
-        headline = '재정적 자유 목표에 도달했어요!';
+        headline = l10n.homeReached;
       } else {
         final years = remaining ~/ 12;
         final remainMonths = remaining % 12;
         headline = years == 0
-            ? '재정적 자유까지 $remainMonths개월'
-            : '재정적 자유까지 $years년 $remainMonths개월';
+            ? l10n.homeUntilFireMonths(remainMonths)
+            : l10n.homeUntilFireYearsMonths(years, remainMonths);
       }
     }
 
@@ -309,9 +328,11 @@ class _DdayCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'FIRE 진행률 ${(progress * 100).toStringAsFixed(0)}% · '
-              '${_money(currentAssets, masked)} / '
-              '${_money(result.fireNumber, masked)}',
+              l10n.homeFireProgress(
+                (progress * 100).toStringAsFixed(0),
+                _money(l10n, money, currentAssets, masked),
+                _money(l10n, money, result.fireNumber, masked),
+              ),
               style: theme.textTheme.bodySmall!.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -330,6 +351,7 @@ class _TrajectoryCard extends StatelessWidget {
   final List<SnapshotSummary> summaries;
   final bool masked;
   final List<Plan> revisions;
+  final MoneyFormat money;
 
   const _TrajectoryCard({
     required this.plan,
@@ -338,11 +360,13 @@ class _TrajectoryCard extends StatelessWidget {
     required this.summaries,
     required this.masked,
     required this.revisions,
+    required this.money,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
 
     return Card(
       child: Padding(
@@ -352,7 +376,7 @@ class _TrajectoryCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Text('궤도', style: theme.textTheme.titleMedium),
+                Text(l10n.homeTrajectory, style: theme.textTheme.titleMedium),
                 const Spacer(),
                 if (summaries.length >= 2)
                   DeviationBadge(
@@ -372,8 +396,8 @@ class _TrajectoryCard extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 summaries.isEmpty
-                    ? '첫 기록을 남기면 궤도 위에 점이 찍혀요'
-                    : '2번째 기록부터 궤도 비교가 시작돼요',
+                    ? l10n.homeFirstRecordHint
+                    : l10n.homeSecondRecordHint,
                 style: theme.textTheme.bodySmall!.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -393,12 +417,15 @@ class _TrajectoryCard extends StatelessWidget {
 
   Widget _chart(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final trajectory = result.assetsByMonth;
+    // 세로축 단위는 시뮬레이션 차트와 동일 (KRW·JPY 1억 / USD $100K)
+    final axisUnit = chartAmountUnit(money.currency);
 
     final planSpots = <FlSpot>[
       for (var m = 0; m < trajectory.length; m += 12)
-        FlSpot(m / 12, trajectory[m] / 100000000),
-      FlSpot((trajectory.length - 1) / 12, trajectory.last / 100000000),
+        FlSpot(m / 12, trajectory[m] / axisUnit),
+      FlSpot((trajectory.length - 1) / 12, trajectory.last / axisUnit),
     ];
 
     final actualSpots = <FlSpot>[
@@ -406,7 +433,7 @@ class _TrajectoryCard extends StatelessWidget {
         if (ymDiffMonths(plan.startedYm, summary.ym) >= 0)
           FlSpot(
             ymDiffMonths(plan.startedYm, summary.ym) / 12,
-            summary.netWorth / 100000000,
+            summary.netWorth / axisUnit,
           ),
     ];
 
@@ -445,7 +472,7 @@ class _TrajectoryCard extends StatelessWidget {
                   // 끝점 라벨은 마지막 눈금과 겹치므로 생략 (fl_chart가 max에 별도로 그림)
                   if (value == meta.max) return const SizedBox.shrink();
                   return Text(
-                    '${value.toInt()}억',
+                    chartAmountLabel(money, value, axisUnit),
                     style: theme.textTheme.labelSmall,
                   );
                 },
@@ -459,7 +486,7 @@ class _TrajectoryCard extends StatelessWidget {
                   // 끝점 라벨은 마지막 눈금과 겹치므로 생략 (fl_chart가 max에 별도로 그림)
                   if (value == meta.max) return const SizedBox.shrink();
                   return Text(
-                    '${input.age0 + value.toInt()}세',
+                    '${input.age0 + value.toInt()}${l10n.ageSuffix}',
                     style: theme.textTheme.labelSmall,
                   );
                 },
@@ -508,6 +535,7 @@ class _SavingRateCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
 
     final withRate = [
       for (final summary in summaries)
@@ -528,10 +556,10 @@ class _SavingRateCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('저축률', style: theme.textTheme.titleMedium),
+              Text(l10n.homeSavingRate, style: theme.textTheme.titleMedium),
               const SizedBox(height: 8),
               Text(
-                '기록할 때 소득/지출을 함께 적으면 저축률 추이를 볼 수 있어요',
+                l10n.homeSavingRateHint,
                 style: theme.textTheme.bodySmall!.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -556,7 +584,8 @@ class _SavingRateCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text('이번 달 저축률', style: theme.textTheme.titleMedium),
+                Text(l10n.homeSavingRateThisMonth,
+                    style: theme.textTheme.titleMedium),
                 const Spacer(),
                 Text(
                   latestRate == null
@@ -595,7 +624,7 @@ class _SavingRateCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Text('${entry.ym % 100}월',
+                      Text(l10n.homeMonthShort('${entry.ym % 100}'),
                           style: theme.textTheme.labelSmall),
                     ],
                   ),
@@ -610,5 +639,5 @@ class _SavingRateCard extends StatelessWidget {
   }
 }
 
-String _money(int won, bool masked) =>
-    masked ? '●●●' : '${formatKoreanMoney(won)}원';
+String _money(AppLocalizations l10n, MoneyFormat money, int minor, bool masked) =>
+    masked ? l10n.commonMasked : money.compact(minor);

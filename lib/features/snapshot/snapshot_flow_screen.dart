@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/money_format.dart';
 import '../../core/ym.dart';
 import '../../data/db/database.dart';
 import '../../data/db/providers.dart';
@@ -13,7 +12,10 @@ import '../../data/milestone_service.dart';
 import '../../data/notifications/reminder_scheduler.dart';
 import '../../data/prefs.dart';
 import '../../data/reminders.dart';
+import '../../data/repositories/settings_store.dart';
+import '../../l10n/l10n.dart';
 import '../common/asset_class_labels.dart';
+import '../common/money.dart';
 import 'snapshot_result_screen.dart';
 
 /// S5→S8. 월 스냅샷 기록 플로우 (PRD) ★ retention 심장
@@ -45,6 +47,10 @@ class _SnapshotFlowScreenState extends ConsumerState<SnapshotFlowScreen> {
   /// 초기값 세팅 중 draft가 덮어써지는 것을 막는다
   bool _suppressDraftWrites = true;
 
+  /// 통화 — 금액은 DB에 최소 단위(센트 등)로 저장하고, 입력은 주 단위로 받는다
+  Currency _currency = Currency.fallback;
+  bool _loadedOnce = false;
+
   String get _draftKey => 'snapshot.draft.$_ym';
 
   @override
@@ -53,7 +59,16 @@ class _SnapshotFlowScreenState extends ConsumerState<SnapshotFlowScreen> {
     _ym = widget.initialYm ?? nowYm();
     _incomeController.addListener(_writeDraft);
     _expenseController.addListener(_writeDraft);
-    _load();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 기본 항목 이름이 UI 언어를 따르므로 l10n을 읽을 수 있는 시점에 첫 로드
+    if (!_loadedOnce) {
+      _loadedOnce = true;
+      _load();
+    }
   }
 
   @override
@@ -73,9 +88,23 @@ class _SnapshotFlowScreenState extends ConsumerState<SnapshotFlowScreen> {
     return null;
   }
 
+  /// 입력 텍스트(주 단위) → 저장 금액(최소 단위, 부채는 음수)
   int _signedAmount(Account account, String text) {
-    final raw = parseAmount(text) ?? 0;
+    final raw = _toMinor(parseAmount(text));
     return account.isLiability ? -raw : raw;
+  }
+
+  int _toMinor(int? major) => (major ?? 0) * _currency.minorPerMajor;
+
+  /// 저장 금액(최소 단위) → 입력 텍스트 (주 단위, 콤마)
+  String _majorText(int minor) {
+    final major = minor.abs() ~/ _currency.minorPerMajor;
+    return major == 0 ? '' : formatWithComma(major);
+  }
+
+  int? _parseMinor(String text) {
+    final major = parseAmount(text);
+    return major == null ? null : major * _currency.minorPerMajor;
   }
 
   // ── 초기값: draft > 기존 스냅샷(소급 수정) > 전월 복사 ──────────
@@ -83,9 +112,19 @@ class _SnapshotFlowScreenState extends ConsumerState<SnapshotFlowScreen> {
   Future<void> _load() async {
     setState(() => _loading = true);
     _suppressDraftWrites = true;
+    final l10n = context.l10n;
 
     final repository = ref.read(snapshotRepositoryProvider);
-    final accounts = await repository.ensureDefaultAccounts();
+    _currency = Currency.fromCode(
+        await ref.read(settingsStoreProvider).get<String>(SettingKeys.currency));
+    final accounts = await repository.ensureDefaultAccounts(names: [
+      l10n.snapDefaultDeposits,
+      l10n.snapDefaultStocks,
+      l10n.snapDefaultPension,
+      l10n.snapDefaultRealEstate,
+      l10n.snapDefaultLoans,
+      l10n.snapDefaultOther,
+    ]);
 
     var amounts = <String, int>{};
     int? income;
@@ -115,14 +154,12 @@ class _SnapshotFlowScreenState extends ConsumerState<SnapshotFlowScreen> {
     _amountControllers.clear();
     for (final account in accounts) {
       final amount = amounts[account.id] ?? 0;
-      final controller = TextEditingController(
-        text: amount == 0 ? '' : formatWithComma(amount.abs()),
-      );
+      final controller = TextEditingController(text: _majorText(amount));
       controller.addListener(_writeDraft);
       _amountControllers[account.id] = controller;
     }
-    _incomeController.text = income == null ? '' : formatWithComma(income);
-    _expenseController.text = expense == null ? '' : formatWithComma(expense);
+    _incomeController.text = income == null ? '' : _majorText(income);
+    _expenseController.text = expense == null ? '' : _majorText(expense);
 
     _suppressDraftWrites = false;
     setState(() {
@@ -156,8 +193,8 @@ class _SnapshotFlowScreenState extends ConsumerState<SnapshotFlowScreen> {
                   entry.key: _signedAmount(
                       _accountById(entry.key)!, entry.value.text),
             },
-            'income': parseAmount(_incomeController.text),
-            'expense': parseAmount(_expenseController.text),
+            'income': _parseMinor(_incomeController.text),
+            'expense': _parseMinor(_expenseController.text),
           }),
         );
   }
@@ -176,8 +213,8 @@ class _SnapshotFlowScreenState extends ConsumerState<SnapshotFlowScreen> {
     await repository.saveSnapshot(
       ym: _ym,
       amountsByAccountId: amounts,
-      income: parseAmount(_incomeController.text),
-      expense: parseAmount(_expenseController.text),
+      income: _parseMinor(_incomeController.text),
+      expense: _parseMinor(_expenseController.text),
     );
     // 마일스톤 판정은 저장 직후 (B1) — 결과 리빌에서 축하 표시
     await evaluateAndRecordMilestones(ref.read(databaseProvider), ym: _ym);
@@ -200,35 +237,36 @@ class _SnapshotFlowScreenState extends ConsumerState<SnapshotFlowScreen> {
     final nameController = TextEditingController();
     var assetClass = 'cash';
     var isLiability = false;
+    final l10n = context.l10n;
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('항목 추가'),
+          title: Text(l10n.snapAddAccount),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameController,
                 autofocus: true,
-                decoration: const InputDecoration(labelText: '항목 이름'),
+                decoration: InputDecoration(labelText: l10n.snapAccountName),
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 initialValue: assetClass,
-                decoration: const InputDecoration(labelText: '자산군'),
+                decoration: InputDecoration(labelText: l10n.snapAssetClass),
                 items: [
-                  for (final entry in assetClassLabels.entries)
+                  for (final code in assetClassCodes)
                     DropdownMenuItem(
-                        value: entry.key, child: Text(entry.value)),
+                        value: code, child: Text(assetClassLabel(l10n, code))),
                 ],
                 onChanged: (value) =>
                     setDialogState(() => assetClass = value ?? 'cash'),
               ),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('부채 (음수로 계산)'),
+                title: Text(l10n.snapLiabilitySwitch),
                 value: isLiability,
                 onChanged: (value) =>
                     setDialogState(() => isLiability = value),
@@ -238,11 +276,11 @@ class _SnapshotFlowScreenState extends ConsumerState<SnapshotFlowScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('취소'),
+              child: Text(l10n.commonCancel),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('추가'),
+              child: Text(l10n.snapAdd),
             ),
           ],
         ),
@@ -267,19 +305,20 @@ class _SnapshotFlowScreenState extends ConsumerState<SnapshotFlowScreen> {
 
   Future<void> _renameAccount(Account account) async {
     final controller = TextEditingController(text: account.name);
+    final l10n = context.l10n;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('이름 변경'),
+        title: Text(l10n.snapRename),
         content: TextField(controller: controller, autofocus: true),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('취소'),
+            child: Text(l10n.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('변경'),
+            child: Text(l10n.snapRenameConfirm),
           ),
         ],
       ),
@@ -317,9 +356,12 @@ class _SnapshotFlowScreenState extends ConsumerState<SnapshotFlowScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final money = moneyFormatOf(context, ref);
+    final languageCode = Localizations.localeOf(context).languageCode;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('자산 기록')),
+      appBar: AppBar(title: Text(l10n.snapTitle)),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : SafeArea(
@@ -335,7 +377,8 @@ class _SnapshotFlowScreenState extends ConsumerState<SnapshotFlowScreen> {
                       ),
                       Expanded(
                         child: Center(
-                          child: Text(formatYm(_ym),
+                          child: Text(
+                              formatYm(_ym, languageCode: languageCode),
                               style: theme.textTheme.titleMedium),
                         ),
                       ),
@@ -346,30 +389,32 @@ class _SnapshotFlowScreenState extends ConsumerState<SnapshotFlowScreen> {
                       ),
                     ],
                   ),
-                  Text('자산 항목', style: theme.textTheme.titleMedium),
+                  Text(l10n.snapAccountsHeader,
+                      style: theme.textTheme.titleMedium),
                   const SizedBox(height: 4),
                   Text(
-                    '지난달 값이 채워져 있어요 — 바뀐 항목만 고치면 돼요',
+                    l10n.snapPrefilledHint,
                     style: theme.textTheme.bodySmall!.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  for (final account in _accounts) _accountRow(account),
+                  for (final account in _accounts)
+                    _accountRow(account, l10n, money),
                   Align(
                     alignment: Alignment.centerLeft,
                     child: TextButton.icon(
                       onPressed: _addAccount,
                       icon: const Icon(Icons.add),
-                      label: const Text('항목 추가'),
+                      label: Text(l10n.snapAddAccount),
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Text('이번 달 소득 · 지출 (선택)',
+                  Text(l10n.snapCashflowHeader,
                       style: theme.textTheme.titleMedium),
                   const SizedBox(height: 4),
                   Text(
-                    '적으면 저축률 추이를 볼 수 있어요',
+                    l10n.snapCashflowHint,
                     style: theme.textTheme.bodySmall!.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -380,10 +425,11 @@ class _SnapshotFlowScreenState extends ConsumerState<SnapshotFlowScreen> {
                     controller: _incomeController,
                     keyboardType: TextInputType.number,
                     inputFormatters: [ThousandsSeparatorInputFormatter()],
-                    decoration: const InputDecoration(
-                      labelText: '세후 소득',
-                      suffixText: '원',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: l10n.snapIncome,
+                      prefixText: _orNull(money.inputPrefix),
+                      suffixText: _orNull(money.inputSuffix),
+                      border: const OutlineInputBorder(),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -392,10 +438,11 @@ class _SnapshotFlowScreenState extends ConsumerState<SnapshotFlowScreen> {
                     controller: _expenseController,
                     keyboardType: TextInputType.number,
                     inputFormatters: [ThousandsSeparatorInputFormatter()],
-                    decoration: const InputDecoration(
-                      labelText: '지출',
-                      suffixText: '원',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: l10n.snapExpense,
+                      prefixText: _orNull(money.inputPrefix),
+                      suffixText: _orNull(money.inputSuffix),
+                      border: const OutlineInputBorder(),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -404,7 +451,7 @@ class _SnapshotFlowScreenState extends ConsumerState<SnapshotFlowScreen> {
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
-                    child: const Text('저장'),
+                    child: Text(l10n.commonSave),
                   ),
                 ],
               ),
@@ -412,8 +459,10 @@ class _SnapshotFlowScreenState extends ConsumerState<SnapshotFlowScreen> {
     );
   }
 
-  Widget _accountRow(Account account) {
+  Widget _accountRow(
+      Account account, AppLocalizations l10n, MoneyFormat money) {
     final theme = Theme.of(context);
+    final classLabel = assetClassLabel(l10n, account.assetClass);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -427,11 +476,12 @@ class _SnapshotFlowScreenState extends ConsumerState<SnapshotFlowScreen> {
               inputFormatters: [ThousandsSeparatorInputFormatter()],
               decoration: InputDecoration(
                 labelText: account.name,
-                prefixText: account.isLiability ? '−' : null,
-                suffixText: '원',
+                prefixText: _orNull(
+                    '${account.isLiability ? '−' : ''}${money.inputPrefix}'),
+                suffixText: _orNull(money.inputSuffix),
                 helperText: account.isLiability
-                    ? '${assetClassLabels[account.assetClass] ?? '기타'} · 부채'
-                    : assetClassLabels[account.assetClass],
+                    ? l10n.snapLiabilityHelper(classLabel)
+                    : classLabel,
                 border: const OutlineInputBorder(),
               ),
             ),
@@ -443,9 +493,9 @@ class _SnapshotFlowScreenState extends ConsumerState<SnapshotFlowScreen> {
               if (action == 'rename') _renameAccount(account);
               if (action == 'delete') _deleteAccount(account);
             },
-            itemBuilder: (context) => const [
-              PopupMenuItem(value: 'rename', child: Text('이름 변경')),
-              PopupMenuItem(value: 'delete', child: Text('삭제')),
+            itemBuilder: (context) => [
+              PopupMenuItem(value: 'rename', child: Text(l10n.snapRename)),
+              PopupMenuItem(value: 'delete', child: Text(l10n.commonDelete)),
             ],
           ),
         ],
@@ -453,3 +503,6 @@ class _SnapshotFlowScreenState extends ConsumerState<SnapshotFlowScreen> {
     );
   }
 }
+
+/// 빈 문자열이면 null — InputDecoration의 접두/접미 슬롯을 비운다
+String? _orNull(String text) => text.isEmpty ? null : text;

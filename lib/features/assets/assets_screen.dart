@@ -2,12 +2,14 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/money_format.dart';
+import '../../core/ym.dart';
 import '../../data/db/providers.dart';
 import '../../data/repositories/settings_store.dart';
 import '../../data/repositories/snapshot_repository.dart';
 import '../../engine/engine.dart';
+import '../../l10n/l10n.dart';
 import '../common/asset_class_labels.dart';
+import '../common/money.dart';
 
 enum _AssetsTab { allocation, cashflow }
 
@@ -31,18 +33,21 @@ class _AssetsScreenState extends ConsumerState<AssetsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: const Text('자산')),
+      appBar: AppBar(title: Text(l10n.assetsTitle)),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
             SegmentedButton<_AssetsTab>(
-              segments: const [
+              segments: [
                 ButtonSegment(
-                    value: _AssetsTab.allocation, label: Text('자산배분')),
+                    value: _AssetsTab.allocation,
+                    label: Text(l10n.assetsAllocationTab)),
                 ButtonSegment(
-                    value: _AssetsTab.cashflow, label: Text('현금흐름')),
+                    value: _AssetsTab.cashflow,
+                    label: Text(l10n.assetsCashflowTab)),
               ],
               selected: {_tab},
               onSelectionChanged: (selection) =>
@@ -68,6 +73,8 @@ class _AllocationView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final money = moneyFormatOf(context, ref);
     final allocation = ref.watch(latestAllocationProvider).value;
     final target = ref.watch(targetAllocationProvider).value ?? const {};
     final masked = ref.watch(maskAmountsProvider).value ?? false;
@@ -77,7 +84,7 @@ class _AllocationView extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(vertical: 48),
         child: Center(
           child: Text(
-            '자산을 기록하면 배분을 볼 수 있어요',
+            l10n.assetsAllocationEmpty,
             style: theme.textTheme.bodyMedium!.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -94,7 +101,9 @@ class _AllocationView extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('${allocation.ym ~/ 100}년 ${allocation.ym % 100}월 기준',
+        Text(
+            l10n.assetsAsOf(formatYm(allocation.ym,
+                languageCode: Localizations.localeOf(context).languageCode)),
             style: theme.textTheme.bodySmall),
         const SizedBox(height: 8),
         SizedBox(
@@ -123,6 +132,7 @@ class _AllocationView extends ConsumerWidget {
             actualPercent: (byClass[assetClass]! * 100 / total).round(),
             targetPercent: target[assetClass],
             masked: masked,
+            money: money,
           ),
         const SizedBox(height: 8),
         Align(
@@ -130,7 +140,8 @@ class _AllocationView extends ConsumerWidget {
           child: OutlinedButton.icon(
             onPressed: () => _editTarget(context, ref, classes, target),
             icon: const Icon(Icons.tune, size: 18),
-            label: Text(target.isEmpty ? '목표 배분 설정' : '목표 배분 수정'),
+            label: Text(
+                target.isEmpty ? l10n.assetsSetTarget : l10n.assetsEditTarget),
           ),
         ),
       ],
@@ -148,10 +159,11 @@ class _AllocationView extends ConsumerWidget {
         assetClass: TextEditingController(
             text: current[assetClass]?.toString() ?? ''),
     };
+    final l10n = context.l10n;
     final saved = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('목표 배분 (%)'),
+        title: Text(l10n.assetsTargetDialogTitle),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -163,7 +175,7 @@ class _AllocationView extends ConsumerWidget {
                   controller: controllers[assetClass],
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
-                    labelText: assetClassLabel(assetClass),
+                    labelText: assetClassLabel(l10n, assetClass),
                     suffixText: '%',
                     border: const OutlineInputBorder(),
                     isDense: true,
@@ -175,11 +187,11 @@ class _AllocationView extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('취소'),
+            child: Text(l10n.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('저장'),
+            child: Text(l10n.commonSave),
           ),
         ],
       ),
@@ -203,6 +215,7 @@ class _AllocationRow extends StatelessWidget {
   final int actualPercent;
   final int? targetPercent;
   final bool masked;
+  final MoneyFormat money;
 
   const _AllocationRow({
     required this.assetClass,
@@ -210,11 +223,13 @@ class _AllocationRow extends StatelessWidget {
     required this.actualPercent,
     required this.targetPercent,
     required this.masked,
+    required this.money,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final target = targetPercent;
     // 사실 표시만 — "리밸런싱하세요" 같은 행동 지시 금지 (제품 원칙)
     final String? deviationLabel;
@@ -223,8 +238,9 @@ class _AllocationRow extends StatelessWidget {
     } else {
       final deviation = actualPercent - target;
       deviationLabel = deviation == 0
-          ? '목표 $target% · 일치'
-          : '목표 $target% · ${deviation > 0 ? '+' : '−'}${deviation.abs()}%p';
+          ? l10n.assetsTargetMatch(target)
+          : l10n.assetsTargetDeviation(
+              target, '${deviation > 0 ? '+' : '−'}${deviation.abs()}');
     }
 
     return Padding(
@@ -244,7 +260,7 @@ class _AllocationRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(assetClassLabel(assetClass),
+                Text(assetClassLabel(l10n, assetClass),
                     style: theme.textTheme.bodyLarge),
                 if (deviationLabel != null)
                   Text(
@@ -263,7 +279,7 @@ class _AllocationRow extends StatelessWidget {
                   style: theme.textTheme.titleMedium!
                       .copyWith(fontWeight: FontWeight.w600)),
               Text(
-                masked ? '●●●' : '${formatKoreanMoney(amount)}원',
+                masked ? l10n.commonMasked : money.compact(amount),
                 style: theme.textTheme.bodySmall!.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -284,6 +300,8 @@ class _CashflowView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final money = moneyFormatOf(context, ref);
     final summaries =
         ref.watch(snapshotSummariesProvider).value ?? const <SnapshotSummary>[];
 
@@ -299,7 +317,7 @@ class _CashflowView extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(vertical: 48),
         child: Center(
           child: Text(
-            '기록할 때 소득/지출을 함께 적으면 현금흐름을 볼 수 있어요',
+            l10n.assetsCashflowEmpty,
             style: theme.textTheme.bodyMedium!.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -320,9 +338,11 @@ class _CashflowView extends ConsumerWidget {
       children: [
         Row(
           children: [
-            _LegendDot(color: theme.colorScheme.primary, label: '소득'),
+            _LegendDot(
+                color: theme.colorScheme.primary, label: l10n.assetsIncome),
             const SizedBox(width: 12),
-            _LegendDot(color: theme.colorScheme.outline, label: '지출'),
+            _LegendDot(
+                color: theme.colorScheme.outline, label: l10n.snapExpense),
           ],
         ),
         const SizedBox(height: 12),
@@ -349,7 +369,8 @@ class _CashflowView extends ConsumerWidget {
                       if (index < 0 || index >= recent.length) {
                         return const SizedBox.shrink();
                       }
-                      return Text('${recent[index].ym % 100}월',
+                      return Text(
+                          l10n.homeMonthShort('${recent[index].ym % 100}'),
                           style: theme.textTheme.labelSmall);
                     },
                   ),
@@ -377,7 +398,8 @@ class _CashflowView extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 16),
-        for (final summary in recent.reversed) _CashflowRow(summary: summary),
+        for (final summary in recent.reversed)
+          _CashflowRow(summary: summary, money: money),
       ],
     );
   }
@@ -385,12 +407,14 @@ class _CashflowView extends ConsumerWidget {
 
 class _CashflowRow extends StatelessWidget {
   final SnapshotSummary summary;
+  final MoneyFormat money;
 
-  const _CashflowRow({required this.summary});
+  const _CashflowRow({required this.summary, required this.money});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final income = summary.snapshot.income!;
     final expense = summary.snapshot.expense!;
     final saving = income - expense;
@@ -400,18 +424,19 @@ class _CashflowRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          Text('${summary.ym % 100}월', style: theme.textTheme.bodyMedium),
+          Text(l10n.homeMonthShort('${summary.ym % 100}'),
+              style: theme.textTheme.bodyMedium),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              '저축 ${formatKoreanMoney(saving)}원',
+              l10n.assetsSaving(money.compact(saving)),
               style: theme.textTheme.bodyMedium,
             ),
           ),
           Text(
             rate == null
-                ? '저축률 —'
-                : '저축률 ${(rate.clamp(-1.0, 1.0) * 100).round()}%',
+                ? l10n.assetsSavingRateNone
+                : l10n.assetsSavingRate((rate.clamp(-1.0, 1.0) * 100).round()),
             style: theme.textTheme.bodyMedium!.copyWith(
               color: theme.colorScheme.primary,
               fontWeight: FontWeight.w600,

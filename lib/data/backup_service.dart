@@ -6,10 +6,16 @@ import 'package:cryptography/cryptography.dart';
 
 import 'db/database.dart';
 
+/// 백업 오류 종류 — UI는 [BackupException.code]로 번역 문구를 고른다
+enum BackupError { unreadable, notFiredomBackup, newerVersion, corrupted, wrongPassphrase }
+
 class BackupException implements Exception {
+  final BackupError code;
+
+  /// 로그·테스트용 한국어 설명 (화면 표시는 code → l10n)
   final String message;
 
-  const BackupException(this.message);
+  const BackupException(this.code, this.message);
 
   @override
   String toString() => message;
@@ -91,15 +97,15 @@ class BackupService {
     try {
       map = jsonDecode(payload) as Map<String, dynamic>;
     } catch (_) {
-      throw const BackupException('백업 파일을 읽을 수 없어요');
+      throw const BackupException(BackupError.unreadable, '백업 파일을 읽을 수 없어요');
     }
     if (map['format'] != 'firedom-backup') {
-      throw const BackupException('파이어덤 백업 파일이 아니에요');
+      throw const BackupException(BackupError.notFiredomBackup, '파이어덤 백업 파일이 아니에요');
     }
     final version = map['schema_version'] as int? ?? 0;
     if (version > _db.schemaVersion) {
       // 더 새 스키마의 백업 — 거부 (B4)
-      throw const BackupException('이 백업은 더 새 버전에서 만들어졌어요 — 앱을 업데이트해주세요');
+      throw const BackupException(BackupError.newerVersion, '이 백업은 더 새 버전에서 만들어졌어요 — 앱을 업데이트해주세요');
     }
     // version < schemaVersion이면 여기서 마이그레이션 체인을 태운다 (B5).
     // 현재 스키마 v1뿐이므로 체인 없음.
@@ -175,11 +181,11 @@ class BackupService {
   }) async {
     const headerLength = 4 + 1 + 4 + _saltLength + _nonceLength + _macLength;
     if (bytes.length < headerLength) {
-      throw const BackupException('백업 파일이 손상됐어요');
+      throw const BackupException(BackupError.corrupted, '백업 파일이 손상됐어요');
     }
     for (var i = 0; i < _magic.length; i++) {
       if (bytes[i] != _magic[i]) {
-        throw const BackupException('파이어덤 백업 파일이 아니에요');
+        throw const BackupException(BackupError.notFiredomBackup, '파이어덤 백업 파일이 아니에요');
       }
     }
     var offset = 4 + 1; // magic + file version
@@ -202,7 +208,7 @@ class BackupService {
       );
       return utf8.decode(clear);
     } on SecretBoxAuthenticationError {
-      throw const BackupException('패스프레이즈가 올바르지 않아요');
+      throw const BackupException(BackupError.wrongPassphrase, '패스프레이즈가 올바르지 않아요');
     }
   }
 

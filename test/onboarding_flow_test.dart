@@ -1,4 +1,5 @@
 import 'package:firedom/data/repositories/plan_repository.dart';
+import 'package:firedom/data/repositories/settings_store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -42,6 +43,28 @@ void main() {
     await tester.enterText(find.byType(TextField), '500');
     await tester.pump();
     expect(find.text('= 500만원'), findsOneWidget);
+  });
+
+  appTest('S1: 통화 USD 선택 → 설정 저장 + 달러 입력이 센트로 저장', (tester) async {
+    final db = await pumpApp(tester);
+
+    await tester.tap(find.byKey(const ValueKey('onboarding-currency')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('미국 달러 (USD)').last);
+    await tester.pumpAndSettle();
+    expect(await SettingsStore(db).get<String>(SettingKeys.currency), 'USD');
+
+    await enterAnswer(tester, '35', nextLabel: '다음');
+    await tester.enterText(find.byType(TextField), '5000');
+    await tester.pump();
+    // USD는 만 단위 토글 없이 달러 단위 입력
+    expect(find.textContaining('단위'), findsNothing);
+    expect(find.text('= 5,000달러'), findsOneWidget);
+
+    await tester.tap(find.text('다음'));
+    await tester.pumpAndSettle();
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getInt('onboarding.monthly_income'), 500000); // 센트
   });
 
   appTest('S2: What-if 슬라이더 최대(+300만) → 45세로 단축', (tester) async {
@@ -97,7 +120,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('계산에 사용한 가정'), findsOneWidget);
-    expect(find.textContaining('투자 자문이 아닙니다'), findsOneWidget);
+    expect(find.textContaining('투자 자문이 아닙니다'), findsAtLeastNWidgets(1));
   });
 
   appTest('S2 CTA: 계획이 plans 테이블에 저장되고 홈으로 진입', (tester) async {

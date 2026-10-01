@@ -49,7 +49,11 @@ class SnapshotRepository {
   }
 
   /// 첫 사용 시 기본 항목 셋업. 이미 항목이 있으면 그대로 반환 (멱등).
-  Future<List<Account>> ensureDefaultAccounts() async {
+  ///
+  /// [names]: 기본 항목 이름 6개 ([defaultAccountSeeds] 순서, UI 언어별).
+  /// null이면 한국어 시드 이름을 쓴다.
+  Future<List<Account>> ensureDefaultAccounts({List<String>? names}) async {
+    assert(names == null || names.length == defaultAccountSeeds.length);
     final existing = await getAccounts();
     if (existing.isNotEmpty) return existing;
     final now = DateTime.now().millisecondsSinceEpoch;
@@ -59,7 +63,7 @@ class SnapshotRepository {
           _db.accounts,
           AccountsCompanion.insert(
             id: _uuid.v4(),
-            name: seed.name,
+            name: names?[index] ?? seed.name,
             assetClass: seed.assetClass,
             isLiability: Value(seed.isLiability),
             sortOrder: Value(index),

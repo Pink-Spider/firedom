@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/currency.dart';
+
 import '../repositories/milestone_repository.dart';
 import '../repositories/plan_repository.dart';
 import '../repositories/scenario_repository.dart';
@@ -84,4 +86,12 @@ final targetAllocationProvider = StreamProvider<Map<String, int>>(
       .watch<Map<String, dynamic>>(SettingKeys.targetAllocation)
       .map((value) =>
           value == null ? const {} : value.map((k, v) => MapEntry(k, v as int))),
+);
+
+/// 통화 — settings 테이블. 없으면 KRW (기존 한국 설치는 전부 원화)
+final currencyProvider = StreamProvider<Currency>(
+  (ref) => ref
+      .watch(settingsStoreProvider)
+      .watch<String>(SettingKeys.currency)
+      .map(Currency.fromCode),
 );

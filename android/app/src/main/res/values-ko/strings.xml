@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">파이어덤</string>
+    <string name="widget_title">파이어덤</string>
+    <string name="widget_placeholder">계획을 만들어보세요</string>
+    <string name="widget_dday_default">자유까지</string>
+</resources>

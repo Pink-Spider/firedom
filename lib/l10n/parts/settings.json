@@ -1,0 +1,493 @@
+{
+  "settingsTitle": {
+    "ko": "설정",
+    "en": "Settings",
+    "ja": "設定",
+    "desc": "설정 화면 앱바"
+  },
+  "settingsReminderPermissionNeeded": {
+    "ko": "알림 권한이 필요해요 — 설정에서 허용해주세요",
+    "en": "Notification permission is required — allow it in system settings",
+    "ja": "通知の許可が必要です — 端末の設定で許可してください"
+  },
+  "settingsBiometricUnsupported": {
+    "ko": "이 기기는 생체인증을 지원하지 않아요",
+    "en": "This device does not support biometric authentication",
+    "ja": "この端末は生体認証に対応していません"
+  },
+  "settingsBiometricSetupReason": {
+    "ko": "앱 잠금을 설정합니다",
+    "en": "Set up app lock",
+    "ja": "アプリロックを設定します",
+    "desc": "OS 생체인증 프롬프트 사유"
+  },
+  "settingsSectionReminder": {
+    "ko": "기록 리마인더",
+    "en": "Record reminder",
+    "ja": "記録リマインダー"
+  },
+  "settingsReminderSwitch": {
+    "ko": "월간 기록 알림",
+    "en": "Monthly record reminder",
+    "ja": "毎月の記録通知"
+  },
+  "settingsReminderSwitchSubtitle": {
+    "ko": "기록하지 않은 달에만 알려드려요 · 로컬 알림",
+    "en": "Only for months not yet recorded · local notification",
+    "ja": "記録していない月だけお知らせします · ローカル通知"
+  },
+  "settingsReminderDay": {
+    "ko": "알림 날짜",
+    "en": "Reminder day",
+    "ja": "通知日"
+  },
+  "settingsReminderLastDay": {
+    "ko": "매월 말일",
+    "en": "Last day of month",
+    "ja": "毎月末日"
+  },
+  "settingsReminderDayOfMonth": {
+    "ko": "매월 {day}일",
+    "en": "Day {day} of month",
+    "ja": "毎月{day}日",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsReminderTime": {
+    "ko": "알림 시간",
+    "en": "Reminder time",
+    "ja": "通知時刻"
+  },
+  "settingsSectionDisplaySecurity": {
+    "ko": "표시 · 보안",
+    "en": "Display · Security",
+    "ja": "表示 · セキュリティ"
+  },
+  "settingsMaskSwitch": {
+    "ko": "금액 가림(●●●) 기본값",
+    "en": "Hide amounts (●●●) by default",
+    "ja": "金額を隠す(●●●) 既定値"
+  },
+  "settingsMaskSwitchSubtitle": {
+    "ko": "홈에서 눈 아이콘으로도 바꿀 수 있어요",
+    "en": "You can also toggle it with the eye icon on Home",
+    "ja": "ホームの目のアイコンからも切り替えられます"
+  },
+  "settingsBiometricSwitch": {
+    "ko": "생체인증 앱 잠금",
+    "en": "Biometric app lock",
+    "ja": "生体認証アプリロック"
+  },
+  "settingsBiometricSwitchSubtitle": {
+    "ko": "앱을 열 때 Face ID/지문 인증",
+    "en": "Face ID / fingerprint when opening the app",
+    "ja": "アプリを開くときにFace ID/指紋認証"
+  },
+  "settingsTheme": {
+    "ko": "화면 테마",
+    "en": "Theme",
+    "ja": "テーマ"
+  },
+  "settingsThemeLight": {
+    "ko": "라이트",
+    "en": "Light",
+    "ja": "ライト"
+  },
+  "settingsThemeDark": {
+    "ko": "다크",
+    "en": "Dark",
+    "ja": "ダーク"
+  },
+  "settingsLanguage": {
+    "ko": "언어",
+    "en": "Language",
+    "ja": "言語"
+  },
+  "settingsCurrency": {
+    "ko": "통화",
+    "en": "Currency",
+    "ja": "通貨"
+  },
+  "settingsCurrencyChangeTitle": {
+    "ko": "통화 변경",
+    "en": "Change currency",
+    "ja": "通貨の変更"
+  },
+  "settingsCurrencyChangeBody": {
+    "ko": "기존에 입력한 금액은 환산되지 않고 단위만 {currency}(으)로 바뀌어요. 계속할까요?",
+    "en": "Existing amounts are not converted — only the unit changes to {currency}. Continue?",
+    "ja": "入力済みの金額は換算されず、単位だけが{currency}に変わります。続けますか？",
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsCurrencyChangeConfirm": {
+    "ko": "변경하기",
+    "en": "Change",
+    "ja": "変更する"
+  },
+  "settingsSectionSubscription": {
+    "ko": "구독",
+    "en": "Subscription",
+    "ja": "サブスクリプション"
+  },
+  "settingsPremiumTitle": {
+    "ko": "파이어덤 프리미엄",
+    "en": "Firedom Premium",
+    "ja": "Firedom プレミアム"
+  },
+  "settingsPremiumActive": {
+    "ko": "이용 중 🎉 — 플랜·해지는 구독 관리에서",
+    "en": "Active 🎉 — manage plan or cancel in Subscription",
+    "ja": "利用中 🎉 — プラン変更・解約はサブスクリプション管理から"
+  },
+  "settingsPremiumInactive": {
+    "ko": "몬테카를로 상세 분포 · 포트폴리오 비중 편집",
+    "en": "Monte Carlo detail · portfolio allocation editing",
+    "ja": "モンテカルロ詳細分布 · ポートフォリオ比率の編集"
+  },
+  "settingsCustomerId": {
+    "ko": "고객 ID",
+    "en": "Customer ID",
+    "ja": "顧客ID"
+  },
+  "settingsCustomerIdSubtitle": {
+    "ko": "{id}\n구독 문의 시 알려주세요 · 탭하면 복사",
+    "en": "{id}\nShare this when contacting support about your subscription · tap to copy",
+    "ja": "{id}\nサブスクリプションのお問い合わせ時にお知らせください · タップでコピー",
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsCustomerIdCopied": {
+    "ko": "고객 ID를 복사했어요",
+    "en": "Customer ID copied",
+    "ja": "顧客IDをコピーしました"
+  },
+  "settingsQaPremium": {
+    "ko": "프리미엄 시뮬레이션 (QA)",
+    "en": "Simulate premium (QA)",
+    "ja": "プレミアム シミュレーション (QA)"
+  },
+  "settingsQaPremiumSubtitle": {
+    "ko": "결제 없이 유료 게이트 테스트 — QA 빌드 전용",
+    "en": "Test the paid gate without purchase — QA builds only",
+    "ja": "購入なしで有料ゲートをテスト — QAビルド専用"
+  },
+  "settingsSectionData": {
+    "ko": "데이터 · 정보",
+    "en": "Data · About",
+    "ja": "データ · 情報"
+  },
+  "settingsBackupExport": {
+    "ko": "백업 파일 내보내기",
+    "en": "Export backup file",
+    "ja": "バックアップファイルを書き出す"
+  },
+  "settingsBackupExportSubtitle": {
+    "ko": "암호화(AES-256) 파일 — iCloud/Drive에 보관하세요 · 서버 없음",
+    "en": "Encrypted (AES-256) file — keep it in iCloud/Drive · no server",
+    "ja": "暗号化(AES-256)ファイル — iCloud/Driveに保管してください · サーバーなし"
+  },
+  "settingsBackupImport": {
+    "ko": "백업 가져오기",
+    "en": "Import backup",
+    "ja": "バックアップを読み込む"
+  },
+  "settingsBackupImportSubtitle": {
+    "ko": "현재 데이터를 백업 내용으로 전체 교체해요",
+    "en": "Replaces all current data with the backup",
+    "ja": "現在のデータをバックアップの内容で全て置き換えます"
+  },
+  "settingsTerms": {
+    "ko": "이용약관",
+    "en": "Terms of Use",
+    "ja": "利用規約"
+  },
+  "settingsTermsSubtitle": {
+    "ko": "Apple 표준 사용권 계약(EULA)",
+    "en": "Apple standard license agreement (EULA)",
+    "ja": "Apple標準使用許諾契約(EULA)"
+  },
+  "settingsPrivacy": {
+    "ko": "개인정보 처리방침",
+    "en": "Privacy Policy",
+    "ja": "プライバシーポリシー"
+  },
+  "settingsAppName": {
+    "ko": "파이어덤 Firedom",
+    "en": "Firedom",
+    "ja": "Firedom",
+    "desc": "앱 정보 다이얼로그의 앱 이름"
+  },
+  "settingsAboutDisclaimer": {
+    "ko": "본 앱의 시뮬레이션은 정보 제공 목적이며 투자 자문이 아닙니다.",
+    "en": "Simulations in this app are for informational purposes only and are not investment advice.",
+    "ja": "本アプリのシミュレーションは情報提供を目的としており、投資助言ではありません。"
+  },
+  "settingsAbout": {
+    "ko": "앱 정보",
+    "en": "About",
+    "ja": "アプリ情報"
+  },
+  "settingsPassphraseCreateTitle": {
+    "ko": "백업 암호 만들기",
+    "en": "Create backup passphrase",
+    "ja": "バックアップのパスフレーズを作成"
+  },
+  "settingsPassphraseEnterTitle": {
+    "ko": "백업 암호 입력",
+    "en": "Enter backup passphrase",
+    "ja": "バックアップのパスフレーズを入力"
+  },
+  "settingsPassphraseLabel": {
+    "ko": "패스프레이즈 (8자 이상)",
+    "en": "Passphrase (8+ characters)",
+    "ja": "パスフレーズ (8文字以上)"
+  },
+  "settingsPassphraseConfirmLabel": {
+    "ko": "한 번 더 입력",
+    "en": "Enter again",
+    "ja": "もう一度入力"
+  },
+  "settingsPassphraseWarning": {
+    "ko": "암호를 잊으면 복구할 수 없어요 — 안전한 곳에 보관하세요",
+    "en": "If you forget the passphrase it cannot be recovered — keep it somewhere safe",
+    "ja": "パスフレーズを忘れると復元できません — 安全な場所に保管してください"
+  },
+  "settingsPassphraseTooShort": {
+    "ko": "8자 이상 입력해주세요",
+    "en": "Enter at least 8 characters",
+    "ja": "8文字以上入力してください"
+  },
+  "settingsPassphraseMismatch": {
+    "ko": "암호가 서로 달라요",
+    "en": "Passphrases do not match",
+    "ja": "パスフレーズが一致しません"
+  },
+  "settingsBackupExportFailed": {
+    "ko": "백업 파일을 만들지 못했어요",
+    "en": "Could not create the backup file",
+    "ja": "バックアップファイルを作成できませんでした"
+  },
+  "settingsBackupOpenFailed": {
+    "ko": "파일을 열지 못했어요",
+    "en": "Could not open the file",
+    "ja": "ファイルを開けませんでした"
+  },
+  "settingsRestoreConfirmTitle": {
+    "ko": "전체 교체 확인",
+    "en": "Replace everything?",
+    "ja": "全体置き換えの確認"
+  },
+  "settingsRestoreConfirmBody": {
+    "ko": "현재 기기의 모든 기록·계획·설정이 백업 내용으로 교체돼요. 계속할까요?",
+    "en": "All records, plans and settings on this device will be replaced with the backup. Continue?",
+    "ja": "この端末のすべての記録・プラン・設定がバックアップの内容に置き換わります。続けますか？"
+  },
+  "settingsRestoreConfirmButton": {
+    "ko": "교체하기",
+    "en": "Replace",
+    "ja": "置き換える"
+  },
+  "settingsRestoreDone": {
+    "ko": "복원 완료 — 데이터가 교체됐어요",
+    "en": "Restore complete — data replaced",
+    "ja": "復元完了 — データを置き換えました"
+  },
+  "settingsRestoreFailed": {
+    "ko": "복원에 실패했어요 — 파일과 암호를 확인해주세요",
+    "en": "Restore failed — check the file and passphrase",
+    "ja": "復元に失敗しました — ファイルとパスフレーズを確認してください"
+  },
+  "settingsBackupErrorUnreadable": {
+    "ko": "백업 파일을 읽을 수 없어요",
+    "en": "Could not read the backup file",
+    "ja": "バックアップファイルを読み込めません"
+  },
+  "settingsBackupErrorNotFiredom": {
+    "ko": "파이어덤 백업 파일이 아니에요",
+    "en": "This is not a Firedom backup file",
+    "ja": "Firedomのバックアップファイルではありません"
+  },
+  "settingsBackupErrorNewerVersion": {
+    "ko": "이 백업은 더 새 버전에서 만들어졌어요 — 앱을 업데이트해주세요",
+    "en": "This backup was made with a newer version — update the app",
+    "ja": "このバックアップは新しいバージョンで作成されました — アプリを更新してください"
+  },
+  "settingsBackupErrorCorrupted": {
+    "ko": "백업 파일이 손상됐어요",
+    "en": "The backup file is corrupted",
+    "ja": "バックアップファイルが破損しています"
+  },
+  "settingsBackupErrorWrongPassphrase": {
+    "ko": "패스프레이즈가 올바르지 않아요",
+    "en": "Incorrect passphrase",
+    "ja": "パスフレーズが正しくありません"
+  },
+  "settingsPrivacyBody": {
+    "ko": "모든 재무 데이터(자산·기록)는 회원가입·계좌 연동 없이 이 기기에만 저장되며, 어떤 경우에도 서버로 전송되지 않습니다. 앱을 삭제하면 데이터도 함께 삭제됩니다.\n\n알림은 기기 로컬 알림만 사용합니다 (푸시 서버 없음).\n\n구독을 이용하는 경우 결제·구독 상태 확인은 스토어(Apple/Google)를 통해 처리되며, 이때도 자산·기록 등 재무 데이터는 전송되지 않습니다.\n\n새 버전 안내를 위해 스토어의 공개 버전 정보만 조회하며, 이때도 개인·재무 데이터는 전송되지 않습니다.\n\n본 앱의 시뮬레이션 결과는 정보 제공 목적이며 투자 자문이 아닙니다.",
+    "en": "All financial data (assets and records) is stored only on this device, with no sign-up or account linking, and is never sent to a server. Deleting the app deletes the data as well.\n\nNotifications use local device notifications only (no push server).\n\nIf you subscribe, payment and subscription status are handled through the store (Apple/Google); no financial data such as assets or records is transmitted.\n\nTo announce new versions, only the store's public version information is looked up; no personal or financial data is transmitted.\n\nSimulation results in this app are for informational purposes only and are not investment advice.",
+    "ja": "すべての財務データ（資産・記録）は会員登録や口座連携なしにこの端末だけに保存され、いかなる場合もサーバーへ送信されません。アプリを削除するとデータも一緒に削除されます。\n\n通知は端末のローカル通知のみを使用します（プッシュサーバーなし）。\n\nサブスクリプションを利用する場合、決済・購読状態の確認はストア（Apple/Google）を通じて処理され、その際も資産・記録などの財務データは送信されません。\n\n新バージョンの案内のためにストアの公開バージョン情報のみ照会し、その際も個人・財務データは送信されません。\n\n本アプリのシミュレーション結果は情報提供を目的としており、投資助言ではありません。"
+  },
+  "subTitle": {
+    "ko": "구독 관리",
+    "en": "Subscription",
+    "ja": "サブスクリプション管理"
+  },
+  "subActiveTitle": {
+    "ko": "파이어덤 프리미엄 이용 중 🎉",
+    "en": "Firedom Premium is active 🎉",
+    "ja": "Firedom プレミアム利用中 🎉"
+  },
+  "subInactiveTitle": {
+    "ko": "구독이 확인되지 않아요",
+    "en": "No active subscription found",
+    "ja": "サブスクリプションが確認できません"
+  },
+  "subActiveBody": {
+    "ko": "몬테카를로 상세 · 시나리오 비교 · 포트폴리오 편집",
+    "en": "Monte Carlo detail · scenario comparison · portfolio editing",
+    "ja": "モンテカルロ詳細 · シナリオ比較 · ポートフォリオ編集",
+    "desc": "구독 활성 시 열려 있는 기능 — 실제 동작하는 3종만 (미출시 기능 노출 금지)"
+  },
+  "subInactiveBody": {
+    "ko": "스토어에서 결제한 이력이 있다면 아래에서 복원해보세요",
+    "en": "If you purchased through the store before, try restoring below",
+    "ja": "ストアで購入した履歴があれば、下から復元をお試しください"
+  },
+  "subPlanRenewal": {
+    "ko": "플랜 · 다음 갱신일",
+    "en": "Plan · next renewal",
+    "ja": "プラン · 次回更新日"
+  },
+  "subPlanRenewalSubtitle": {
+    "ko": "스토어 구독 화면에서 확인할 수 있어요",
+    "en": "Available on the store's subscription page",
+    "ja": "ストアのサブスクリプション画面で確認できます"
+  },
+  "subManagedByStore": {
+    "ko": "구독은 스토어 계정으로 관리돼요 — 플랜 변경과 해지는 스토어에서 할 수 있고, 해지해도 남은 기간까지는 프리미엄이 유지돼요.",
+    "en": "Subscriptions are managed by your store account — change or cancel the plan in the store. After cancelling, Premium stays active until the end of the current period.",
+    "ja": "サブスクリプションはストアのアカウントで管理されます — プラン変更と解約はストアで行え、解約しても残りの期間はプレミアムが維持されます。"
+  },
+  "subManageInStore": {
+    "ko": "스토어에서 구독 관리",
+    "en": "Manage in store",
+    "ja": "ストアで管理する"
+  },
+  "subRestore": {
+    "ko": "구매 복원",
+    "en": "Restore purchases",
+    "ja": "購入を復元"
+  },
+  "subStoreOpenFailed": {
+    "ko": "스토어를 열 수 없어요 — 스토어 앱에서 구독을 확인해주세요",
+    "en": "Could not open the store — check your subscription in the store app",
+    "ja": "ストアを開けません — ストアアプリでサブスクリプションを確認してください"
+  },
+  "subRestored": {
+    "ko": "구매를 복원했어요",
+    "en": "Purchases restored",
+    "ja": "購入を復元しました"
+  },
+  "subRestoreNotFound": {
+    "ko": "복원할 구매를 찾지 못했어요",
+    "en": "No purchases to restore were found",
+    "ja": "復元できる購入が見つかりませんでした"
+  },
+  "upgradeTitle": {
+    "ko": "업데이트가 있어요",
+    "en": "Update available",
+    "ja": "アップデートがあります"
+  },
+  "upgradeBody": {
+    "ko": "{appName}의 새 버전 {storeVersion}이 나왔어요. 지금 버전은 {installedVersion}이에요.",
+    "en": "A new version of {appName} ({storeVersion}) is available. You have {installedVersion}.",
+    "ja": "{appName}の新しいバージョン{storeVersion}が公開されました。現在のバージョンは{installedVersion}です。",
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      },
+      "storeVersion": {
+        "type": "String"
+      },
+      "installedVersion": {
+        "type": "String"
+      }
+    },
+    "desc": "upgrader 템플릿 토큰({{appName}} 등)이 플레이스홀더로 들어온다"
+  },
+  "upgradePrompt": {
+    "ko": "지금 업데이트할까요?",
+    "en": "Update now?",
+    "ja": "今すぐアップデートしますか？"
+  },
+  "upgradeLater": {
+    "ko": "나중에",
+    "en": "Later",
+    "ja": "あとで"
+  },
+  "upgradeUpdate": {
+    "ko": "업데이트",
+    "en": "Update",
+    "ja": "アップデート"
+  },
+  "upgradeReleaseNotes": {
+    "ko": "이번 업데이트 내용",
+    "en": "What's new",
+    "ja": "アップデート内容"
+  },
+  "lockUnlockReason": {
+    "ko": "파이어덤 잠금을 해제합니다",
+    "en": "Unlock Firedom",
+    "ja": "Firedomのロックを解除します",
+    "desc": "OS 생체인증 프롬프트 사유"
+  },
+  "lockTitle": {
+    "ko": "파이어덤이 잠겨 있어요",
+    "en": "Firedom is locked",
+    "ja": "Firedomはロックされています"
+  },
+  "lockBody": {
+    "ko": "재무 데이터 보호를 위해 인증이 필요해요",
+    "en": "Authentication is required to protect your financial data",
+    "ja": "財務データ保護のため認証が必要です"
+  },
+  "lockUnlock": {
+    "ko": "잠금 해제",
+    "en": "Unlock",
+    "ja": "ロック解除"
+  },
+  "shellHome": {
+    "ko": "홈",
+    "en": "Home",
+    "ja": "ホーム",
+    "desc": "하단 탭"
+  },
+  "shellSimulation": {
+    "ko": "시뮬레이션",
+    "en": "Simulation",
+    "ja": "シミュレーション",
+    "desc": "하단 탭"
+  },
+  "shellRecord": {
+    "ko": "기록",
+    "en": "Record",
+    "ja": "記録",
+    "desc": "하단 탭 — 기록 플로우 push"
+  },
+  "shellAssets": {
+    "ko": "자산",
+    "en": "Assets",
+    "ja": "資産",
+    "desc": "하단 탭"
+  }
+}

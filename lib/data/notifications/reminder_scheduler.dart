@@ -9,13 +9,23 @@ class ReminderNotification {
   final String title;
   final String body;
 
+  /// Android 알림 채널 이름·설명 (설정 언어의 l10n 문자열).
+  /// 채널 ID는 고정([monthlyReminderChannelId])이고 표시 문구만 언어를 따른다.
+  final String channelName;
+  final String channelDescription;
+
   const ReminderNotification({
     required this.id,
     required this.when,
     required this.title,
     required this.body,
+    required this.channelName,
+    required this.channelDescription,
   });
 }
+
+/// Android 알림 채널 ID — 바꾸면 기존 채널 설정(사용자 음소거 등)이 분리된다
+const monthlyReminderChannelId = 'monthly_reminder';
 
 /// 로컬 알림 스케줄러 추상화 — 테스트에서 fake로 교체 (로컬 알림만, 푸시 서버 없음)
 abstract class ReminderScheduler {
@@ -75,13 +85,13 @@ class LocalNotificationReminderScheduler implements ReminderScheduler {
         title: notification.title,
         body: notification.body,
         scheduledDate: tz.TZDateTime.from(notification.when, tz.UTC),
-        notificationDetails: const NotificationDetails(
+        notificationDetails: NotificationDetails(
           android: AndroidNotificationDetails(
-            'monthly_reminder',
-            '월간 기록 리마인더',
-            channelDescription: '월 1회 자산 기록 알림 (미기록 월에만)',
+            monthlyReminderChannelId,
+            notification.channelName,
+            channelDescription: notification.channelDescription,
           ),
-          iOS: DarwinNotificationDetails(),
+          iOS: const DarwinNotificationDetails(),
         ),
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       );

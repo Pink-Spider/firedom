@@ -1,0 +1,528 @@
+{
+  "onbCurrencyLabel": {
+    "ko": "통화",
+    "en": "Currency",
+    "ja": "通貨",
+    "desc": "온보딩 첫 화면 통화 선택 라벨"
+  },
+  "onbStepAgeTitle": {
+    "ko": "나이가 어떻게 되세요?",
+    "en": "How old are you?",
+    "ja": "年齢を教えてください"
+  },
+  "onbStepAgeSubtitle": {
+    "ko": "만 나이 기준이에요",
+    "en": "Your current age",
+    "ja": "満年齢でお答えください"
+  },
+  "onbStepIncomeTitle": {
+    "ko": "세후 월소득은 얼마인가요?",
+    "en": "What is your monthly take-home income?",
+    "ja": "手取りの月収はいくらですか？"
+  },
+  "onbStepIncomeSubtitle": {
+    "ko": "대략이면 충분해요 — 실수령액 기준",
+    "en": "A rough number is fine — after tax",
+    "ja": "おおよそで構いません — 手取り額"
+  },
+  "onbStepExpenseTitle": {
+    "ko": "한 달에 얼마나 쓰세요?",
+    "en": "How much do you spend per month?",
+    "ja": "1か月の支出はいくらですか？"
+  },
+  "onbStepExpenseSubtitle": {
+    "ko": "대략이면 충분해요 — 고정비 포함 월 지출",
+    "en": "A rough number is fine — including fixed costs",
+    "ja": "おおよそで構いません — 固定費を含む月の支出"
+  },
+  "onbStepAssetsTitle": {
+    "ko": "지금 순자산은 얼마쯤인가요?",
+    "en": "What is your net worth today?",
+    "ja": "現在の純資産はいくらですか？"
+  },
+  "onbStepAssetsSubtitle": {
+    "ko": "대략이면 충분해요 — 예금+보유자산−대출",
+    "en": "A rough number is fine — cash + holdings − debt",
+    "ja": "おおよそで構いません — 預金＋保有資産−借入"
+  },
+  "onbErrorAgeRange": {
+    "ko": "1~85 사이 나이를 입력해주세요",
+    "en": "Enter an age between 1 and 85",
+    "ja": "1〜85の年齢を入力してください"
+  },
+  "onbErrorTooLarge": {
+    "ko": "금액이 너무 커요",
+    "en": "Amount is too large",
+    "ja": "金額が大きすぎます"
+  },
+  "onbUnitSegment": {
+    "ko": "{unit} 단위",
+    "en": "In {unit}",
+    "ja": "{unit}単位",
+    "desc": "금액 입력 단위 토글 — unit은 '만원'/'원'/'万円'",
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "onbHelperEquals": {
+    "ko": "= {amount}",
+    "en": "= {amount}",
+    "ja": "= {amount}",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "onbSeeResult": {
+    "ko": "결과 보기",
+    "en": "See result",
+    "ja": "結果を見る"
+  },
+  "onbNeedInputBack": {
+    "ko": "입력이 필요해요 — 돌아가기",
+    "en": "Input needed — go back",
+    "ja": "入力が必要です — 戻る"
+  },
+  "onbShowAssumptions": {
+    "ko": "가정 보기",
+    "en": "View assumptions",
+    "ja": "前提を見る"
+  },
+  "onbStartPlan": {
+    "ko": "이 계획 시작하기",
+    "en": "Start this plan",
+    "ja": "このプランを始める"
+  },
+  "onbAssumptionsTitle": {
+    "ko": "계산에 사용한 가정",
+    "en": "Assumptions used",
+    "ja": "計算に使った前提"
+  },
+  "onbAssumptionRealReturn": {
+    "ko": "연 실질수익률",
+    "en": "Annual real return",
+    "ja": "年間実質リターン"
+  },
+  "onbAssumptionRealReturnValue": {
+    "ko": "{rate}% (중립 프리셋)",
+    "en": "{rate}% (neutral preset)",
+    "ja": "{rate}%（中立プリセット）",
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "onbAssumptionSwr": {
+    "ko": "안전인출률 (4% 룰)",
+    "en": "Safe withdrawal rate (4% rule)",
+    "ja": "安全引き出し率（4%ルール）"
+  },
+  "onbAssumptionMoneyBasis": {
+    "ko": "금액 기준",
+    "en": "Money basis",
+    "ja": "金額の基準"
+  },
+  "onbAssumptionMoneyBasisValue": {
+    "ko": "모든 금액은 오늘 돈 가치(실질)",
+    "en": "All amounts in today's money (real)",
+    "ja": "すべて現在の貨幣価値（実質）"
+  },
+  "onbAssumptionRetireSpendValue": {
+    "ko": "현재 월 지출과 동일",
+    "en": "Same as current monthly spending",
+    "ja": "現在の月間支出と同じ"
+  },
+  "onbAssumptionsEditHint": {
+    "ko": "가정은 목표 설정 화면에서 언제든 바꿀 수 있어요.",
+    "en": "These assumptions can be changed anytime in Goal settings.",
+    "ja": "前提は目標設定画面でいつでも変更できます。",
+    "desc": "면책(disclaimerSimulation) 뒤에 붙는 안내"
+  },
+  "onbHeadlineUnreachablePrefix": {
+    "ko": "지금 조건으로는",
+    "en": "Under current conditions",
+    "ja": "今の条件では"
+  },
+  "onbHeadlineUnreachable": {
+    "ko": "100년 안에 도달이 어려워요",
+    "en": "Not reached within 100 years",
+    "ja": "100年以内の到達は難しいです"
+  },
+  "onbHeadlineUnreachableHint": {
+    "ko": "아래 슬라이더로 저축을 늘리면 얼마나 달라지는지 볼 수 있어요.",
+    "en": "The slider below shows how extra savings change the result.",
+    "ja": "下のスライダーで貯蓄を増やすとどう変わるか確認できます。"
+  },
+  "onbCongrats": {
+    "ko": "축하해요!",
+    "en": "Congratulations!",
+    "ja": "おめでとうございます！"
+  },
+  "onbAlreadyFire": {
+    "ko": "이미 FIRE에 도달했어요",
+    "en": "You have already reached FIRE",
+    "ja": "すでにFIREに到達しています"
+  },
+  "onbYourFireAge": {
+    "ko": "당신의 FIRE 나이",
+    "en": "Your FIRE age",
+    "ja": "あなたのFIRE年齢"
+  },
+  "onbYearsLater": {
+    "ko": "약 {years}년 후",
+    "en": "{years, plural, =1{In about 1 year} other{In about {years} years}}",
+    "ja": "約{years}年後",
+    "placeholders": {
+      "years": {
+        "type": "int"
+      }
+    }
+  },
+  "onbYearsMonthsLater": {
+    "ko": "약 {years}년 {months}개월 후",
+    "en": "In about {years}y {months}m",
+    "ja": "約{years}年{months}か月後",
+    "placeholders": {
+      "years": {
+        "type": "int"
+      },
+      "months": {
+        "type": "int"
+      }
+    }
+  },
+  "onbFireNumberTitle": {
+    "ko": "필요 자산 (FIRE Number)",
+    "en": "Required assets (FIRE number)",
+    "ja": "必要資産（FIREナンバー）"
+  },
+  "onbFireNumberBasis": {
+    "ko": "월 지출 {spend} × {swr}% 룰 기준",
+    "en": "Monthly spending {spend} × {swr}% rule",
+    "ja": "月間支出 {spend} × {swr}%ルール基準",
+    "placeholders": {
+      "spend": {
+        "type": "String"
+      },
+      "swr": {
+        "type": "String"
+      }
+    }
+  },
+  "onbAxisHundredMillion": {
+    "ko": "{n}억",
+    "en": "{n}00M",
+    "ja": "{n}億",
+    "desc": "궤도 차트 세로축 눈금 (억/億 단위) — CJK UI + 만 단위 통화일 때만",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "onbWhatIfTitle": {
+    "ko": "매달 조금 더 저축한다면?",
+    "en": "What if you saved a little more each month?",
+    "ja": "毎月もう少し貯蓄したら？"
+  },
+  "onbWhatIfMoveSlider": {
+    "ko": "슬라이더를 움직여 보세요",
+    "en": "Move the slider to compare",
+    "ja": "スライダーを動かしてみてください"
+  },
+  "onbWhatIfStillUnreachable": {
+    "ko": "아직 도달이 어려워요",
+    "en": "Still out of reach",
+    "ja": "まだ到達が難しいです"
+  },
+  "onbWhatIfEffect": {
+    "ko": "+{amount} → {age}",
+    "en": "+{amount} → {age}",
+    "ja": "+{amount} → {age}",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "age": {
+        "type": "String"
+      }
+    }
+  },
+  "onbWhatIfEffectShortened": {
+    "ko": "+{amount} → {age} ({shortened} 단축)",
+    "en": "+{amount} → {age} ({shortened} sooner)",
+    "ja": "+{amount} → {age}（{shortened}短縮）",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "age": {
+        "type": "String"
+      },
+      "shortened": {
+        "type": "String"
+      }
+    }
+  },
+  "onbSliderPlus": {
+    "ko": "+{amount}",
+    "en": "+{amount}",
+    "ja": "+{amount}",
+    "desc": "슬라이더 양끝 라벨",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "onbNoSavingTitle": {
+    "ko": "현재 저축이 없어\nFIRE 나이를 계산할 수 없어요",
+    "en": "With no monthly savings,\nFIRE age cannot be calculated",
+    "ja": "現在貯蓄がないため\nFIRE年齢を計算できません"
+  },
+  "onbNoSavingBody": {
+    "ko": "월 지출이 소득과 같거나 더 커요. 입력한 지출을 조금만 낮추면 계획이 만들어져요.",
+    "en": "Monthly spending is equal to or higher than income. A slightly lower spending figure is enough to build a plan.",
+    "ja": "月の支出が収入と同じかそれ以上です。入力した支出を少し下げるとプランが作成できます。"
+  },
+  "onbAdjustExpense": {
+    "ko": "지출 조정하기",
+    "en": "Adjust spending",
+    "ja": "支出を調整する"
+  },
+  "goalTitle": {
+    "ko": "목표 설정",
+    "en": "Goal settings",
+    "ja": "目標設定"
+  },
+  "goalNoActivePlan": {
+    "ko": "활성 계획이 없어요",
+    "en": "No active plan",
+    "ja": "有効なプランがありません"
+  },
+  "goalSavedSnack": {
+    "ko": "계획을 업데이트했어요 — 궤도에 반영됩니다",
+    "en": "Plan updated — reflected in your trajectory",
+    "ja": "プランを更新しました — 軌道に反映されます"
+  },
+  "goalFireType": {
+    "ko": "FIRE 유형",
+    "en": "FIRE type",
+    "ja": "FIREタイプ"
+  },
+  "goalFireTypeLean": {
+    "ko": "린",
+    "en": "Lean",
+    "ja": "リーン"
+  },
+  "goalFireTypeFat": {
+    "ko": "팻",
+    "en": "Fat",
+    "ja": "ファット"
+  },
+  "goalFireTypeCoast": {
+    "ko": "코스트",
+    "en": "Coast",
+    "ja": "コースト"
+  },
+  "goalFireTypeBarista": {
+    "ko": "바리스타",
+    "en": "Barista",
+    "ja": "バリスタ"
+  },
+  "goalFireTypeCustom": {
+    "ko": "직접 설정",
+    "en": "Custom",
+    "ja": "カスタム"
+  },
+  "goalMonthlySaving": {
+    "ko": "월 저축액",
+    "en": "Monthly savings",
+    "ja": "月間貯蓄額"
+  },
+  "goalRetireSpend": {
+    "ko": "은퇴 후 월 생활비",
+    "en": "Monthly spending after retirement",
+    "ja": "退職後の月間生活費"
+  },
+  "goalSwr": {
+    "ko": "안전인출률",
+    "en": "Safe withdrawal rate",
+    "ja": "安全引き出し率"
+  },
+  "goalExpectedReturn": {
+    "ko": "기대수익률 (실질)",
+    "en": "Expected return (real)",
+    "ja": "期待リターン（実質）"
+  },
+  "goalReturnConservative": {
+    "ko": "보수",
+    "en": "Conservative",
+    "ja": "保守"
+  },
+  "goalReturnNeutral": {
+    "ko": "중립",
+    "en": "Neutral",
+    "ja": "中立"
+  },
+  "goalReturnAggressive": {
+    "ko": "공격",
+    "en": "Aggressive",
+    "ja": "積極"
+  },
+  "goalReturnCustom": {
+    "ko": "직접",
+    "en": "Custom",
+    "ja": "カスタム"
+  },
+  "goalNominalReturn": {
+    "ko": "명목수익률",
+    "en": "Nominal return",
+    "ja": "名目リターン"
+  },
+  "goalInflation": {
+    "ko": "인플레이션",
+    "en": "Inflation",
+    "ja": "インフレ率"
+  },
+  "goalRealReturnFisher": {
+    "ko": "실질수익률 {rate}% (피셔 방정식으로 계산)",
+    "en": "Real return {rate}% (Fisher equation)",
+    "ja": "実質リターン {rate}%（フィッシャー方程式で計算）",
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "goalReturnSummary": {
+    "ko": "실질 {real}% · 변동성 {vol}%",
+    "en": "Real {real}% · Volatility {vol}%",
+    "ja": "実質 {real}% · 変動率 {vol}%",
+    "placeholders": {
+      "real": {
+        "type": "String"
+      },
+      "vol": {
+        "type": "String"
+      }
+    }
+  },
+  "goalLifeExpectancy": {
+    "ko": "기대수명",
+    "en": "Life expectancy",
+    "ja": "想定寿命"
+  },
+  "goalPensionToggle": {
+    "ko": "국민연금 반영",
+    "en": "Include public pension",
+    "ja": "公的年金を反映"
+  },
+  "goalPensionHint": {
+    "ko": "예상 수령액은 통합연금포털(fss.or.kr)에서 확인할 수 있어요",
+    "en": "Your expected monthly benefit is available from your public pension provider",
+    "ja": "見込み受給額は年金機関の案内で確認できます"
+  },
+  "goalPensionAmount": {
+    "ko": "예상 월 수령액",
+    "en": "Expected monthly benefit",
+    "ja": "見込み月額"
+  },
+  "goalPensionStartAge": {
+    "ko": "수령 나이",
+    "en": "Start age",
+    "ja": "受給開始年齢"
+  },
+  "goalSaveButton": {
+    "ko": "저장하기",
+    "en": "Save",
+    "ja": "保存する"
+  },
+  "goalSaveHint": {
+    "ko": "저장하면 새 리비전으로 기록되고, 홈 궤도 차트에 변경 시점이 표시돼요.",
+    "en": "Saving records a new revision and marks the change on the home trajectory chart.",
+    "ja": "保存すると新しいリビジョンとして記録され、ホームの軌道チャートに変更時点が表示されます。"
+  },
+  "goalCheckInputs": {
+    "ko": "입력값을 확인해주세요",
+    "en": "Check your inputs",
+    "ja": "入力内容を確認してください"
+  },
+  "goalAlreadyFire": {
+    "ko": "이미 FIRE 도달!",
+    "en": "FIRE already reached!",
+    "ja": "すでにFIRE到達！"
+  },
+  "goalFireAge": {
+    "ko": "FIRE 나이 {age}세",
+    "en": "FIRE at age {age}",
+    "ja": "FIRE年齢 {age}歳",
+    "placeholders": {
+      "age": {
+        "type": "int"
+      }
+    }
+  },
+  "goalBridgeBefore": {
+    "ko": "수령 전(~{age}세): 월 {amount} (생활비 전액)",
+    "en": "Before pension (to age {age}): {amount}/mo (full spending)",
+    "ja": "受給前（〜{age}歳）: 月 {amount}（生活費全額）",
+    "placeholders": {
+      "age": {
+        "type": "int"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "goalBridgeAfter": {
+    "ko": "수령 후({age}세~): 월 {amount} (생활비 − 연금 {pension})",
+    "en": "After pension (age {age}+): {amount}/mo (spending − pension {pension})",
+    "ja": "受給後（{age}歳〜）: 月 {amount}（生活費 − 年金 {pension}）",
+    "placeholders": {
+      "age": {
+        "type": "int"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "pension": {
+        "type": "String"
+      }
+    }
+  },
+  "goalPensionEffect": {
+    "ko": "연금 반영으로 은퇴가 {months}개월 앞당겨져요",
+    "en": "{months, plural, =1{Including the pension brings FIRE 1 month earlier} other{Including the pension brings FIRE {months} months earlier}}",
+    "ja": "年金を反映すると到達が{months}か月早まります",
+    "placeholders": {
+      "months": {
+        "type": "int"
+      }
+    }
+  },
+  "goalPreviewTitle": {
+    "ko": "이 가정이라면",
+    "en": "With these assumptions",
+    "ja": "この前提では"
+  },
+  "goalPreviewSummary": {
+    "ko": "{period} 후 · 목표 자산 {amount}",
+    "en": "{period} from now · Target {amount}",
+    "ja": "{period}後 · 目標資産 {amount}",
+    "desc": "period는 yearsMonthsLabel",
+    "placeholders": {
+      "period": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  }
+}

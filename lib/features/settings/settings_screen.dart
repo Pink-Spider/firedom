@@ -5,9 +5,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../app/locale.dart';
+import '../../core/currency.dart';
 import '../../data/backup_service.dart';
 import '../../data/db/providers.dart';
 import '../../data/entitlements.dart';
@@ -15,6 +18,7 @@ import '../../data/notifications/reminder_scheduler.dart';
 import '../../data/reminders.dart';
 import '../../data/repositories/settings_store.dart';
 import '../../app/theme.dart';
+import '../../l10n/l10n.dart';
 import '../lock/biometric.dart';
 import '../paywall/paywall_sheet.dart';
 import 'subscription_screen.dart';
@@ -22,6 +26,27 @@ import 'subscription_screen.dart';
 /// QA 릴리스 빌드 플래그 — `--dart-define=FIREDOM_QA=true`로 활성화.
 /// 결제 연동 전 실기기에서 유료 게이트를 테스트하기 위한 것. 기본 false.
 const _qaBuild = bool.fromEnvironment('FIREDOM_QA');
+
+/// 언어 드롭다운의 '시스템' 항목 값 (설정에는 null로 저장)
+const _systemLocaleValue = 'system';
+
+/// 백업 오류 코드 → 현재 언어 문구
+String backupErrorMessage(AppLocalizations l10n, BackupError code) =>
+    switch (code) {
+      BackupError.unreadable => l10n.settingsBackupErrorUnreadable,
+      BackupError.notFiredomBackup => l10n.settingsBackupErrorNotFiredom,
+      BackupError.newerVersion => l10n.settingsBackupErrorNewerVersion,
+      BackupError.corrupted => l10n.settingsBackupErrorCorrupted,
+      BackupError.wrongPassphrase => l10n.settingsBackupErrorWrongPassphrase,
+    };
+
+/// 통화 → 설정 화면 표시 이름
+String currencyLabel(AppLocalizations l10n, Currency currency) =>
+    switch (currency) {
+      Currency.krw => l10n.currencyKrw,
+      Currency.usd => l10n.currencyUsd,
+      Currency.jpy => l10n.currencyJpy,
+    };
 
 /// S10. 설정 (PRD, v0.9 — 백업/복원 제외)
 ///
@@ -38,6 +63,9 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _loading = true;
+
+  /// 앱 정보 타일용 "1.0.0 (10)". 플랫폼 채널 실패(테스트 등) 시 빈 문자열
+  String _version = '';
   ReminderSettings _reminder = const ReminderSettings(enabled: false);
   bool _biometricLock = false;
 
@@ -52,10 +80,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final reminder = await loadReminderSettings(store);
     final biometric =
         await store.get<bool>(SettingKeys.biometricLock) ?? false;
+    var version = '';
+    try {
+      final info = await PackageInfo.fromPlatform();
+      version = '${info.version} (${info.buildNumber})';
+    } catch (_) {
+      // 플랫폼 채널이 없는 환경 — 버전 미표시
+    }
     if (!mounted) return;
     setState(() {
       _reminder = reminder;
       _biometricLock = biometric;
+      _version = version;
       _loading = false;
     });
   }
@@ -79,9 +115,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           await ref.read(reminderSchedulerProvider).ensurePermissions();
       if (!granted) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('알림 권한이 필요해요 — 설정에서 허용해주세요')),
-          );
+          _showSnack(context.l10n.settingsReminderPermissionNeeded);
         }
         return;
       }
@@ -113,13 +147,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (enabled) {
       if (!await authenticator.isSupported) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('이 기기는 생체인증을 지원하지 않아요')),
-          );
+          _showSnack(context.l10n.settingsBiometricUnsupported);
         }
         return;
       }
-      final ok = await authenticator.authenticate('앱 잠금을 설정합니다');
+      if (!mounted) return;
+      final ok = await authenticator
+          .authenticate(context.l10n.settingsBiometricSetupReason);
       if (!ok) return;
     }
     await ref
@@ -128,41 +162,90 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     setState(() => _biometricLock = enabled);
   }
 
+  Future<void> _changeLocale(String? value) async {
+    if (value == null) return;
+    await ref.read(settingsStoreProvider).set(
+          SettingKeys.locale,
+          value == _systemLocaleValue ? null : value,
+        );
+  }
+
+  /// 통화 변경 — 저장된 금액은 환산하지 않고 단위만 바뀌므로 확인을 받는다
+  Future<void> _changeCurrency(Currency? currency) async {
+    if (currency == null) return;
+    final current = ref.read(currencyProvider).value ?? Currency.fallback;
+    if (currency == current) return;
+    final l10n = context.l10n;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.settingsCurrencyChangeTitle),
+        content: Text(
+          l10n.settingsCurrencyChangeBody(currencyLabel(l10n, currency)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.commonCancel),
+          ),
+          FilledButton(
+            key: const ValueKey('currency-change-confirm'),
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l10n.settingsCurrencyChangeConfirm),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    await ref
+        .read(settingsStoreProvider)
+        .set(SettingKeys.currency, currency.code);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final masked = ref.watch(maskAmountsProvider).value ?? false;
 
     if (_loading) {
       return Scaffold(
-        appBar: AppBar(title: const Text('설정')),
+        appBar: AppBar(title: Text(l10n.settingsTitle)),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
 
+    final localeCode =
+        ref.watch(localeProvider).value?.languageCode ?? _systemLocaleValue;
+    final currency = ref.watch(currencyProvider).value ?? Currency.fallback;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('설정')),
+      appBar: AppBar(title: Text(l10n.settingsTitle)),
       body: SafeArea(
         child: ListView(
           children: [
-            _SectionHeader('기록 리마인더'),
+            _SectionHeader(l10n.settingsSectionReminder),
             SwitchListTile(
               key: const ValueKey('reminder-switch'),
-              title: const Text('월간 기록 알림'),
-              subtitle: const Text('기록하지 않은 달에만 알려드려요 · 로컬 알림'),
+              title: Text(l10n.settingsReminderSwitch),
+              subtitle: Text(l10n.settingsReminderSwitchSubtitle),
               value: _reminder.enabled,
               onChanged: _toggleReminder,
             ),
             if (_reminder.enabled) ...[
               ListTile(
-                title: const Text('알림 날짜'),
+                title: Text(l10n.settingsReminderDay),
                 trailing: DropdownButton<int>(
                   key: const ValueKey('reminder-day-dropdown'),
                   value: _reminder.dayOfMonth,
                   items: [
-                    const DropdownMenuItem(value: 0, child: Text('매월 말일')),
+                    DropdownMenuItem(
+                        value: 0, child: Text(l10n.settingsReminderLastDay)),
                     for (var day = 1; day <= 28; day++)
-                      DropdownMenuItem(value: day, child: Text('매월 $day일')),
+                      DropdownMenuItem(
+                        value: day,
+                        child: Text(l10n.settingsReminderDayOfMonth(day)),
+                      ),
                   ],
                   onChanged: (day) {
                     if (day == null) return;
@@ -176,7 +259,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
               ),
               ListTile(
-                title: const Text('알림 시간'),
+                title: Text(l10n.settingsReminderTime),
                 trailing: Text(
                   '${_reminder.hour.toString().padLeft(2, '0')}:'
                   '${_reminder.minute.toString().padLeft(2, '0')}',
@@ -186,11 +269,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ],
             const Divider(),
-            _SectionHeader('표시 · 보안'),
+            _SectionHeader(l10n.settingsSectionDisplaySecurity),
             SwitchListTile(
               key: const ValueKey('mask-switch'),
-              title: const Text('금액 가림(●●●) 기본값'),
-              subtitle: const Text('홈에서 눈 아이콘으로도 바꿀 수 있어요'),
+              title: Text(l10n.settingsMaskSwitch),
+              subtitle: Text(l10n.settingsMaskSwitchSubtitle),
               value: masked,
               onChanged: (value) => ref
                   .read(settingsStoreProvider)
@@ -198,22 +281,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             SwitchListTile(
               key: const ValueKey('biometric-switch'),
-              title: const Text('생체인증 앱 잠금'),
-              subtitle: const Text('앱을 열 때 Face ID/지문 인증'),
+              title: Text(l10n.settingsBiometricSwitch),
+              subtitle: Text(l10n.settingsBiometricSwitchSubtitle),
               value: _biometricLock,
               onChanged: _toggleBiometric,
             ),
             ListTile(
-              title: const Text('화면 테마'),
+              title: Text(l10n.settingsTheme),
               trailing: DropdownButton<ThemeMode>(
                 key: const ValueKey('theme-mode-dropdown'),
                 value: ref.watch(themeModeProvider).value ?? ThemeMode.system,
-                items: const [
+                items: [
                   DropdownMenuItem(
-                      value: ThemeMode.system, child: Text('시스템')),
+                      value: ThemeMode.system,
+                      child: Text(l10n.languageSystem)),
                   DropdownMenuItem(
-                      value: ThemeMode.light, child: Text('라이트')),
-                  DropdownMenuItem(value: ThemeMode.dark, child: Text('다크')),
+                      value: ThemeMode.light,
+                      child: Text(l10n.settingsThemeLight)),
+                  DropdownMenuItem(
+                      value: ThemeMode.dark,
+                      child: Text(l10n.settingsThemeDark)),
                 ],
                 onChanged: (mode) {
                   if (mode == null) return;
@@ -223,15 +310,45 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 },
               ),
             ),
+            ListTile(
+              title: Text(l10n.settingsLanguage),
+              trailing: DropdownButton<String>(
+                key: const ValueKey('language-dropdown'),
+                value: localeCode,
+                items: [
+                  for (final locale in selectableLocales)
+                    DropdownMenuItem(
+                      value: locale?.languageCode ?? _systemLocaleValue,
+                      child: Text(_languageLabel(l10n, locale?.languageCode)),
+                    ),
+                ],
+                onChanged: _changeLocale,
+              ),
+            ),
+            ListTile(
+              title: Text(l10n.settingsCurrency),
+              trailing: DropdownButton<Currency>(
+                key: const ValueKey('currency-dropdown'),
+                value: currency,
+                items: [
+                  for (final c in Currency.values)
+                    DropdownMenuItem(
+                      value: c,
+                      child: Text(currencyLabel(l10n, c)),
+                    ),
+                ],
+                onChanged: _changeCurrency,
+              ),
+            ),
             const Divider(),
-            _SectionHeader('구독'),
+            _SectionHeader(l10n.settingsSectionSubscription),
             Builder(builder: (context) {
               final isPremium = ref.watch(isPremiumProvider).value ?? false;
               return ListTile(
-                title: const Text('파이어덤 프리미엄'),
+                title: Text(l10n.settingsPremiumTitle),
                 subtitle: Text(isPremium
-                    ? '이용 중 🎉 — 플랜·해지는 구독 관리에서'
-                    : '몬테카를로 상세 분포 · 포트폴리오 비중 편집'),
+                    ? l10n.settingsPremiumActive
+                    : l10n.settingsPremiumInactive),
                 trailing: const Icon(Icons.chevron_right),
                 // S10-2: 구독자는 관리 화면, 미구독자는 페이월
                 onTap: () {
@@ -254,16 +371,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               if (customerId == null) return const SizedBox.shrink();
               return ListTile(
                 key: const ValueKey('customer-id-tile'),
-                title: const Text('고객 ID'),
-                subtitle: Text('$customerId\n구독 문의 시 알려주세요 · 탭하면 복사'),
+                title: Text(l10n.settingsCustomerId),
+                subtitle: Text(l10n.settingsCustomerIdSubtitle(customerId)),
                 isThreeLine: true,
                 trailing: const Icon(Icons.copy_outlined, size: 18),
                 onTap: () async {
                   await Clipboard.setData(ClipboardData(text: customerId));
                   if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('고객 ID를 복사했어요')),
-                  );
+                  _showSnack(l10n.settingsCustomerIdCopied);
                 },
               );
             }),
@@ -272,34 +387,33 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             if (kDebugMode || _qaBuild)
               SwitchListTile(
                 key: const ValueKey('debug-premium-switch'),
-                title: const Text('프리미엄 시뮬레이션 (QA)'),
-                subtitle: const Text('결제 없이 유료 게이트 테스트 — QA 빌드 전용'),
+                title: Text(l10n.settingsQaPremium),
+                subtitle: Text(l10n.settingsQaPremiumSubtitle),
                 value: ref.watch(isPremiumProvider).value ?? false,
                 onChanged: (value) => ref
                     .read(entitlementServiceProvider)
                     .setDebugPremium(value),
               ),
             const Divider(),
-            _SectionHeader('데이터 · 정보'),
+            _SectionHeader(l10n.settingsSectionData),
             ListTile(
               key: const ValueKey('backup-export-tile'),
-              title: const Text('백업 파일 내보내기'),
-              subtitle: const Text(
-                  '암호화(AES-256) 파일 — iCloud/Drive에 보관하세요 · 서버 없음'),
+              title: Text(l10n.settingsBackupExport),
+              subtitle: Text(l10n.settingsBackupExportSubtitle),
               trailing: const Icon(Icons.upload_outlined),
               onTap: _exportBackup,
             ),
             ListTile(
               key: const ValueKey('backup-import-tile'),
-              title: const Text('백업 가져오기'),
-              subtitle: const Text('현재 데이터를 백업 내용으로 전체 교체해요'),
+              title: Text(l10n.settingsBackupImport),
+              subtitle: Text(l10n.settingsBackupImportSubtitle),
               trailing: const Icon(Icons.download_outlined),
               onTap: _importBackup,
             ),
             ListTile(
               key: const ValueKey('settings-terms-tile'),
-              title: const Text('이용약관'),
-              subtitle: const Text('Apple 표준 사용권 계약(EULA)'),
+              title: Text(l10n.settingsTerms),
+              subtitle: Text(l10n.settingsTermsSubtitle),
               trailing: const Icon(Icons.open_in_new, size: 18),
               onTap: () => launchUrl(
                 Uri.parse(paywallTermsUrl),
@@ -307,17 +421,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
             ListTile(
-              title: const Text('개인정보 처리방침'),
+              title: Text(l10n.settingsPrivacy),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => _showPrivacyDialog(context),
             ),
-            const AboutListTile(
-              applicationName: '파이어덤 Firedom',
-              applicationVersion: '0.1.0',
+            AboutListTile(
+              applicationName: l10n.settingsAppName,
+              applicationVersion: _version,
               aboutBoxChildren: [
-                Text('본 앱의 시뮬레이션은 정보 제공 목적이며 투자 자문이 아닙니다.'),
+                Text(l10n.settingsAboutDisclaimer),
               ],
-              child: Text('앱 정보'),
+              child: Text(l10n.settingsAbout),
             ),
             const SizedBox(height: 24),
           ],
@@ -326,17 +440,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+  String _languageLabel(AppLocalizations l10n, String? code) =>
+      switch (code) {
+        'ko' => l10n.languageKo,
+        'en' => l10n.languageEn,
+        'ja' => l10n.languageJa,
+        _ => l10n.languageSystem,
+      };
+
   // ── 백업 / 복원 (B4) ─────────────────────────────────────────
 
   Future<String?> _askPassphrase({required bool creating}) {
     final controller = TextEditingController();
     final confirmController = TextEditingController();
+    final l10n = context.l10n;
     String? error;
     return showDialog<String>(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: Text(creating ? '백업 암호 만들기' : '백업 암호 입력'),
+          title: Text(creating
+              ? l10n.settingsPassphraseCreateTitle
+              : l10n.settingsPassphraseEnterTitle),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -346,7 +471,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 obscureText: true,
                 autofocus: true,
                 decoration: InputDecoration(
-                  labelText: '패스프레이즈 (8자 이상)',
+                  labelText: l10n.settingsPassphraseLabel,
                   errorText: error,
                 ),
               ),
@@ -356,11 +481,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   key: const ValueKey('passphrase-confirm-field'),
                   controller: confirmController,
                   obscureText: true,
-                  decoration: const InputDecoration(labelText: '한 번 더 입력'),
+                  decoration: InputDecoration(
+                      labelText: l10n.settingsPassphraseConfirmLabel),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '암호를 잊으면 복구할 수 없어요 — 안전한 곳에 보관하세요',
+                  l10n.settingsPassphraseWarning,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
@@ -369,22 +495,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('취소'),
+              child: Text(l10n.commonCancel),
             ),
             FilledButton(
               onPressed: () {
                 final passphrase = controller.text;
                 if (passphrase.length < 8) {
-                  setDialogState(() => error = '8자 이상 입력해주세요');
+                  setDialogState(
+                      () => error = l10n.settingsPassphraseTooShort);
                   return;
                 }
                 if (creating && passphrase != confirmController.text) {
-                  setDialogState(() => error = '암호가 서로 달라요');
+                  setDialogState(
+                      () => error = l10n.settingsPassphraseMismatch);
                   return;
                 }
                 Navigator.pop(context, passphrase);
               },
-              child: const Text('확인'),
+              child: Text(l10n.commonConfirm),
             ),
           ],
         ),
@@ -401,7 +529,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _exportBackup() async {
     final passphrase = await _askPassphrase(creating: true);
-    if (passphrase == null) return;
+    if (passphrase == null || !mounted) return;
+    final l10n = context.l10n;
     try {
       final bytes = await BackupService(ref.read(databaseProvider))
           .export(passphrase: passphrase);
@@ -413,18 +542,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       await file.writeAsBytes(bytes, flush: true);
       await SharePlus.instance.share(ShareParams(files: [XFile(file.path)]));
     } on BackupException catch (error) {
-      _showSnack(error.message);
+      _showSnack(backupErrorMessage(l10n, error.code));
     } catch (_) {
-      _showSnack('백업 파일을 만들지 못했어요');
+      _showSnack(l10n.settingsBackupExportFailed);
     }
   }
 
   Future<void> _importBackup() async {
+    final l10n = context.l10n;
     final XFile? picked;
     try {
       picked = await openFile();
     } catch (_) {
-      _showSnack('파일을 열지 못했어요');
+      _showSnack(l10n.settingsBackupOpenFailed);
       return;
     }
     if (picked == null) return;
@@ -436,17 +566,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('전체 교체 확인'),
-        content: const Text(
-            '현재 기기의 모든 기록·계획·설정이 백업 내용으로 교체돼요. 계속할까요?'),
+        title: Text(l10n.settingsRestoreConfirmTitle),
+        content: Text(l10n.settingsRestoreConfirmBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('취소'),
+            child: Text(l10n.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('교체하기'),
+            child: Text(l10n.settingsRestoreConfirmButton),
           ),
         ],
       ),
@@ -456,41 +585,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     try {
       await BackupService(ref.read(databaseProvider))
           .import(bytes: bytes, passphrase: passphrase);
-      _showSnack('복원 완료 — 데이터가 교체됐어요');
+      _showSnack(l10n.settingsRestoreDone);
       await _load(); // 설정 항목(리마인더 등) 다시 읽기
       await rescheduleReminders(
         db: ref.read(databaseProvider),
         scheduler: ref.read(reminderSchedulerProvider),
       );
     } on BackupException catch (error) {
-      _showSnack(error.message);
+      _showSnack(backupErrorMessage(l10n, error.code));
     } catch (_) {
-      _showSnack('복원에 실패했어요 — 파일과 암호를 확인해주세요');
+      _showSnack(l10n.settingsRestoreFailed);
     }
   }
 
   void _showPrivacyDialog(BuildContext context) {
+    final l10n = context.l10n;
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('개인정보 처리방침'),
-        content: const SingleChildScrollView(
-          child: Text(
-            '모든 재무 데이터(자산·기록)는 회원가입·계좌 연동 없이 이 기기에만 '
-            '저장되며, 어떤 경우에도 서버로 전송되지 않습니다. 앱을 삭제하면 '
-            '데이터도 함께 삭제됩니다.\n\n'
-            '알림은 기기 로컬 알림만 사용합니다 (푸시 서버 없음).\n\n'
-            '구독을 이용하는 경우 결제·구독 상태 확인은 스토어(Apple/Google)를 '
-            '통해 처리되며, 이때도 자산·기록 등 재무 데이터는 전송되지 않습니다.\n\n'
-            '새 버전 안내를 위해 스토어의 공개 버전 정보만 조회하며, 이때도 '
-            '개인·재무 데이터는 전송되지 않습니다.\n\n'
-            '본 앱의 시뮬레이션 결과는 정보 제공 목적이며 투자 자문이 아닙니다.',
-          ),
+        title: Text(l10n.settingsPrivacy),
+        content: SingleChildScrollView(
+          child: Text(l10n.settingsPrivacyBody),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('확인'),
+            child: Text(l10n.commonConfirm),
           ),
         ],
       ),

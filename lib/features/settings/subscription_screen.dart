@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../data/entitlements.dart';
+import '../../l10n/l10n.dart';
 
 /// S10-2. 구독 관리 (PRD) — 구독자 전용.
 ///
@@ -21,10 +22,11 @@ class SubscriptionScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final isPremium = ref.watch(isPremiumProvider).value ?? false;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('구독 관리')),
+      appBar: AppBar(title: Text(l10n.subTitle)),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
@@ -37,7 +39,7 @@ class SubscriptionScreen extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isPremium ? '파이어덤 프리미엄 이용 중 🎉' : '구독이 확인되지 않아요',
+                      isPremium ? l10n.subActiveTitle : l10n.subInactiveTitle,
                       style: theme.textTheme.titleMedium!.copyWith(
                         color: theme.colorScheme.onPrimaryContainer,
                         fontWeight: FontWeight.bold,
@@ -45,9 +47,7 @@ class SubscriptionScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      isPremium
-                          ? '몬테카를로 상세 · 시나리오 비교 · 연금 뷰 · 포트폴리오 편집'
-                          : '스토어에서 결제한 이력이 있다면 아래에서 복원해보세요',
+                      isPremium ? l10n.subActiveBody : l10n.subInactiveBody,
                       style: theme.textTheme.bodySmall!.copyWith(
                         color: theme.colorScheme.onPrimaryContainer,
                       ),
@@ -57,14 +57,13 @@ class SubscriptionScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 8),
-            const ListTile(
+            ListTile(
               contentPadding: EdgeInsets.zero,
-              title: Text('플랜 · 다음 갱신일'),
-              subtitle: Text('스토어 구독 화면에서 확인할 수 있어요'),
+              title: Text(l10n.subPlanRenewal),
+              subtitle: Text(l10n.subPlanRenewalSubtitle),
             ),
             Text(
-              '구독은 스토어 계정으로 관리돼요 — 플랜 변경과 해지는 스토어에서 할 수 있고, '
-              '해지해도 남은 기간까지는 프리미엄이 유지돼요.',
+              l10n.subManagedByStore,
               style: theme.textTheme.bodySmall!.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -73,11 +72,11 @@ class SubscriptionScreen extends ConsumerWidget {
             FilledButton.tonal(
               key: const ValueKey('store-subscription-button'),
               onPressed: () => _openStore(context),
-              child: const Text('스토어에서 구독 관리'),
+              child: Text(l10n.subManageInStore),
             ),
             TextButton(
               onPressed: () => _restore(context, ref),
-              child: const Text('구매 복원'),
+              child: Text(l10n.subRestore),
             ),
           ],
         ),
@@ -95,7 +94,7 @@ class SubscriptionScreen extends ConsumerWidget {
     } catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('스토어를 열 수 없어요 — 스토어 앱에서 구독을 확인해주세요')),
+        SnackBar(content: Text(context.l10n.subStoreOpenFailed)),
       );
     }
   }
@@ -105,9 +104,8 @@ class SubscriptionScreen extends ConsumerWidget {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(ok
-            ? '구매를 복원했어요'
-            : '복원할 구매를 찾지 못했어요 (결제 연동 준비 중)'),
+        content: Text(
+            ok ? context.l10n.subRestored : context.l10n.subRestoreNotFound),
       ),
     );
   }

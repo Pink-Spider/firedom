@@ -3,11 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/money_format.dart';
 import '../../core/ym.dart';
 import '../../data/db/providers.dart';
 import '../../data/home_widget_sync.dart';
 import '../../engine/engine.dart';
+import '../../l10n/l10n.dart';
+import '../common/money.dart';
 import '../home/home_screen.dart';
 import 'onboarding_draft.dart';
 
@@ -26,7 +27,7 @@ class OnboardingResultScreen extends ConsumerStatefulWidget {
 
 class _OnboardingResultScreenState
     extends ConsumerState<OnboardingResultScreen> {
-  /// What-if: 월 추가 저축 (원)
+  /// What-if: 월 추가 저축 (통화 최소 단위)
   int _extraSaving = 0;
 
   PlanInput _planOf(OnboardingDraft draft, {required int extraSaving}) {
@@ -42,6 +43,7 @@ class _OnboardingResultScreenState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final draft = ref.watch(onboardingDraftProvider);
     if (!draft.isComplete) {
       // 딥링크 등으로 입력 없이 진입한 경우
@@ -49,7 +51,7 @@ class _OnboardingResultScreenState
         body: Center(
           child: TextButton(
             onPressed: () => context.pop(),
-            child: const Text('입력이 필요해요 — 돌아가기'),
+            child: Text(l10n.onbNeedInputBack),
           ),
         ),
       );
@@ -100,7 +102,7 @@ class _OnboardingResultScreenState
             Center(
               child: TextButton(
                 onPressed: () => _showAssumptions(context, plan),
-                child: const Text('가정 보기'),
+                child: Text(l10n.onbShowAssumptions),
               ),
             ),
             const SizedBox(height: 16),
@@ -109,7 +111,16 @@ class _OnboardingResultScreenState
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
-              child: const Text('이 계획 시작하기'),
+              child: Text(l10n.onbStartPlan),
+            ),
+            const SizedBox(height: 12),
+            // 면책은 '가정 보기' 시트뿐 아니라 결과 본문에도 (제품 원칙)
+            Text(
+              l10n.disclaimerShort,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           ],
         ),
@@ -130,6 +141,7 @@ class _OnboardingResultScreenState
   }
 
   void _showAssumptions(BuildContext context, PlanInput plan) {
+    final l10n = context.l10n;
     showModalBottomSheet<void>(
       context: context,
       builder: (context) => Padding(
@@ -138,24 +150,27 @@ class _OnboardingResultScreenState
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('계산에 사용한 가정',
+            Text(l10n.onbAssumptionsTitle,
                 style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 16),
             _AssumptionRow(
-              '연 실질수익률',
-              '${(plan.realReturnBp / 100).toStringAsFixed(1)}% (중립 프리셋)',
+              l10n.onbAssumptionRealReturn,
+              l10n.onbAssumptionRealReturnValue(
+                  (plan.realReturnBp / 100).toStringAsFixed(1)),
             ),
             _AssumptionRow(
-              '안전인출률 (4% 룰)',
+              l10n.onbAssumptionSwr,
               '${(plan.swrBp / 100).toStringAsFixed(1)}%',
             ),
-            _AssumptionRow('기대수명', '${plan.lifeExpectancy}세'),
-            _AssumptionRow('금액 기준', '모든 금액은 오늘 돈 가치(실질)'),
-            _AssumptionRow('은퇴 후 월 생활비', '현재 월 지출과 동일'),
+            _AssumptionRow(
+                l10n.goalLifeExpectancy, l10n.ageLabel(plan.lifeExpectancy)),
+            _AssumptionRow(l10n.onbAssumptionMoneyBasis,
+                l10n.onbAssumptionMoneyBasisValue),
+            _AssumptionRow(
+                l10n.goalRetireSpend, l10n.onbAssumptionRetireSpendValue),
             const SizedBox(height: 16),
             Text(
-              '본 시뮬레이션은 정보 제공 목적이며 투자 자문이 아닙니다. '
-              '가정은 목표 설정 화면에서 언제든 바꿀 수 있어요.',
+              '${l10n.disclaimerSimulation} ${l10n.onbAssumptionsEditHint}',
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 8),
@@ -175,20 +190,22 @@ class _Headline extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final months = monthsToFire;
 
     if (months == null) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('지금 조건으로는', style: theme.textTheme.titleMedium),
+          Text(l10n.onbHeadlineUnreachablePrefix,
+              style: theme.textTheme.titleMedium),
           Text(
-            '100년 안에 도달이 어려워요',
+            l10n.onbHeadlineUnreachable,
             style: theme.textTheme.headlineMedium,
           ),
           const SizedBox(height: 8),
           Text(
-            '아래 슬라이더로 저축을 늘리면 얼마나 달라지는지 볼 수 있어요.',
+            l10n.onbHeadlineUnreachableHint,
             style: theme.textTheme.bodyMedium,
           ),
         ],
@@ -199,8 +216,8 @@ class _Headline extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('축하해요!', style: theme.textTheme.titleMedium),
-          Text('이미 FIRE에 도달했어요',
+          Text(l10n.onbCongrats, style: theme.textTheme.titleMedium),
+          Text(l10n.onbAlreadyFire,
               style: theme.textTheme.headlineMedium!.copyWith(
                 color: theme.colorScheme.primary,
                 fontWeight: FontWeight.bold,
@@ -215,16 +232,18 @@ class _Headline extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('당신의 FIRE 나이', style: theme.textTheme.titleMedium),
+        Text(l10n.onbYourFireAge, style: theme.textTheme.titleMedium),
         Text(
-          '$fireAge세',
+          l10n.ageLabel(fireAge),
           style: theme.textTheme.displayLarge!.copyWith(
             color: theme.colorScheme.primary,
             fontWeight: FontWeight.bold,
           ),
         ),
         Text(
-          remainMonths == 0 ? '약 $years년 후' : '약 $years년 $remainMonths개월 후',
+          remainMonths == 0
+              ? l10n.onbYearsLater(years)
+              : l10n.onbYearsMonthsLater(years, remainMonths),
           style: theme.textTheme.titleMedium!.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
@@ -234,7 +253,7 @@ class _Headline extends StatelessWidget {
   }
 }
 
-class _FireNumberCard extends StatelessWidget {
+class _FireNumberCard extends ConsumerWidget {
   final int monthlyExpense;
   final int swrBp;
   final int fireNumber;
@@ -246,8 +265,10 @@ class _FireNumberCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final money = moneyFormatOf(context, ref);
     final swrPercent = (swrBp / 100).toStringAsFixed(0);
     return Card(
       child: Padding(
@@ -255,17 +276,16 @@ class _FireNumberCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('필요 자산 (FIRE Number)',
-                style: theme.textTheme.labelLarge),
+            Text(l10n.onbFireNumberTitle, style: theme.textTheme.labelLarge),
             const SizedBox(height: 4),
             Text(
-              '${formatKoreanMoney(fireNumber)}원',
+              money.compact(fireNumber),
               style: theme.textTheme.headlineSmall!
                   .copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 4),
             Text(
-              '월 지출 ${formatKoreanMoney(monthlyExpense)}원 × $swrPercent% 룰 기준',
+              l10n.onbFireNumberBasis(money.compact(monthlyExpense), swrPercent),
               style: theme.textTheme.bodySmall!.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -277,24 +297,38 @@ class _FireNumberCard extends StatelessWidget {
   }
 }
 
-class _TrajectoryChart extends StatelessWidget {
+class _TrajectoryChart extends ConsumerWidget {
   final FireResult result;
   final int age0;
 
   const _TrajectoryChart({required this.result, required this.age0});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final money = moneyFormatOf(context, ref);
     final trajectory = result.assetsByMonth;
+
+    // 세로축 단위: 억/億 단위 통화(CJK UI)는 1억, 그 외는 주 단위 1,000 (→ "$900K")
+    final useHundredMillion = money.hasLargeInputUnit;
+    final axisUnit = useHundredMillion
+        ? 100000000 * money.currency.minorPerMajor
+        : 1000 * money.currency.minorPerMajor;
+    String axisLabel(double value) {
+      final n = value.toInt();
+      return useHundredMillion
+          ? l10n.onbAxisHundredMillion(n)
+          : money.compact(n * axisUnit);
+    }
 
     // 연 단위로 다운샘플 + 마지막 점(FIRE 도달)
     final spots = <FlSpot>[
       for (var m = 0; m < trajectory.length; m += 12)
-        FlSpot(m / 12, trajectory[m] / 100000000),
+        FlSpot(m / 12, trajectory[m] / axisUnit),
       FlSpot(
         (trajectory.length - 1) / 12,
-        trajectory.last / 100000000,
+        trajectory.last / axisUnit,
       ),
     ];
 
@@ -317,7 +351,7 @@ class _TrajectoryChart extends StatelessWidget {
                   // 끝점 라벨은 마지막 눈금과 겹치므로 생략 (fl_chart가 max에 별도로 그림)
                   if (value == meta.max) return const SizedBox.shrink();
                   return Text(
-                    '${value.toInt()}억',
+                    axisLabel(value),
                     style: theme.textTheme.labelSmall,
                   );
                 },
@@ -331,7 +365,7 @@ class _TrajectoryChart extends StatelessWidget {
                   // 끝점 라벨은 마지막 눈금과 겹치므로 생략 (fl_chart가 max에 별도로 그림)
                   if (value == meta.max) return const SizedBox.shrink();
                   return Text(
-                    '${age0 + value.toInt()}세',
+                    l10n.ageLabel(age0 + value.toInt()),
                     style: theme.textTheme.labelSmall,
                   );
                 },
@@ -358,7 +392,7 @@ class _TrajectoryChart extends StatelessWidget {
   }
 }
 
-class _WhatIfSlider extends StatelessWidget {
+class _WhatIfSlider extends ConsumerWidget {
   final int extraSaving;
   final int age0;
   final FireResult result;
@@ -374,25 +408,32 @@ class _WhatIfSlider extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final money = moneyFormatOf(context, ref);
+    // 슬라이더 한 칸 = 통화별 월 금액 단위의 절반 (KRW 5만원), 최대 30칸
+    final step = currencyOf(ref).monthlyStep;
+    final maxExtra = 30 * step;
 
     String effectLabel() {
-      if (extraSaving == 0) return '슬라이더를 움직여 보세요';
-      if (result.monthsToFire == null) return '아직 도달이 어려워요';
+      if (extraSaving == 0) return l10n.onbWhatIfMoveSlider;
+      if (result.monthsToFire == null) return l10n.onbWhatIfStillUnreachable;
       final fireAge = age0 + result.monthsToFire! ~/ 12;
+      final amount = money.compact(extraSaving);
+      final age = l10n.ageLabel(fireAge);
       final base = baseResult.monthsToFire;
-      if (base == null) return '+${formatKoreanMoney(extraSaving)}원 → $fireAge세';
+      if (base == null) return l10n.onbWhatIfEffect(amount, age);
       final savedMonths = base - result.monthsToFire!;
       final years = savedMonths ~/ 12;
       final months = savedMonths % 12;
       final shortened = [
-        if (years > 0) '$years년',
-        if (months > 0) '$months개월',
+        if (years > 0) l10n.yearsLabel(years),
+        if (months > 0) l10n.monthsLabel(months),
       ].join(' ');
       return shortened.isEmpty
-          ? '+${formatKoreanMoney(extraSaving)}원 → $fireAge세'
-          : '+${formatKoreanMoney(extraSaving)}원 → $fireAge세 ($shortened 단축)';
+          ? l10n.onbWhatIfEffect(amount, age)
+          : l10n.onbWhatIfEffectShortened(amount, age, shortened);
     }
 
     return Card(
@@ -401,7 +442,7 @@ class _WhatIfSlider extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('매달 조금 더 저축한다면?', style: theme.textTheme.titleMedium),
+            Text(l10n.onbWhatIfTitle, style: theme.textTheme.titleMedium),
             const SizedBox(height: 4),
             Text(
               effectLabel(),
@@ -411,17 +452,19 @@ class _WhatIfSlider extends StatelessWidget {
               ),
             ),
             Slider(
-              value: extraSaving.toDouble(),
+              value: extraSaving.clamp(0, maxExtra).toDouble(),
               min: 0,
-              max: 3000000,
-              divisions: 60, // 5만원 단위
+              max: maxExtra.toDouble(),
+              divisions: 60,
               onChanged: (value) => onChanged(value.round()),
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('+0원', style: theme.textTheme.labelSmall),
-                Text('+300만원', style: theme.textTheme.labelSmall),
+                Text(l10n.onbSliderPlus(money.compact(0)),
+                    style: theme.textTheme.labelSmall),
+                Text(l10n.onbSliderPlus(money.compact(maxExtra)),
+                    style: theme.textTheme.labelSmall),
               ],
             ),
           ],
@@ -439,6 +482,7 @@ class _NoSavingView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     return Scaffold(
       appBar: AppBar(),
       body: SafeArea(
@@ -452,13 +496,12 @@ class _NoSavingView extends StatelessWidget {
                   size: 48, color: theme.colorScheme.primary),
               const SizedBox(height: 16),
               Text(
-                '현재 저축이 없어\nFIRE 나이를 계산할 수 없어요',
+                l10n.onbNoSavingTitle,
                 style: theme.textTheme.headlineSmall,
               ),
               const SizedBox(height: 12),
               Text(
-                '월 지출이 소득과 같거나 더 커요. 지출을 조금만 줄여도 '
-                '계획이 만들어져요.',
+                l10n.onbNoSavingBody,
                 style: theme.textTheme.bodyMedium!.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -468,7 +511,7 @@ class _NoSavingView extends StatelessWidget {
                 width: double.infinity,
                 child: FilledButton(
                   onPressed: onAdjustExpense,
-                  child: const Text('지출 조정하기'),
+                  child: Text(l10n.onbAdjustExpense),
                 ),
               ),
             ],
