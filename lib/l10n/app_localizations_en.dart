@@ -752,7 +752,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get paywallFallbackPricing =>
-      '₩39,000/year — about ₩3,250/month · 34% off\n₩4,900/month · 7-day free trial';
+      'The annual plan costs less than monthly · 7-day free trial\nThe store shows the price for your region';
 
   @override
   String get paywallFeatureMonteCarlo =>

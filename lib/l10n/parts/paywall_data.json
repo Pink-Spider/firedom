@@ -1,38 +1,217 @@
 {
-  "paywallTitle": {"ko": "파이어덤 프리미엄", "en": "Firedom Premium", "ja": "Firedom プレミアム", "desc": "페이월 시트 제목"},
-  "paywallAlreadyPremium": {"ko": "이미 프리미엄을 이용 중이에요 🎉", "en": "You're already on Premium 🎉", "ja": "すでにプレミアムをご利用中です 🎉"},
-  "paywallTeaserGeneric": {"ko": "내 계획의 리스크까지 확인해보세요", "en": "See the risk side of your plan too", "ja": "プランのリスクまで確認できます", "desc": "성공 확률이 없을 때 페이월 부제"},
-  "paywallTeaserWithRate": {"ko": "회원님 계획의 성공 확률 {rate}% — 상세 분포와 자산 고갈 리스크를 확인해보세요", "en": "Your plan's success rate is {rate}% — see the full distribution and depletion risk", "ja": "あなたのプランの成功確率は{rate}% — 詳細分布と資産枯渇リスクを確認できます", "desc": "rate는 정수 퍼센트 문자열(소수 없음)", "placeholders": {"rate": {"type": "String"}}},
-  "paywallFeatureMonteCarlo": {"ko": "몬테카를로 상세 분포 · 자산 고갈 나이 분포", "en": "Monte Carlo detail · asset depletion age distribution", "ja": "モンテカルロ詳細分布 · 資産枯渇年齢の分布", "desc": "프리미엄 기능 1 — 실제 동작하는 기능만 올린다"},
-  "paywallFeaturePortfolio": {"ko": "포트폴리오 비중 자유 편집", "en": "Edit portfolio weights freely", "ja": "ポートフォリオ比率の自由編集", "desc": "프리미엄 기능 2"},
-  "paywallFeatureScenarios": {"ko": "시나리오 무제한 저장 · 나란히 비교", "en": "Unlimited scenario saves · side-by-side comparison", "ja": "シナリオ無制限保存 · 並べて比較", "desc": "프리미엄 기능 3"},
-  "paywallPlanAnnual": {"ko": "연간", "en": "Annual", "ja": "年間"},
-  "paywallPlanMonthly": {"ko": "월간", "en": "Monthly", "ja": "月間"},
-  "paywallPlanWeekly": {"ko": "주간", "en": "Weekly", "ja": "週間"},
-  "paywallPlanLifetime": {"ko": "평생", "en": "Lifetime", "ja": "永久"},
-  "paywallPlanPrice": {"ko": "{plan} · {price}", "en": "{plan} · {price}", "ja": "{plan} · {price}", "desc": "플랜 라벨 + 스토어 localized price(RevenueCat priceString 그대로)", "placeholders": {"plan": {"type": "String"}, "price": {"type": "String"}}},
-  "paywallSubscribe": {"ko": "구독 시작하기", "en": "Start subscription", "ja": "サブスクリプションを開始"},
-  "paywallFallbackPricing": {"ko": "연 39,000원 — 월 3,250원꼴 · 34% 할인\n월 4,900원 · 7일 무료 체험", "en": "₩39,000/year — about ₩3,250/month · 34% off\n₩4,900/month · 7-day free trial", "ja": "年 ₩39,000 — 月あたり約 ₩3,250 · 34% オフ\n月 ₩4,900 · 7日間無料体験", "desc": "RevenueCat 미구성 시 안내 가격 — 한국 스토어 정가(KRW). 구성 시엔 스토어 localized price를 쓴다"},
-  "paywallRestore": {"ko": "구매 복원", "en": "Restore purchases", "ja": "購入を復元"},
-  "paywallAutoRenewNote": {"ko": "무료 체험 종료 후 선택한 플랜으로 자동 갱신되며, 언제든 스토어 계정에서 해지할 수 있어요.", "en": "After the free trial, the selected plan renews automatically. You can cancel anytime from your store account.", "ja": "無料体験終了後は選択したプランで自動更新されます。ストアのアカウントからいつでも解約できます。"},
-  "paywallPurchaseFailed": {"ko": "결제가 완료되지 않았어요", "en": "Payment was not completed", "ja": "決済が完了しませんでした"},
-  "paywallStoreNotReady": {"ko": "스토어 결제 연동 준비 중이에요 — 곧 열려요", "en": "Store billing is still being set up — coming soon", "ja": "ストア決済の準備中です — まもなく利用できます"},
-  "paywallRestored": {"ko": "구매를 복원했어요", "en": "Purchases restored", "ja": "購入を復元しました"},
-  "paywallNothingToRestore": {"ko": "복원할 구매 내역이 없어요 (연동 준비 중)", "en": "No purchases to restore (billing not yet connected)", "ja": "復元できる購入履歴がありません（連携準備中）"},
-  "paywallBrowserFailed": {"ko": "브라우저를 열 수 없어요", "en": "Couldn't open the browser", "ja": "ブラウザを開けません"},
-  "paywallTerms": {"ko": "이용약관", "en": "Terms of Use", "ja": "利用規約", "desc": "App Store 3.1.2(c) 필수 링크 — 링크 URL은 paywallTermsUrl 상수"},
-  "paywallPrivacy": {"ko": "개인정보 처리방침", "en": "Privacy Policy", "ja": "プライバシーポリシー", "desc": "App Store 3.1.2(c) 필수 링크 — 링크 URL은 paywallPrivacyUrl 상수"},
-
-  "widgetNoPlan": {"ko": "계획을 만들어보세요", "en": "Create a plan", "ja": "プランを作成しましょう", "desc": "홈 위젯 — 계획 없음"},
-  "widgetCheckAssumptions": {"ko": "가정 점검이 필요해요", "en": "Assumptions need a review", "ja": "前提の見直しが必要です", "desc": "홈 위젯 — 목표 도달 불가"},
-  "widgetGoalReached": {"ko": "목표 도달!", "en": "Goal reached!", "ja": "目標達成！"},
-  "widgetUntilFree": {"ko": "자유까지 {duration}", "en": "{duration} to freedom", "ja": "自由まで{duration}", "desc": "duration은 yearsMonthsLabel/monthsLabel 결과. 위젯에 금액은 넣지 않는다", "placeholders": {"duration": {"type": "String"}}},
-  "widgetAheadOfPlan": {"ko": "계획보다 {count}개월 앞", "en": "{count, plural, =1{1 month ahead of plan} other{{count} months ahead of plan}}", "ja": "計画より{count}か月先行", "placeholders": {"count": {"type": "int"}}},
-  "widgetBehindPlan": {"ko": "계획보다 {count}개월 뒤", "en": "{count, plural, =1{1 month behind plan} other{{count} months behind plan}}", "ja": "計画より{count}か月遅れ", "placeholders": {"count": {"type": "int"}}},
-  "widgetOnTrack": {"ko": "계획대로 진행 중", "en": "On track", "ja": "計画どおり進行中"},
-
-  "reminderTitle": {"ko": "이번 달 자산 기록, 잊지 않으셨죠?", "en": "Your monthly asset record is waiting", "ja": "今月の資産記録、お忘れではありませんか？", "desc": "로컬 알림 제목"},
-  "reminderBody": {"ko": "3분이면 충분해요 — 계획 대비 어디쯤인지 확인해보세요", "en": "Takes about 3 minutes — see where you stand against your plan", "ja": "3分で十分です — 計画に対する現在地を確認できます", "desc": "로컬 알림 본문"},
-  "reminderChannelName": {"ko": "월간 기록 리마인더", "en": "Monthly record reminder", "ja": "月次記録リマインダー", "desc": "Android 알림 채널 이름"},
-  "reminderChannelDescription": {"ko": "월 1회 자산 기록 알림 (미기록 월에만)", "en": "Once-a-month asset record notification (only for unrecorded months)", "ja": "月1回の資産記録通知（未記録の月のみ）", "desc": "Android 알림 채널 설명"}
+  "paywallTitle": {
+    "ko": "파이어덤 프리미엄",
+    "en": "Firedom Premium",
+    "ja": "Firedom プレミアム",
+    "desc": "페이월 시트 제목"
+  },
+  "paywallAlreadyPremium": {
+    "ko": "이미 프리미엄을 이용 중이에요 🎉",
+    "en": "You're already on Premium 🎉",
+    "ja": "すでにプレミアムをご利用中です 🎉"
+  },
+  "paywallTeaserGeneric": {
+    "ko": "내 계획의 리스크까지 확인해보세요",
+    "en": "See the risk side of your plan too",
+    "ja": "プランのリスクまで確認できます",
+    "desc": "성공 확률이 없을 때 페이월 부제"
+  },
+  "paywallTeaserWithRate": {
+    "ko": "회원님 계획의 성공 확률 {rate}% — 상세 분포와 자산 고갈 리스크를 확인해보세요",
+    "en": "Your plan's success rate is {rate}% — see the full distribution and depletion risk",
+    "ja": "あなたのプランの成功確率は{rate}% — 詳細分布と資産枯渇リスクを確認できます",
+    "desc": "rate는 정수 퍼센트 문자열(소수 없음)",
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "paywallFeatureMonteCarlo": {
+    "ko": "몬테카를로 상세 분포 · 자산 고갈 나이 분포",
+    "en": "Monte Carlo detail · asset depletion age distribution",
+    "ja": "モンテカルロ詳細分布 · 資産枯渇年齢の分布",
+    "desc": "프리미엄 기능 1 — 실제 동작하는 기능만 올린다"
+  },
+  "paywallFeaturePortfolio": {
+    "ko": "포트폴리오 비중 자유 편집",
+    "en": "Edit portfolio weights freely",
+    "ja": "ポートフォリオ比率の自由編集",
+    "desc": "프리미엄 기능 2"
+  },
+  "paywallFeatureScenarios": {
+    "ko": "시나리오 무제한 저장 · 나란히 비교",
+    "en": "Unlimited scenario saves · side-by-side comparison",
+    "ja": "シナリオ無制限保存 · 並べて比較",
+    "desc": "프리미엄 기능 3"
+  },
+  "paywallPlanAnnual": {
+    "ko": "연간",
+    "en": "Annual",
+    "ja": "年間"
+  },
+  "paywallPlanMonthly": {
+    "ko": "월간",
+    "en": "Monthly",
+    "ja": "月間"
+  },
+  "paywallPlanWeekly": {
+    "ko": "주간",
+    "en": "Weekly",
+    "ja": "週間"
+  },
+  "paywallPlanLifetime": {
+    "ko": "평생",
+    "en": "Lifetime",
+    "ja": "永久"
+  },
+  "paywallPlanPrice": {
+    "ko": "{plan} · {price}",
+    "en": "{plan} · {price}",
+    "ja": "{plan} · {price}",
+    "desc": "플랜 라벨 + 스토어 localized price(RevenueCat priceString 그대로)",
+    "placeholders": {
+      "plan": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "paywallSubscribe": {
+    "ko": "구독 시작하기",
+    "en": "Start subscription",
+    "ja": "サブスクリプションを開始"
+  },
+  "paywallFallbackPricing": {
+    "ko": "연간 플랜이 월간보다 저렴해요 · 7일 무료 체험\n가격은 스토어에서 확인할 수 있어요",
+    "en": "The annual plan costs less than monthly · 7-day free trial\nThe store shows the price for your region",
+    "ja": "年間プランは月額より割安です · 7日間無料体験\n価格はストアでご確認いただけます",
+    "desc": "스토어 가격을 받아오지 못했을 때의 안내. 통화·금액을 넣지 않는다 — 지역별 통화가 다르고 RevenueCat localized price가 진실이다 (과거 원화 고정 문구로 해외에서 오표기)"
+  },
+  "paywallRestore": {
+    "ko": "구매 복원",
+    "en": "Restore purchases",
+    "ja": "購入を復元"
+  },
+  "paywallAutoRenewNote": {
+    "ko": "무료 체험 종료 후 선택한 플랜으로 자동 갱신되며, 언제든 스토어 계정에서 해지할 수 있어요.",
+    "en": "After the free trial, the selected plan renews automatically. You can cancel anytime from your store account.",
+    "ja": "無料体験終了後は選択したプランで自動更新されます。ストアのアカウントからいつでも解約できます。"
+  },
+  "paywallPurchaseFailed": {
+    "ko": "결제가 완료되지 않았어요",
+    "en": "Payment was not completed",
+    "ja": "決済が完了しませんでした"
+  },
+  "paywallStoreNotReady": {
+    "ko": "스토어 결제 연동 준비 중이에요 — 곧 열려요",
+    "en": "Store billing is still being set up — coming soon",
+    "ja": "ストア決済の準備中です — まもなく利用できます"
+  },
+  "paywallRestored": {
+    "ko": "구매를 복원했어요",
+    "en": "Purchases restored",
+    "ja": "購入を復元しました"
+  },
+  "paywallNothingToRestore": {
+    "ko": "복원할 구매 내역이 없어요 (연동 준비 중)",
+    "en": "No purchases to restore (billing not yet connected)",
+    "ja": "復元できる購入履歴がありません（連携準備中）"
+  },
+  "paywallBrowserFailed": {
+    "ko": "브라우저를 열 수 없어요",
+    "en": "Couldn't open the browser",
+    "ja": "ブラウザを開けません"
+  },
+  "paywallTerms": {
+    "ko": "이용약관",
+    "en": "Terms of Use",
+    "ja": "利用規約",
+    "desc": "App Store 3.1.2(c) 필수 링크 — 링크 URL은 paywallTermsUrl 상수"
+  },
+  "paywallPrivacy": {
+    "ko": "개인정보 처리방침",
+    "en": "Privacy Policy",
+    "ja": "プライバシーポリシー",
+    "desc": "App Store 3.1.2(c) 필수 링크 — 링크 URL은 paywallPrivacyUrl 상수"
+  },
+  "widgetNoPlan": {
+    "ko": "계획을 만들어보세요",
+    "en": "Create a plan",
+    "ja": "プランを作成しましょう",
+    "desc": "홈 위젯 — 계획 없음"
+  },
+  "widgetCheckAssumptions": {
+    "ko": "가정 점검이 필요해요",
+    "en": "Assumptions need a review",
+    "ja": "前提の見直しが必要です",
+    "desc": "홈 위젯 — 목표 도달 불가"
+  },
+  "widgetGoalReached": {
+    "ko": "목표 도달!",
+    "en": "Goal reached!",
+    "ja": "目標達成！"
+  },
+  "widgetUntilFree": {
+    "ko": "자유까지 {duration}",
+    "en": "{duration} to freedom",
+    "ja": "自由まで{duration}",
+    "desc": "duration은 yearsMonthsLabel/monthsLabel 결과. 위젯에 금액은 넣지 않는다",
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetAheadOfPlan": {
+    "ko": "계획보다 {count}개월 앞",
+    "en": "{count, plural, =1{1 month ahead of plan} other{{count} months ahead of plan}}",
+    "ja": "計画より{count}か月先行",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "widgetBehindPlan": {
+    "ko": "계획보다 {count}개월 뒤",
+    "en": "{count, plural, =1{1 month behind plan} other{{count} months behind plan}}",
+    "ja": "計画より{count}か月遅れ",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "widgetOnTrack": {
+    "ko": "계획대로 진행 중",
+    "en": "On track",
+    "ja": "計画どおり進行中"
+  },
+  "reminderTitle": {
+    "ko": "이번 달 자산 기록, 잊지 않으셨죠?",
+    "en": "Your monthly asset record is waiting",
+    "ja": "今月の資産記録、お忘れではありませんか？",
+    "desc": "로컬 알림 제목"
+  },
+  "reminderBody": {
+    "ko": "3분이면 충분해요 — 계획 대비 어디쯤인지 확인해보세요",
+    "en": "Takes about 3 minutes — see where you stand against your plan",
+    "ja": "3分で十分です — 計画に対する現在地を確認できます",
+    "desc": "로컬 알림 본문"
+  },
+  "reminderChannelName": {
+    "ko": "월간 기록 리마인더",
+    "en": "Monthly record reminder",
+    "ja": "月次記録リマインダー",
+    "desc": "Android 알림 채널 이름"
+  },
+  "reminderChannelDescription": {
+    "ko": "월 1회 자산 기록 알림 (미기록 월에만)",
+    "en": "Once-a-month asset record notification (only for unrecorded months)",
+    "ja": "月1回の資産記録通知（未記録の月のみ）",
+    "desc": "Android 알림 채널 설명"
+  }
 }

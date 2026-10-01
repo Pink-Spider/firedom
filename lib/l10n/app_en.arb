@@ -189,7 +189,7 @@
   "paywallAlreadyPremium": "You're already on Premium 🎉",
   "paywallAutoRenewNote": "After the free trial, the selected plan renews automatically. You can cancel anytime from your store account.",
   "paywallBrowserFailed": "Couldn't open the browser",
-  "paywallFallbackPricing": "₩39,000/year — about ₩3,250/month · 34% off\n₩4,900/month · 7-day free trial",
+  "paywallFallbackPricing": "The annual plan costs less than monthly · 7-day free trial\nThe store shows the price for your region",
   "paywallFeatureMonteCarlo": "Monte Carlo detail · asset depletion age distribution",
   "paywallFeaturePortfolio": "Edit portfolio weights freely",
   "paywallFeatureScenarios": "Unlimited scenario saves · side-by-side comparison",

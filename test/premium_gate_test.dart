@@ -84,8 +84,9 @@ void main() {
     // 미출시 기능을 올리면 '결제했는데 안 열린다'는 오인 구매가 된다.
     expect(find.text('포트폴리오 비중 자유 편집'), findsOneWidget);
     expect(find.text('출시 예정'), findsNothing);
-    // 연간 우선 표기
-    expect(find.textContaining('연 39,000원'), findsOneWidget);
+    // 스토어 가격을 못 받아온 상태의 안내 — 금액·통화를 박지 않고 체험 조건만 알린다
+    expect(find.textContaining('7일 무료 체험'), findsOneWidget);
+    expect(find.textContaining('39,000'), findsNothing);
 
     // App Store 심사 3.1.2(c): 구독 화면의 이용약관(EULA)·개인정보 링크는
     // 렌더링만으로는 부족하고 **실제로 열려야** 한다.

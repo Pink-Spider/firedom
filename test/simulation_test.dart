@@ -140,7 +140,7 @@ void main() {
     await tester.tap(find.text('상세 분포 보기 🔒'));
     await tester.pumpAndSettle();
     expect(find.text('파이어덤 프리미엄'), findsOneWidget);
-    expect(find.textContaining('월 4,900원'), findsOneWidget);
+    expect(find.textContaining('7일 무료 체험'), findsOneWidget);
   });
 
   appTest('S4 시나리오 저장 1개 + 불러오기', (tester) async {

@@ -160,7 +160,14 @@ App Store 지침 **3.1.2(c)**: 구독을 파는 앱은 이용약관(EULA)과 개
   §14 순서로. 해외 앱 이름은 `Firedom`, 한국은 `파이어덤` 유지. 영어·일본어 등록정보는
   `docs/스토어_등록_문구.md` §5
 - 구독 상품 ID는 양대 스토어 공통: `firedom_39000_1y`(₩39,000/년), `firedom_4900_1m`(₩4,900/월),
-  각각 7일 무료 체험
+  각각 7일 무료 체험. **통화는 RevenueCat이 아니라 스토어가 정한다** — 앱은 RevenueCat이 주는
+  현지화 가격 문자열(`storeProduct.priceString`)을 그대로 출력하므로 앱에 금액을 박지 않는다
+- **양대 스토어 환산가가 어긋나 있다 (국가 확장 전 해결 필요).** 원화 기준가를 두 스토어가 각자
+  환산해 같은 통화에서도 값이 다르다(미국 연간 App Store $22.99 vs Play $28.99). 맞추는 스크립트는
+  `tool/align_play_prices.py`(드라이런 기본, `--apply`로 적용)이며 **실결제에 영향을 주므로 사람이
+  직접 실행한다**. 실측 표와 주의사항은 `docs/스토어_등록_문구.md` §5-4
+- 스토어 API는 `tool/asc_api.py`(App Store Connect) / `tool/play_api.py`(Google Play) —
+  외부 의존성 없이 서비스 계정·ASC 키로 토큰을 만든다. 자격증명은 `secret/`·`~/.appstoreconnect/`
 - 빌드·제출 절차는 `docs/guide/TestFlight_배포_가이드.md`, 문구는 `docs/스토어_등록_문구.md`
 
 ## 비밀 파일 (커밋 금지)

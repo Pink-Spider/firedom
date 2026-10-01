@@ -1234,10 +1234,10 @@ abstract class AppLocalizations {
   /// **'브라우저를 열 수 없어요'**
   String get paywallBrowserFailed;
 
-  /// RevenueCat 미구성 시 안내 가격 — 한국 스토어 정가(KRW). 구성 시엔 스토어 localized price를 쓴다
+  /// 스토어 가격을 받아오지 못했을 때의 안내. 통화·금액을 넣지 않는다 — 지역별 통화가 다르고 RevenueCat localized price가 진실이다 (과거 원화 고정 문구로 해외에서 오표기)
   ///
   /// In ko, this message translates to:
-  /// **'연 39,000원 — 월 3,250원꼴 · 34% 할인\n월 4,900원 · 7일 무료 체험'**
+  /// **'연간 플랜이 월간보다 저렴해요 · 7일 무료 체험\n가격은 스토어에서 확인할 수 있어요'**
   String get paywallFallbackPricing;
 
   /// 프리미엄 기능 1 — 실제 동작하는 기능만 올린다

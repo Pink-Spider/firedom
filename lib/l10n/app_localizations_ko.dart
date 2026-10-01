@@ -656,7 +656,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get paywallFallbackPricing =>
-      '연 39,000원 — 월 3,250원꼴 · 34% 할인\n월 4,900원 · 7일 무료 체험';
+      '연간 플랜이 월간보다 저렴해요 · 7일 무료 체험\n가격은 스토어에서 확인할 수 있어요';
 
   @override
   String get paywallFeatureMonteCarlo => '몬테카를로 상세 분포 · 자산 고갈 나이 분포';

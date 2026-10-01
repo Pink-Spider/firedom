@@ -654,7 +654,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get paywallFallbackPricing =>
-      '年 ₩39,000 — 月あたり約 ₩3,250 · 34% オフ\n月 ₩4,900 · 7日間無料体験';
+      '年間プランは月額より割安です · 7日間無料体験\n価格はストアでご確認いただけます';
 
   @override
   String get paywallFeatureMonteCarlo => 'モンテカルロ詳細分布 · 資産枯渇年齢の分布';
