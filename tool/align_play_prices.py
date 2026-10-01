@@ -23,6 +23,24 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import asc_api
 import play_api
 
+
+PERMISSION_HELP = """
+가격을 쓸 권한이 없습니다 (HTTP 403 PERMISSION_DENIED).
+
+이 서비스 계정은 구독을 **읽을** 수는 있고 테스트 트랙 출시도 되지만,
+상품 카탈로그(구독·인앱상품) **수정** 권한이 없습니다. 실제로
+`GET subscriptions`는 통과하는데 `GET inappproducts`와
+`PATCH subscriptions`는 403입니다.
+
+해결: Play Console → 사용자 및 권한 → 아래 계정 → 앱 권한에서
+수익 창출(상품·가격) 관리 권한을 켠 뒤 다시 실행하세요.
+    {email}
+권한 변경은 반영까지 몇 분 걸릴 수 있습니다.
+
+권한을 늘리고 싶지 않다면 Play Console에서 직접 수정해야 합니다
+(기본 플랜 → 지역별 가격). 지역이 100곳을 넘어 수작업은 권하지 않습니다.
+"""
+
 SUBS = {  # Play productId → ASC subscription id
     'firedom_39000_1y': '6809275273',
     'firedom_4900_1m': '6809277491',
@@ -169,12 +187,18 @@ def main():
         return
 
     for product_id, body in plans.items():
-        res = play_api.call(
-            'PATCH',
-            f'subscriptions/{product_id}?updateMask=basePlans'
-            '&regionsVersion.version=2022/02'
-            '&latencyTolerance=PRODUCT_UPDATE_LATENCY_TOLERANCE_LATENCY_SENSITIVE',
-            body)
+        try:
+            res = play_api.call(
+                'PATCH',
+                f'subscriptions/{product_id}?updateMask=basePlans'
+                '&regionsVersion.version=2022/02'
+                '&latencyTolerance=PRODUCT_UPDATE_LATENCY_TOLERANCE_LATENCY_SENSITIVE',
+                body)
+        except RuntimeError as err:
+            if 'HTTP 403' in str(err):
+                raise SystemExit(PERMISSION_HELP.format(
+                    email=play_api.service_account()['client_email'])) from None
+            raise
         shown = {r['regionCode']: r['price']
                  for r in res['basePlans'][0]['regionalConfigs']
                  if r['regionCode'] in ('KR', 'US', 'JP', 'GB', 'DE')}
