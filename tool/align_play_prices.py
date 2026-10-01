@@ -98,6 +98,23 @@ A3_A2 = {
 A2_A3 = {v: k for k, v in A3_A2.items()}
 
 
+
+def region_metadata():
+    """Google이 지금 기대하는 지역 버전과 지역별 결제 통화.
+
+    `pricing:convertRegionPrices`는 가격 계산기라 아무것도 수정하지 않는다.
+    지역 버전을 하드코딩하면 과거 버전의 통화 규칙으로 검증돼 거부된다
+    (2022/02는 아르헨티나를 USD로 보지만 2026/01은 ARS다).
+    """
+    res = play_api.call('POST', 'pricing:convertRegionPrices',
+                        {'price': {'currencyCode': 'USD', 'units': '1', 'nanos': 0}})
+    version = res['regionVersion']['version']
+    expected = {code: entry['price']['currencyCode']
+                for code, entry in res.get('convertedRegionPrices', {}).items()
+                if entry.get('price')}
+    return version, expected
+
+
 def asc_currency_by_territory():
     """ASC 지역 → 통화 코드."""
     out, nxt = {}, '/v1/territories?limit=200'
@@ -147,8 +164,10 @@ def same(a, b):
 
 def main():
     apply_changes = '--apply' in sys.argv
+    regions_version, expected_currency = region_metadata()
+    print(f'Play 지역 버전 {regions_version} 기준\n')
     currency_of = asc_currency_by_territory()
-    plans = {}
+    plans, blocked = {}, []
 
     for product_id, sub_id in SUBS.items():
         target = asc_prices(sub_id, currency_of)
@@ -159,12 +178,20 @@ def main():
         for base_plan in patched['basePlans']:
             for region in base_plan.get('regionalConfigs', []):
                 a2 = region['regionCode']
+                # 진실은 Google이 이 지역에 기대하는 통화다. 저장된 값이 기대와
+                # 어긋나면 **우리가 손대지 않은 지역이라도** PATCH 전체가 거부된다
+                # (updateMask=basePlans는 전체 목록을 다시 검증한다).
+                expects = expected_currency.get(a2)
+                stored = region.get('price', {}).get('currencyCode')
+                if expects and stored and stored != expects:
+                    blocked.append((a2, stored, expects))
+                    continue
                 a3 = A2_A3.get(a2)
                 if not a3 or a3 not in target:
                     out_of_scope.append(a2)
                     continue
                 currency, amount = target[a3]
-                if region.get('price', {}).get('currencyCode') != currency:
+                if stored != currency:
                     other_currency.append(a2)
                     continue
                 want = money(currency, amount)
@@ -188,6 +215,17 @@ def main():
         for row in sorted(changed)[:8]:
             print('   ', row)
 
+    if blocked:
+        print('\n저장된 통화가 Google 기대값과 다른 지역이 있습니다 '
+              '(지역, 저장됨, 기대):')
+        for row in sorted(set(blocked)):
+            print('   ', row)
+        raise SystemExit(
+            '\n이 지역이 섞여 있으면 PATCH 전체가 거부됩니다 '
+            '(updateMask=basePlans는 전 지역을 다시 검증한다).\n'
+            'Play Console에서 해당 지역 통화를 먼저 맞춘 뒤 다시 실행하세요. '
+            '아무 가격도 바꾸지 않았습니다.')
+
     if not apply_changes:
         print('\n드라이런입니다. 실제로 바꾸려면 --apply 를 붙여 실행하세요.')
         return
@@ -197,7 +235,7 @@ def main():
             res = play_api.call(
                 'PATCH',
                 f'subscriptions/{product_id}?updateMask=basePlans'
-                '&regionsVersion.version=2022/02'
+                f'&regionsVersion.version={regions_version}'
                 '&latencyTolerance=PRODUCT_UPDATE_LATENCY_TOLERANCE_LATENCY_SENSITIVE',
                 body)
         except RuntimeError as err:

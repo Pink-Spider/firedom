@@ -45,13 +45,19 @@ def token():
     _tok['v'], _tok['exp'] = t['access_token'], now + t.get('expires_in', 3600)
     return _tok['v']
 
-def call(method, path, body=None, absolute=False):
+def call(method, path, body=None, absolute=False, retries=3):
+    """API 호출. 5xx는 잠깐 쉬고 다시 시도한다 (503이 드물게 뜬다)."""
     url = path if absolute else BASE + path
-    req = urllib.request.Request(url, method=method,
-        headers={'Authorization': f'Bearer {token()}', 'Content-Type': 'application/json'},
-        data=json.dumps(body).encode() if body is not None else None)
-    try:
-        with urllib.request.urlopen(req) as r:
-            txt = r.read().decode(); return json.loads(txt) if txt else {}
-    except urllib.error.HTTPError as e:
-        raise RuntimeError(f'HTTP {e.code}: {e.read().decode()[:1200]}') from None
+    for attempt in range(retries):
+        req = urllib.request.Request(url, method=method,
+            headers={'Authorization': f'Bearer {token()}', 'Content-Type': 'application/json'},
+            data=json.dumps(body).encode() if body is not None else None)
+        try:
+            with urllib.request.urlopen(req) as r:
+                txt = r.read().decode(); return json.loads(txt) if txt else {}
+        except urllib.error.HTTPError as e:
+            detail = e.read().decode()[:1200]
+            if e.code >= 500 and attempt < retries - 1:
+                time.sleep(2 ** attempt * 3)
+                continue
+            raise RuntimeError(f'HTTP {e.code}: {detail}') from None
