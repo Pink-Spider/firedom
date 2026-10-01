@@ -139,7 +139,11 @@ App Store 지침 **3.1.2(c)**: 구독을 파는 앱은 이용약관(EULA)과 개
 - **v1.0 양대 스토어 게시 완료.** App Store는 빌드 8(0.1.0+8, 3.1.2(c) 대응 빌드),
   Google Play 프로덕션은 버전 6(0.1.0). 빌드 9(0.1.0+9)는 Play **내부 테스트 트랙**에만
   올라가 있다(설정 화면 고객 ID 타일). 현재 `pubspec.yaml`은 **`1.0.0+10`** — 다국어·다통화
-  빌드로 아직 어느 스토어에도 제출하지 않았다. 설정 화면 앱 버전은 `package_info_plus`로 읽는다
+  빌드. **2026-10-01 TestFlight 내부 테스트(알파테스터 그룹, 자동 배포)에 업로드**했고 심사
+  제출은 아직이다. 설정 화면 앱 버전은 `package_info_plus`로 읽는다
+- **iOS 업로드는 CLI로 한다.** `xcrun altool --upload-app --type ios -f build/ios/ipa/firedom.ipa
+  --apiKey 8FZTAA3T77 --apiIssuer <Issuer ID>` (키는 `~/.appstoreconnect/private_keys/`, Issuer ID는
+  메모리 `store-submission-setup`). 내부 그룹 '알파테스터'는 모든 빌드 자동 접근이라 처리 완료 즉시 뜬다
 - **App Store 링크는 반드시 `kr` 스토어프론트로.** ASC 공유 버튼이 주는 `/us/` 링크는
   한국 단일 배포라 404가 난다. 공식 링크·단축 링크·배지는 `docs/스토어_등록_문구.md`
   '공용 URL'과 `docs/marketing/`에 있다

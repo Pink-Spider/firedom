@@ -48,7 +48,13 @@ open ios/Runner.xcworkspace
 - **Xcode Organizer**(아카이브 후 자동으로 열림):
   **Distribute App → App Store Connect → Upload**
 - 또는 **Transporter** 앱(Mac App Store 무료)에 `.ipa`를 드래그해 업로드
-- CLI로도 가능하지만(altool/notarytool + 앱 암호) Organizer/Transporter가 쉬움
+- **CLI (권장, 2026-10-01부터 이 경로 사용)** — ASC API 키로 앱 암호 없이 업로드:
+  ```bash
+  xcrun altool --upload-app --type ios -f build/ios/ipa/firedom.ipa \
+    --apiKey 8FZTAA3T77 --apiIssuer <Issuer ID>
+  ```
+  키 파일은 `~/.appstoreconnect/private_keys/AuthKey_8FZTAA3T77.p8`(git 외부). 업로드 후
+  처리 5~30분. 내부 그룹 '알파테스터'는 "모든 빌드 자동 접근"이라 별도 배정 없이 뜬다
 
 ## 4. App Store Connect → TestFlight 탭
 
