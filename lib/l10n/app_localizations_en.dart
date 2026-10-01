@@ -752,7 +752,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get paywallFallbackPricing =>
-      'The annual plan costs less than monthly · 7-day free trial\nThe store shows the price for your region';
+      'Choose annual or monthly · 7-day free trial\nYour store shows the price for your region';
 
   @override
   String get paywallFeatureMonteCarlo =>
@@ -787,6 +787,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get paywallPlanWeekly => 'Weekly';
 
   @override
+  String get paywallPricesUnavailable =>
+      'Couldn\'t load prices — check your connection and try again';
+
+  @override
   String get paywallPrivacy => 'Privacy Policy';
 
   @override
@@ -797,6 +801,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get paywallRestored => 'Purchases restored';
+
+  @override
+  String get paywallRetryPrices => 'Reload prices';
 
   @override
   String get paywallStoreNotReady =>

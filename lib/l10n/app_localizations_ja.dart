@@ -654,7 +654,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get paywallFallbackPricing =>
-      '年間プランは月額より割安です · 7日間無料体験\n価格はストアでご確認いただけます';
+      '年間・月間から選べます · 7日間無料体験\nご利用中のストアが地域に応じた価格を表示します';
 
   @override
   String get paywallFeatureMonteCarlo => 'モンテカルロ詳細分布 · 資産枯渇年齢の分布';
@@ -686,6 +686,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get paywallPlanWeekly => '週間';
 
   @override
+  String get paywallPricesUnavailable => '価格を取得できませんでした · 通信環境をご確認のうえ再度お試しください';
+
+  @override
   String get paywallPrivacy => 'プライバシーポリシー';
 
   @override
@@ -696,6 +699,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get paywallRestored => '購入を復元しました';
+
+  @override
+  String get paywallRetryPrices => '価格を再読み込み';
 
   @override
   String get paywallStoreNotReady => 'ストア決済の準備中です — まもなく利用できます';

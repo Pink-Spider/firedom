@@ -142,7 +142,9 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
                 ),
               ),
             ] else ...[
-              // 미구성(연동/상품 준비 전) — 안내 가격 + 준비 중 버튼
+              // 가격을 못 받아온 상태 — 플랜 구성만 알리고 금액은 적지 않는다.
+              // App Store 3.1.2는 구매 CTA 화면에 기간당 가격 표시를 요구하므로
+              // 이 분기에서는 결제를 시작하는 버튼을 두지 않고 재시도만 제공한다.
               Center(
                 child: Text(
                   l10n.paywallFallbackPricing,
@@ -154,9 +156,16 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
               const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
-                child: FilledButton(
-                  onPressed: _purchaseStub,
-                  child: Text(l10n.paywallSubscribe),
+                child: OutlinedButton(
+                  key: const ValueKey('paywall-reload-prices'),
+                  onPressed: _busy ? null : _reloadPrices,
+                  child: _busy
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Text(l10n.paywallRetryPrices),
                 ),
               ),
             ],
@@ -199,16 +208,22 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
     }
   }
 
-  Future<void> _purchaseStub() async {
-    final ok = await ref.read(entitlementServiceProvider).purchase();
+  /// 가격 재조회. 여전히 비어 있으면 원인에 맞는 안내를 띄운다 —
+  /// RevenueCat 미구성 빌드는 '연동 준비 중', 구성됐는데 조회가 비면 '불러오기 실패'.
+  Future<void> _reloadPrices() async {
+    final svc = ref.read(entitlementServiceProvider);
+    setState(() => _busy = true);
+    if (svc.isConfigured) await _loadPackages(svc);
     if (!mounted) return;
-    if (!ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.paywallStoreNotReady)),
-      );
-      return;
-    }
-    Navigator.pop(context);
+    setState(() => _busy = false);
+    if (_packages.isNotEmpty) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(svc.isConfigured
+            ? context.l10n.paywallPricesUnavailable
+            : context.l10n.paywallStoreNotReady),
+      ),
+    );
   }
 
   Future<void> _restore() async {

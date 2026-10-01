@@ -1234,10 +1234,10 @@ abstract class AppLocalizations {
   /// **'브라우저를 열 수 없어요'**
   String get paywallBrowserFailed;
 
-  /// 스토어 가격을 받아오지 못했을 때의 안내. 통화·금액을 넣지 않는다 — 지역별 통화가 다르고 RevenueCat localized price가 진실이다 (과거 원화 고정 문구로 해외에서 오표기)
+  /// 스토어 가격을 받아오지 못했을 때의 안내. 통화·금액·할인율을 넣지 않는다 — 지역별 통화가 다르고 RevenueCat localized price가 진실이다. 가격을 모르는 상태라 '더 저렴하다' 같은 단정도 하지 않는다 (과거 원화 고정 문구로 해외에서 오표기)
   ///
   /// In ko, this message translates to:
-  /// **'연간 플랜이 월간보다 저렴해요 · 7일 무료 체험\n가격은 스토어에서 확인할 수 있어요'**
+  /// **'연간·월간 중에서 고를 수 있어요 · 7일 무료 체험\n가격은 사용 중인 스토어에서 지역에 맞게 보여드려요'**
   String get paywallFallbackPricing;
 
   /// 프리미엄 기능 1 — 실제 동작하는 기능만 올린다
@@ -1294,6 +1294,12 @@ abstract class AppLocalizations {
   /// **'주간'**
   String get paywallPlanWeekly;
 
+  /// 오퍼링 조회 실패(오프라인 등)용. '연동 준비 중'(paywallStoreNotReady)은 RevenueCat 미구성 빌드에서만 쓴다 — 구독이 라이브인 출시 빌드에서 섞이면 사실과 다르다
+  ///
+  /// In ko, this message translates to:
+  /// **'가격을 불러오지 못했어요 · 네트워크를 확인한 뒤 다시 시도해주세요'**
+  String get paywallPricesUnavailable;
+
   /// App Store 3.1.2(c) 필수 링크 — 링크 URL은 paywallPrivacyUrl 상수
   ///
   /// In ko, this message translates to:
@@ -1317,6 +1323,12 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'구매를 복원했어요'**
   String get paywallRestored;
+
+  /// App Store 3.1.2: 기간당 가격을 표시하지 못하는 화면에 결제 개시 버튼을 두지 않는다
+  ///
+  /// In ko, this message translates to:
+  /// **'가격 다시 불러오기'**
+  String get paywallRetryPrices;
 
   /// No description provided for @paywallStoreNotReady.
   ///

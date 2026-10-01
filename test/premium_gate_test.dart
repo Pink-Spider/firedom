@@ -102,7 +102,9 @@ void main() {
     expect(launcher.launched, [paywallTermsUrl, paywallPrivacyUrl]);
     expect(paywallTermsUrl, contains('apple.com/legal'));
 
-    await tester.tap(find.text('구독 시작하기'));
+    // 가격을 모르는 화면에는 결제 개시 버튼을 두지 않는다 (App Store 3.1.2)
+    expect(find.text('구독 시작하기'), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('paywall-reload-prices')));
     await tester.pumpAndSettle();
     expect(find.textContaining('결제 연동 준비 중'), findsOneWidget);
   });

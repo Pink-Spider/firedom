@@ -656,7 +656,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get paywallFallbackPricing =>
-      '연간 플랜이 월간보다 저렴해요 · 7일 무료 체험\n가격은 스토어에서 확인할 수 있어요';
+      '연간·월간 중에서 고를 수 있어요 · 7일 무료 체험\n가격은 사용 중인 스토어에서 지역에 맞게 보여드려요';
 
   @override
   String get paywallFeatureMonteCarlo => '몬테카를로 상세 분포 · 자산 고갈 나이 분포';
@@ -688,6 +688,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get paywallPlanWeekly => '주간';
 
   @override
+  String get paywallPricesUnavailable =>
+      '가격을 불러오지 못했어요 · 네트워크를 확인한 뒤 다시 시도해주세요';
+
+  @override
   String get paywallPrivacy => '개인정보 처리방침';
 
   @override
@@ -698,6 +702,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get paywallRestored => '구매를 복원했어요';
+
+  @override
+  String get paywallRetryPrices => '가격 다시 불러오기';
 
   @override
   String get paywallStoreNotReady => '스토어 결제 연동 준비 중이에요 — 곧 열려요';

@@ -69,7 +69,9 @@ void main() {
     await tester.tap(find.text('파이어덤 프리미엄'));
     await tester.pumpAndSettle();
 
-    expect(find.text('구독 시작하기'), findsOneWidget);
+    // 페이월이 열렸는지 — 테스트 환경은 RevenueCat 미구성이라 가격 대신 재시도 버튼이 뜬다
+    expect(find.byKey(const ValueKey('paywall-reload-prices')), findsOneWidget);
+    expect(find.textContaining('7일 무료 체험'), findsOneWidget);
     expect(find.text('구독 관리'), findsNothing);
   });
 
