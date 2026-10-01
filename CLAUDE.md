@@ -167,7 +167,8 @@ App Store 지침 **3.1.2(c)**: 구독을 파는 앱은 이용약관(EULA)과 개
   `tool/align_play_prices.py`(드라이런 기본, `--apply`로 적용)이며 **실결제에 영향을 주므로 사람이
   직접 실행한다**. 실측 표와 주의사항은 `docs/스토어_등록_문구.md` §5-4
 - **Play 서비스 계정은 읽기·트랙 출시만 가능하다.** 가격·상품 수정은 403 — Play Console에서
-  해당 서비스 계정에 상품·가격 관리 권한을 먼저 켜야 한다 (AAB 업로드·내부 트랙 커밋은 지금도 된다)
+  그 계정에 **'스토어 등록정보 관리'(Manage store presence)** 를 먼저 켜야 한다. API로 자기 권한을
+  올리는 건 불가능하다 (AAB 업로드·내부 트랙 커밋은 지금도 된다)
 - 스토어 API는 `tool/asc_api.py`(App Store Connect) / `tool/play_api.py`(Google Play) —
   외부 의존성 없이 서비스 계정·ASC 키로 토큰을 만든다. 자격증명은 `secret/`·`~/.appstoreconnect/`
 - 빌드·제출 절차는 `docs/guide/TestFlight_배포_가이드.md`, 문구는 `docs/스토어_등록_문구.md`
