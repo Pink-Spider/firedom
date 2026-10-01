@@ -27,10 +27,11 @@ import play_api
 PERMISSION_HELP = """
 가격을 쓸 권한이 없습니다 (HTTP 403 PERMISSION_DENIED).
 
-이 서비스 계정은 구독을 **읽을** 수는 있고 테스트 트랙 출시도 되지만,
-상품 카탈로그(구독·인앱상품) **수정** 권한이 없습니다. 실제로
-`GET subscriptions`는 통과하는데 `GET inappproducts`와
-`PATCH subscriptions`는 403입니다.
+이 서비스 계정은 구독을 **읽을** 수는 있지만 **가격 수정** 권한이 없습니다.
+
+참고: `GET inappproducts`는 권한이 충분해도 403이 날 수 있습니다
+(이 앱에는 일회성 상품이 없다). 권한 여부를 그걸로 판단하지 말고
+이 스크립트의 드라이런·적용 결과로 판단하세요.
 
 해결: Play Console → 사용자 및 권한 → 아래 계정 → 앱 권한에서
 **'스토어 등록정보 관리'(Manage store presence)** 를 켠 뒤 다시 실행하세요.
