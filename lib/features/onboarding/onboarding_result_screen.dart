@@ -336,6 +336,8 @@ class _TrajectoryChart extends ConsumerWidget {
       height: 200,
       child: LineChart(
         LineChartData(
+          // 축 하한 0 고정 — 자동이면 최솟값 라벨이 눈금 라벨과 겹친다 (home_screen 참고)
+          minY: 0,
           gridData: const FlGridData(show: false),
           borderData: FlBorderData(show: false),
           titlesData: FlTitlesData(

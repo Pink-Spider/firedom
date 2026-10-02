@@ -454,6 +454,9 @@ class _TrajectoryCard extends StatelessWidget {
       height: 190,
       child: LineChart(
         LineChartData(
+          // 축 하한을 0으로 고정한다. 자동(데이터 최솟값)으로 두면 fl_chart가
+          // 최솟값 라벨을 눈금 라벨과 따로 그려서 둘이 겹친다 ($90K와 $100K).
+          minY: 0,
           gridData: const FlGridData(show: false),
           borderData: FlBorderData(show: false),
           lineTouchData: const LineTouchData(enabled: false),

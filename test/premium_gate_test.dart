@@ -1,5 +1,6 @@
 import 'package:firedom/core/ym.dart';
 import 'package:firedom/data/db/database.dart';
+import 'package:firedom/data/entitlements.dart';
 import 'package:firedom/data/repositories/plan_repository.dart';
 import 'package:firedom/data/repositories/settings_store.dart';
 import 'package:firedom/engine/engine.dart';
@@ -130,16 +131,16 @@ void main() {
     expect(find.textContaining('투자 자문이 아닙니다'), findsOneWidget);
   });
 
-  appTest('설정: 디버그 프리미엄 토글 → 구독 상태 표시 갱신', (tester) async {
-    await pumpApp(tester, seed: (db) async => seedPlan(db));
+  appTest('설정: 프리미엄이 켜지면 구독 상태 표시가 갱신된다', (tester) async {
+    // QA 토글 위젯은 --dart-define=FIREDOM_QA=true 빌드에만 있으므로(스토어 스크린샷에
+    // 찍히는 사고를 막으려 디버그 자동 노출을 뺐다) 상태를 직접 바꿔 검증한다.
+    final db = await pumpApp(tester, seed: (db) async => seedPlan(db));
 
     await tester.tap(find.byIcon(Icons.settings_outlined));
     await tester.pumpAndSettle();
+    expect(find.textContaining('이용 중 🎉'), findsNothing);
 
-    await tester.scrollUntilVisible(
-        find.byKey(const ValueKey('debug-premium-switch')), 200,
-        scrollable: find.byType(Scrollable).first);
-    await tester.tap(find.byKey(const ValueKey('debug-premium-switch')));
+    await EntitlementService(SettingsStore(db)).setDebugPremium(true);
     await tester.pumpAndSettle();
 
     expect(find.textContaining('이용 중 🎉'), findsOneWidget);

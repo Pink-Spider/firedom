@@ -19,7 +19,8 @@ import '../test/helpers.dart';
 /// 데이터는 in-memory DB에 심어 매번 동일한 화면이 나오게 한다 (실기기 데이터 불필요).
 const _locale = String.fromEnvironment('SHOT_LOCALE', defaultValue: 'ko');
 const _currency = String.fromEnvironment('SHOT_CURRENCY', defaultValue: 'KRW');
-const _prefix = String.fromEnvironment('SHOT_PREFIX', defaultValue: 'iphone65');
+/// 화면마다 머무는 시간 — 바깥 캡처 루프와 맞춘다
+const _hold = Duration(seconds: 8);
 
 /// 통화별 "사람에게 자연스러운" 시연 금액 (최소 단위).
 /// KRW·JPY는 원/엔 그대로, USD는 센트.
@@ -73,11 +74,23 @@ Future<void> _seed(AppDatabase db) async {
 }
 
 void main() {
-  final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  Future<void> shot(WidgetTester tester, String name) async {
+  /// 하단 탭 이동 — 같은 아이콘이 본문에도 있어(예: '포트폴리오로 구성') 탭바로 범위를 좁힌다
+  Future<void> tapTab(WidgetTester tester, IconData icon) async {
+    await tester.tap(find.descendant(
+        of: find.byType(NavigationBar), matching: find.byIcon(icon)));
     await tester.pumpAndSettle();
-    await binding.takeScreenshot('$_prefix/$_locale/$name');
+  }
+
+  /// 화면을 띄운 뒤 [_hold]만큼 머문다. 캡처는 바깥(`tool/screenshots.sh`)에서
+  /// `xcrun simctl io screenshot`으로 한다 — iOS에서 integration_test의
+  /// takeScreenshot이 드라이버 응답을 기다리며 멈추는 일이 있어 쓰지 않는다.
+  Future<void> hold(WidgetTester tester, String name) async {
+    await tester.pumpAndSettle();
+    debugPrint('SHOT_READY $name');
+    await tester.runAsync(() => Future<void>.delayed(_hold));
+    await tester.pumpAndSettle();
   }
 
   testWidgets('스토어 스크린샷 ($_locale/$_currency)', (tester) async {
@@ -88,28 +101,27 @@ void main() {
     ]);
 
     // 1) 홈 — 궤도 차트와 D-day
-    await shot(tester, '01_home_orbit');
+    await hold(tester, '01_home_orbit');
 
     // 2) 시뮬레이션 — What-if 슬라이더
-    await tester.tap(find.byIcon(Icons.query_stats));
-    await shot(tester, '02_simulation');
+    await tapTab(tester, Icons.query_stats);
+    await hold(tester, '02_simulation');
 
     // 3) 자산 — 자산군 배분
-    await tester.tap(find.byIcon(Icons.pie_chart_outline));
-    await shot(tester, '03_assets');
+    await tapTab(tester, Icons.pie_chart_outline);
+    await hold(tester, '03_assets');
 
     // 4) 기록 — 월 스냅샷 입력
-    await tester.tap(find.byIcon(Icons.add_circle_outline));
-    await shot(tester, '04_snapshot');
+    await tapTab(tester, Icons.add_circle_outline);
+    await hold(tester, '04_snapshot');
     if (find.byType(BackButton).evaluate().isNotEmpty) {
       await tester.tap(find.byType(BackButton));
       await tester.pumpAndSettle();
     }
 
     // 5) 설정 — 프라이버시·언어·통화
-    await tester.tap(find.byIcon(Icons.home_outlined));
-    await tester.pumpAndSettle();
+    await tapTab(tester, Icons.home_outlined);
     await tester.tap(find.byIcon(Icons.settings_outlined));
-    await shot(tester, '05_settings');
+    await hold(tester, '05_settings');
   });
 }

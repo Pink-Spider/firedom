@@ -29,11 +29,20 @@ fvm dart run flutter_launcher_icons      # 앱 아이콘 재생성 (원본 asset
 python3 tool/merge_l10n.py && fvm flutter gen-l10n   # 문구 변경 후: parts/*.json → arb → app_localizations*.dart
 ```
 
-- RevenueCat 키는 `--dart-define`으로만 주입한다. 키가 없으면 **스텁 모드**로 기동한다
-  (구매/복원은 false, 게이트는 settings 캐시만 참조). 로컬 결제 테스트는
-  `--dart-define-from-file=revenuecat.json`, 정식 빌드는 `revenuecat.prod.json`
-- `--dart-define=FIREDOM_QA=true`를 주면 설정 화면에 결제 없이 프리미엄을 켜는 QA 토글이 생긴다.
-  **정식 출시 빌드에는 절대 넣지 말 것**
+### 빌드 플래그 (`--dart-define`)
+
+| 플래그 | 효과 | 쓰는 곳 |
+|---|---|---|
+| `REVENUECAT_IOS_KEY` / `REVENUECAT_ANDROID_KEY` | 결제 연동. **없으면 스텁 모드**(구매·복원 false, 게이트는 settings 캐시만) | 파일로 주입: 로컬·베타 `revenuecat.json`, 정식 `revenuecat.prod.json` |
+| `FIREDOM_QA=true` | 설정 화면에 '프리미엄 시뮬레이션 (QA)' 토글 — 결제 없이 유료 게이트를 켠다 | QA용 TestFlight 빌드. **정식 출시 빌드에 절대 넣지 말 것** |
+| `SHOT_LOCALE` / `SHOT_CURRENCY` / `SHOT_PREFIX` | 스크린샷 촬영용 언어·통화·기기 폴더 | `tool/screenshots.sh`가 자동으로 넘긴다 |
+
+- **QA 토글은 `FIREDOM_QA`로만 켜진다 — 디버그 빌드라고 자동으로 보이지 않는다.**
+  예전에는 `kDebugMode`에도 반응해서, 시뮬레이터 스크린샷(시뮬레이터는 profile·release
+  빌드를 지원하지 않아 항상 디버그다)에 찍혀 스토어로 나갈 뻔했다. 로컬에서 쓰려면
+  `fvm flutter run --dart-define=FIREDOM_QA=true`
+- RevenueCat 키 주입 예:
+  `fvm flutter run --dart-define-from-file=revenuecat.json`
 - 릴리스 빌드: `fvm flutter build ipa --dart-define-from-file=revenuecat.prod.json` /
   `fvm flutter build appbundle --dart-define-from-file=revenuecat.prod.json`
 - iOS 서명: Xcode 자동 서명, 팀 `Z53YTTRR32`

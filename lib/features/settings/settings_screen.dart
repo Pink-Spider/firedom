@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:file_selector/file_selector.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -382,9 +381,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 },
               );
             }),
-            // 디버그 빌드, 또는 --dart-define=FIREDOM_QA=true로 빌드한
-            // QA용 릴리스에서 유료 게이트를 결제 없이 켜본다 (프로덕션엔 없음)
-            if (kDebugMode || _qaBuild)
+            // --dart-define=FIREDOM_QA=true로 빌드했을 때만 — 결제 없이 유료 게이트를 켜본다.
+            // 디버그 빌드에 자동 노출하지 않는다: 시뮬레이터 스크린샷에 찍혀 스토어로
+            // 나갈 뻔했다. 로컬에서 쓰려면 실행할 때 플래그를 준다
+            if (_qaBuild)
               SwitchListTile(
                 key: const ValueKey('debug-premium-switch'),
                 title: Text(l10n.settingsQaPremium),

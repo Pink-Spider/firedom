@@ -110,7 +110,7 @@ fvm flutter build ipa \
 ```
 → `build/ios/ipa/firedom.ipa` 생성 → Transporter/Organizer로 업로드(§3).
 
-- **`--dart-define=FIREDOM_QA=true`**: 설정 화면에 "프리미엄 시뮬레이션 (QA)"
+- **`--dart-define=FIREDOM_QA=true`**: 이 플래그를 준 빌드에서**만** 설정 화면에 "프리미엄 시뮬레이션 (QA)"
   토글이 나타나 결제 없이 유료 기능을 테스트할 수 있다.
 - **`--dart-define-from-file=revenuecat.json`**: RevenueCat 키를 주입해 결제
   흐름(Test Store)까지 테스트. 키가 없거나 비면 스텁으로 폴백(QA 토글만 동작).
@@ -119,6 +119,12 @@ fvm flutter build ipa \
 ⚠️ **이 QA 빌드(QA 토글·Test Store 키 포함)는 TestFlight 베타 전용 —
 App Store 정식 심사/출시로 승격하지 말 것.** 정식 출시는 플래그 없이,
 프로덕션 RevenueCat 키(`appl_`/`goog_`)로 다시 빌드한다.
+
+**QA 토글은 디버그 빌드라고 자동으로 보이지 않는다** (2026-10-02 변경). 플래그를 준
+빌드에만 나타난다. 그 전에는 `kDebugMode`에도 반응해서 시뮬레이터 스크린샷에 찍혔다 —
+시뮬레이터는 profile·release 빌드를 지원하지 않아 촬영이 항상 디버그로 돌기 때문이다.
+로컬 개발 중 토글이 필요하면 실행할 때 플래그를 준다:
+`fvm flutter run --dart-define=FIREDOM_QA=true`
 
 ## 10. 정식 출시(App Store 심사 제출)용 빌드 ★
 
@@ -237,6 +243,26 @@ EOF
 
 앱이 ko·en·ja 3개 언어와 KRW/USD/JPY 통화를 지원하는 빌드가 되기 전에는 **절대 국가를 넓히지
 않는다** (§13의 "전 세계 배포" 사고 참조 — 한국어 단일 앱을 177개국에 풀었다가 폐기됐다).
+
+### 14-0. 언어별 스크린샷
+
+```bash
+tool/screenshots.sh            # ko·en·ja 모두
+tool/screenshots.sh en         # 특정 언어만
+```
+
+- 결과는 `store_assets/screenshots/iphone65/<locale>/`. 업로드는
+  `python3 tool/upload_screenshots.py --push` (양대 스토어)
+- 언어·통화는 **앱 설정**으로 바꾼다. 시뮬레이터 언어를 건드리지 않으므로 같은 데이터로
+  세 언어를 똑같이 찍는다. 데이터는 통합 테스트가 in-memory DB에 심어 매번 동일하다
+- 기기는 ASO 전용 시뮬레이터(`iPhone 14 Plus (ASO)`, 6.5" 1284×2778) 고정.
+  `SHOT_DEVICE`로 바꿀 수 있다
+- **촬영은 항상 디버그 빌드다** — 시뮬레이터가 profile·release를 지원하지 않는다
+  (`release/profile builds are only supported for physical devices`). 그래서 디버그에서만
+  보이는 UI가 있으면 스토어 스크린샷에 그대로 들어간다. QA 토글을 플래그 전용으로 바꾼 이유다
+- iOS에서 `integration_test`의 `takeScreenshot`은 드라이버 응답을 기다리다 멈추는 일이
+  있어 쓰지 않는다. 테스트는 각 화면에서 잠시 머물고 `SHOT_READY <이름>`을 로그로 알리며,
+  스크립트가 그때 `xcrun simctl io screenshot`으로 원본을 받는다
 
 ### 14-1. 빌드에서 확인할 것
 
