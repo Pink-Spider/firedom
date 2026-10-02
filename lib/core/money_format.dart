@@ -139,6 +139,17 @@ class MoneyFormat {
     // "$1.0M" → "$1M"
     return '$sign${text.replaceAll(RegExp(r'\.0(?=[KMBT]$)'), '')}';
   }
+
+  /// 차트 축 눈금용 축약 — CJK는 통화 단위어를 뺀다 ("6억", "6,000万", r"$600K").
+  ///
+  /// 축은 폭이 좁아 "6,000万円"처럼 길어지면 라벨이 두 줄로 접힌다. 단위는 축 전체에서
+  /// 같으니 눈금마다 반복할 필요가 없다. 영어는 기호가 접두라 그대로 둔다.
+  String axis(int minor) {
+    if (masked) return maskedText;
+    final text = compact(minor);
+    if (!_cjk || !text.endsWith(unitWord)) return text;
+    return text.substring(0, text.length - unitWord.length);
+  }
 }
 
 /// 숫자 입력에 천 단위 콤마를 실시간 적용 (PRD S1)

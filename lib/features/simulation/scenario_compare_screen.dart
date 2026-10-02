@@ -323,7 +323,7 @@ class _CompareChart extends StatelessWidget {
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
-              reservedSize: 44,
+              reservedSize: chartAxisLabelWidth,
               getTitlesWidget: (value, meta) {
                 // 끝점 라벨은 마지막 눈금과 겹치므로 생략 (fl_chart가 max에 별도로 그림)
                 if (value == meta.max) return const SizedBox.shrink();

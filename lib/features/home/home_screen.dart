@@ -470,7 +470,7 @@ class _TrajectoryCard extends StatelessWidget {
               sideTitles: SideTitles(
                 // 가림 모드에서는 금액 축도 숨긴다
                 showTitles: !masked,
-                reservedSize: 44,
+                reservedSize: chartAxisLabelWidth,
                 getTitlesWidget: (value, meta) {
                   // 끝점 라벨은 마지막 눈금과 겹치므로 생략 (fl_chart가 max에 별도로 그림)
                   if (value == meta.max) return const SizedBox.shrink();

@@ -116,11 +116,12 @@ def push_play(prefix, locale, paths):
     lang = PLAY_LOCALE[locale]
     edit = P.call('POST', 'edits')['id']
     try:
-        P.call('DELETE', f'edits/{edit}/images/{lang}/{image_type}')
+        # 이미지 엔드포인트는 edits/{id}/listings/{lang}/{type} 아래다 (images/ 아님 — 404)
+        P.call('DELETE', f'edits/{edit}/listings/{lang}/{image_type}')
         for path in paths:
             blob = open(path, 'rb').read()
             url = ('https://androidpublisher.googleapis.com/upload/androidpublisher/v3/'
-                   f'applications/{P.PKG}/edits/{edit}/images/{lang}/{image_type}'
+                   f'applications/{P.PKG}/edits/{edit}/listings/{lang}/{image_type}'
                    '?uploadType=media')
             _raw('POST', url, {'Authorization': f'Bearer {P.token()}',
                                'Content-Type': 'image/png',

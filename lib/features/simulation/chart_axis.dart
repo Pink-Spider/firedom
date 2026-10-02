@@ -10,7 +10,12 @@ int chartAmountUnit(Currency currency) => switch (currency) {
       Currency.usd => 10000000,
     };
 
-/// y축 눈금 라벨 — 축 값 × 단위를 통화·언어에 맞춰 축약 ("1억원" / "$100K" / "1億円")
+/// y축 라벨 칸 너비. 일본어 "6,000万"처럼 긴 라벨이 두 줄로 접히지 않을 만큼 둔다
+/// (44로는 접혔다). 차트 폭은 그만큼 줄지만 라벨이 깨지는 것보다 낫다.
+const chartAxisLabelWidth = 68.0;
+
+/// y축 눈금 라벨 — 축 값 × 단위를 통화·언어에 맞춰 축약 ("1억" / "$100K" / "1億")
+/// CJK는 단위어를 빼 한 줄에 들어가게 한다 ([MoneyFormat.axis]).
 /// 가림 모드에서는 빈 문자열 (축 눈금 자체를 숨긴다)
 String chartAmountLabel(MoneyFormat money, double axisValue, int unit) =>
-    money.masked ? '' : money.compact((axisValue * unit).round());
+    money.masked ? '' : money.axis((axisValue * unit).round());

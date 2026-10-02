@@ -145,11 +145,12 @@ App Store 지침 **3.1.2(c)**: 구독을 파는 앱은 이용약관(EULA)과 개
 
 ## 릴리스 상태 (2026-09-23 기준)
 
-- **v1.0 양대 스토어 게시 완료.** App Store는 빌드 8(0.1.0+8, 3.1.2(c) 대응 빌드),
-  Google Play 프로덕션은 버전 6(0.1.0). 빌드 9(0.1.0+9)는 Play **내부 테스트 트랙**에만
-  올라가 있다(설정 화면 고객 ID 타일). 현재 `pubspec.yaml`은 **`1.0.0+10`** — 다국어·다통화
-  빌드. **2026-10-01 TestFlight 내부 테스트(알파테스터 그룹, 자동 배포)에 업로드**했고 심사
-  제출은 아직이다. 설정 화면 앱 버전은 `package_info_plus`로 읽는다
+- **v1.0.0 다국어·다통화 배포 (2026-10-02).** `pubspec.yaml`은 `1.0.0+10`.
+  - **Google Play: 프로덕션 출시 완료** (버전코드 10, 등록정보·출시노트 ko·en·ja)
+  - **App Store: 심사 대기**(WAITING_FOR_REVIEW, 2026-10-02 제출). 승인 즉시 자동 출시 설정.
+    스크린샷은 언어별 iPhone 6.5" 5장 + iPad 12.9" 5장
+  - 그 이전: App Store 빌드 8(0.1.0+8), Play 버전 6(0.1.0), 빌드 9는 Play 내부 테스트에만
+  - 설정 화면 앱 버전은 `package_info_plus`로 읽는다
 - **iOS 업로드는 CLI로 한다.** `xcrun altool --upload-app --type ios -f build/ios/ipa/firedom.ipa
   --apiKey 8FZTAA3T77 --apiIssuer <Issuer ID>` (키는 `~/.appstoreconnect/private_keys/`, Issuer ID는
   메모리 `store-submission-setup`). 내부 그룹 '알파테스터'는 모든 빌드 자동 접근이라 처리 완료 즉시 뜬다
@@ -163,19 +164,22 @@ App Store 지침 **3.1.2(c)**: 구독을 파는 앱은 이용약관(EULA)과 개
   프로모셔널 엔타이틀먼트(`premium`, Lifetime)를 쓴다. 계정이 없는 앱이라 고객 ID가
   설치 단위 익명 ID이며, 설정 → 구독 → '고객 ID' 타일에서 복사할 수 있다(빌드 9~).
   앱을 삭제·재설치하면 ID가 바뀌므로 업데이트 설치로 유지해야 한다
-- **배포 지역: 현재 스토어 게시본(빌드 8·9)은 대한민국만.** 2026-10-01에 글로벌 전환을
-  결정해 코드는 ko·en·ja + KRW/USD/JPY를 지원하지만, **아직 다국어 빌드가 스토어에 올라가지
-  않았다.** 국가 확장은 반드시 다국어 빌드 심사 통과 뒤 `docs/guide/TestFlight_배포_가이드.md`
-  §14 순서로. 해외 앱 이름은 `Firedom`, 한국은 `파이어덤` 유지. 영어·일본어 등록정보는
-  `docs/스토어_등록_문구.md` §5
+- **배포 지역: 국가 확장은 아직 사용자 TODO.** 코드·등록정보·스크린샷·처리방침은 ko·en·ja로
+  준비됐고 빌드도 올라갔지만, **판매 지역 설정은 양대 스토어 모두 API로 다루지 못해**
+  콘솔에서 직접 넓혀야 한다(미국·캐나다·영국·호주·뉴질랜드·싱가포르·일본).
+  해외 앱 이름은 `Firedom`, 한국은 `파이어덤` 유지. 절차는 `docs/guide/TestFlight_배포_가이드.md` §14
 - 구독 상품 ID는 양대 스토어 공통: `firedom_39000_1y`(₩39,000/년), `firedom_4900_1m`(₩4,900/월),
   각각 7일 무료 체험. **통화는 RevenueCat이 아니라 스토어가 정한다** — 앱은 RevenueCat이 주는
   현지화 가격 문자열(`storeProduct.priceString`)을 그대로 출력하므로 앱에 금액을 박지 않는다
 - **양대 스토어 가격은 2026-10-01에 맞췄다** (`tool/align_play_prices.py`, 같은 통화인 지역만 —
   통화가 다른 30곳은 환율을 임의로 만들지 않고 건너뛴다). 다시 돌릴 일이 있으면 **실결제에 영향을
   주므로 사람이 직접 실행한다**. 실측 표와 함정은 `docs/스토어_등록_문구.md` §5-4
-- Play 서비스 계정에는 가격 수정용 **'스토어 등록정보 관리'** 권한이 부여돼 있다.
-  단 `GET inappproducts`는 권한이 충분해도 403이라 권한 판단 기준으로 쓰면 안 된다
+- Play 서비스 계정 권한: **'스토어 등록정보 관리'**(가격·등록정보·스크린샷)와
+  **프로덕션 출시**가 부여돼 있다(2026-10-02). 트랙 PATCH는 통과하는데 `edits:validate`에서
+  403이면 출시 권한이 없는 것이다. `GET inappproducts`는 권한이 충분해도 403이라
+  권한 판단 기준으로 쓰면 안 된다
+- 스토어 자동화 도구: `tool/store_listings.py`(등록정보), `tool/upload_screenshots.py`(스크린샷),
+  `tool/screenshots.sh`+`tool/seed_demo_db.py`(촬영), `tool/align_play_prices.py`(가격)
 - 스토어 API는 `tool/asc_api.py`(App Store Connect) / `tool/play_api.py`(Google Play) —
   외부 의존성 없이 서비스 계정·ASC 키로 토큰을 만든다. 자격증명은 `secret/`·`~/.appstoreconnect/`
 - 빌드·제출 절차는 `docs/guide/TestFlight_배포_가이드.md`, 문구는 `docs/스토어_등록_문구.md`

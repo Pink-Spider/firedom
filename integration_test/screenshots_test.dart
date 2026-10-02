@@ -5,6 +5,7 @@ import 'package:firedom/data/repositories/settings_store.dart';
 import 'package:firedom/data/repositories/snapshot_repository.dart';
 import 'package:firedom/engine/engine.dart';
 import 'package:firedom/features/simulation/monte_carlo_runner.dart';
+import 'package:firedom/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -55,7 +56,17 @@ Future<void> _seed(AppDatabase db) async {
 
   // 최근 6개월 기록 — 궤도 차트와 저축률 추이가 보이도록 조금씩 증가
   final repo = SnapshotRepository(db);
-  final accounts = await repo.ensureDefaultAccounts();
+  // 기본 항목 이름도 현재 언어로 — 실제 앱이 기록 화면에서 넘기는 것과 같은 l10n 문구다.
+  // 그냥 ensureDefaultAccounts()를 부르면 한국어 기본 시드가 들어가 영어 화면에 한글이 남는다.
+  final l10n = lookupAppLocalizations(Locale(_locale));
+  final accounts = await repo.ensureDefaultAccounts(names: [
+    l10n.snapDefaultDeposits,
+    l10n.snapDefaultStocks,
+    l10n.snapDefaultPension,
+    l10n.snapDefaultRealEstate,
+    l10n.snapDefaultLoans,
+    l10n.snapDefaultOther,
+  ]);
   for (var i = 6; i >= 0; i--) {
     final ym = ymAddMonths(nowYm(), -i);
     final grow = (6 - i);

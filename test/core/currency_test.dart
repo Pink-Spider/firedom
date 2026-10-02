@@ -107,4 +107,21 @@ void main() {
       expect(formatYm(202612, languageCode: 'ja'), '2026年12月');
     });
   });
+
+  group('MoneyFormat.axis — 차트 축 라벨', () {
+    test('CJK는 단위어를 뺀다 (좁은 축에서 두 줄로 접히지 않게)', () {
+      expect(const MoneyFormat(Currency.krw, 'ko').axis(600000000), '6억');
+      expect(const MoneyFormat(Currency.jpy, 'ja').axis(60000000), '6,000万');
+      expect(const MoneyFormat(Currency.krw, 'ko').axis(0), '0');
+    });
+
+    test('영어는 기호가 접두라 compact 그대로', () {
+      expect(const MoneyFormat(Currency.usd, 'en').axis(60000000), r'$600K');
+    });
+
+    test('가림 모드', () {
+      expect(const MoneyFormat(Currency.krw, 'ko', masked: true).axis(600000000),
+          '●●●');
+    });
+  });
 }

@@ -11,6 +11,7 @@ import '../../l10n/l10n.dart';
 import '../common/money.dart';
 import '../home/home_screen.dart';
 import 'onboarding_draft.dart';
+import '../simulation/chart_axis.dart';
 
 /// S2. 온보딩 — 결과 (PRD) ★ aha moment
 ///
@@ -348,7 +349,7 @@ class _TrajectoryChart extends ConsumerWidget {
             leftTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
-                reservedSize: 44,
+                reservedSize: chartAxisLabelWidth,
                 getTitlesWidget: (value, meta) {
                   // 끝점 라벨은 마지막 눈금과 겹치므로 생략 (fl_chart가 max에 별도로 그림)
                   if (value == meta.max) return const SizedBox.shrink();
