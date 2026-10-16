@@ -7,6 +7,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 한국형 FIRE(조기은퇴) 시뮬레이터 앱. 핵심 루프: 목표 설계 → 시뮬레이션(계획 궤도) → 월 1회 자산 스냅샷 기록 → 계획 vs 실제 궤도 비교.
 
 상세 기획은 `docs/PRD_FIRE시뮬레이터_MVP.md`(화면 단위 스펙), `docs/경쟁분석_FIRE재무설계앱.md`, `docs/Firedom_브랜드_ASO.md` 참조.
+엔진 자산군 프리셋(수익률·변동성)의 출처는 `docs/자산군_프리셋_근거.md` — 프리셋 숫자를 바꿀 땐 이 문서도 같이 고친다.
+iOS 홈 위젯 익스텐션 타겟·App Group 설정 이력은 `docs/W1_홈위젯_iOS_설정.md`.
 
 ## 스택 / 명령어
 
@@ -39,7 +41,7 @@ tool/screenshots.sh [ko|en|ja]           # 스토어 스크린샷 촬영 (iOS �
 |---|---|---|
 | `REVENUECAT_IOS_KEY` / `REVENUECAT_ANDROID_KEY` | 결제 연동. **없으면 스텁 모드**(구매·복원 false, 게이트는 settings 캐시만) | 파일로 주입: 로컬·베타 `revenuecat.json`, 정식 `revenuecat.prod.json` |
 | `FIREDOM_QA=true` | 설정 화면에 '프리미엄 시뮬레이션 (QA)' 토글 — 결제 없이 유료 게이트를 켠다 | QA용 TestFlight 빌드. **정식 출시 빌드에 절대 넣지 말 것** |
-| `SHOT_LOCALE` / `SHOT_CURRENCY` / `SHOT_PREFIX` | 스크린샷 촬영용 언어·통화·기기 폴더 | `tool/screenshots.sh`가 자동으로 넘긴다 |
+| `SHOT_LOCALE` / `SHOT_CURRENCY` | 스크린샷 촬영용 언어·통화 (`integration_test/`만 읽는다) | `tool/screenshots.sh`가 자동으로 넘긴다. 기기 폴더·시뮬레이터·대기 시간은 셸 환경변수 `SHOT_PREFIX`/`SHOT_DEVICE`/`SHOT_HOLD` |
 
 - **QA 토글은 `FIREDOM_QA`로만 켜진다 — 디버그 빌드라고 자동으로 보이지 않는다.**
   예전에는 `kDebugMode`에도 반응해서, 시뮬레이터 스크린샷(시뮬레이터는 profile·release
@@ -209,11 +211,18 @@ App Store 지침 **3.1.2(c)**: 구독을 파는 앱은 이용약관(EULA)과 개
   외부 의존성 없이 서비스 계정·ASC 키로 토큰을 만든다. 자격증명은 `secret/`·`~/.appstoreconnect/`
 - 빌드·제출 절차는 `docs/guide/TestFlight_배포_가이드.md`, 문구는 `docs/스토어_등록_문구.md`
 
-## 비밀 파일 (커밋 금지)
+## 공개 저장소 · 비밀 파일 (커밋 금지) ★
+
+**`Pink-Spider/firedom`은 2026-10-16부터 공개(PUBLIC) 저장소다.** LICENSE 파일이 없으므로 기본값은
+all rights reserved이며, 라이선스 추가는 사용자가 결정한다. GitHub 시크릿 스캐닝·푸시 보호가 켜져 있다.
+이 파일(CLAUDE.md)과 `docs/`도 공개되므로 개인 메모·내부 자격증명 힌트를 적지 않는다.
 
 `android/key.properties`, `android/app/upload-keystore.jks`, `revenuecat.json`,
 `revenuecat.prod.json`, `secret/`, `*.p8` — 모두 gitignore 처리돼 있다.
 새 자격증명을 추가할 때는 **먼저 `.gitignore`에 넣고** `git check-ignore -v`로 확인한다.
+새 도구 스크립트에서 키 ID·프로젝트 ID·이메일 같은 식별자는 코드 기본값으로 박지 말고
+환경변수나 `secret/` 파일에서 읽는다 (기존 `tool/asc_api.py`·`tool/play_api.py`의 기본값은
+이미 공개 이력에 남은 것이라 그대로 둔다).
 
 ## 이 저장소의 Claude Code 설정
 

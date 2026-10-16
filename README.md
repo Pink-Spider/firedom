@@ -17,11 +17,13 @@
 - **릴리스 상태**: v1.0.0 (`1.0.0+10`, 다국어·다통화) 양대 스토어 출시 완료 (2026-10)
 - **최소 지원 OS**: iOS 15.0 / Android 7.0 (API 24 — Flutter 3.44 기본값)
 - **언어·통화**: 한국어·영어·일본어 (기기 언어 또는 설정), KRW·USD·JPY (온보딩에서 선택)
-- **배포 지역**: App Store 8곳(한국·미국·캐나다·영국·호주·뉴질랜드·싱가포르·일본), Google Play도 콘솔에서
-  확장. 해외 앱 이름은 `Firedom`, 한국은 `파이어덤`
-- **스토어 링크**: App Store https://apps.apple.com/kr/app/%ED%8C%8C%EC%9D%B4%EC%96%B4%EB%8D%A4-firedom/id6790997319
-  (단축 https://apple.co/4hjZhqd) · Google Play https://play.google.com/store/apps/details?id=app.firedom.firedom.
-  공식 배지는 `docs/스토어_등록_문구.md` '공용 URL' 참조
+- **배포 지역**: App Store 8곳(한국·미국·캐나다·영국·호주·뉴질랜드·싱가포르·일본),
+  Google Play도 콘솔에서 확장
+- **앱 이름**: 한국 `파이어덤`, 그 외 지역 `Firedom`
+- **스토어 링크**: [App Store](https://apps.apple.com/kr/app/%ED%8C%8C%EC%9D%B4%EC%96%B4%EB%8D%A4-firedom/id6790997319)
+  (단축 https://apple.co/4hjZhqd) ·
+  [Google Play](https://play.google.com/store/apps/details?id=app.firedom.firedom).
+  공식 배지 파일은 `docs/스토어_등록_문구.md` '공용 URL' 참조
 - **구독**: `firedom_39000_1y`(₩39,000/년) · `firedom_4900_1m`(₩4,900/월), 각 7일 무료 체험
 
 ## 기능
@@ -93,7 +95,7 @@ lib/
                 assets, goal, paywall, settings, lock
 test/           위젯·플로우 테스트 + engine 골든 테스트
 docs/           기획·설계·운영 문서
-store_assets/   스토어 제출용 스크린샷·피처 그래픽·아이콘 (git 미포함 자산 포함)
+store_assets/   스토어 제출용 스크린샷(언어·기기별)·피처 그래픽·아이콘
 ```
 
 주요 의존성: `flutter_riverpod` · `go_router` · `drift` · `fl_chart` ·
@@ -117,8 +119,9 @@ store_assets/   스토어 제출용 스크린샷·피처 그래픽·아이콘 (g
 
 ## 비밀 파일 (커밋 금지)
 
-아래는 모두 `.gitignore` 처리돼 있다. **특히 Android 업로드 키스토어는 분실 시 복구가
-불가능하므로 반드시 별도 백업할 것.**
+아래는 모두 `.gitignore` 처리돼 있다. 저장소가 공개라 한 번 푸시된 내용은 이력에 영구히
+남는다 (GitHub 시크릿 스캐닝·푸시 보호 켜짐). **특히 Android 업로드 키스토어는 분실 시
+복구가 불가능하므로 반드시 별도 백업할 것.**
 
 ```
 android/key.properties            android/app/upload-keystore.jks
@@ -128,4 +131,7 @@ secret/                           *.p8
 
 ## 라이선스
 
-비공개 프로젝트 (`publish_to: none`). © 2026 Pink Spider
+공개 저장소(2026-10-16 공개)이지만 아직 LICENSE 파일이 없다. 별도 명시 전까지
+코드·문구·아이콘·스토어 자산 모두 all rights reserved. pub.dev에는 배포하지 않는다
+(`publish_to: none`).
+© 2026 Pink Spider
