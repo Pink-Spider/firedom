@@ -213,8 +213,10 @@ App Store 지침 **3.1.2(c)**: 구독을 파는 앱은 이용약관(EULA)과 개
 
 ## 공개 저장소 · 비밀 파일 (커밋 금지) ★
 
-**`Pink-Spider/firedom`은 2026-10-16부터 공개(PUBLIC) 저장소다.** LICENSE 파일이 없으므로 기본값은
-all rights reserved이며, 라이선스 추가는 사용자가 결정한다. GitHub 시크릿 스캐닝·푸시 보호가 켜져 있다.
+**`Pink-Spider/firedom`은 2026-10-16부터 공개(PUBLIC) 저장소다.** 소스 코드는 GPL-3.0(`LICENSE`)이고
+앱 이름·아이콘(`assets/icon/`)·스토어 자산(`store_assets/`, `docs/marketing/`)·스토어 문구는 제외(모든 권리
+보유)다 — README '라이선스' 절이 기준. 외부 PR을 받기 시작하면 스토어 배포권 유지를 위해 CLA가 필요하다
+(GPL은 라이선시만 구속하므로 저작권자 본인의 스토어 배포는 자유). GitHub 시크릿 스캐닝·푸시 보호가 켜져 있다.
 이 파일(CLAUDE.md)과 `docs/`도 공개되므로 개인 메모·내부 자격증명 힌트를 적지 않는다.
 
 `android/key.properties`, `android/app/upload-keystore.jks`, `revenuecat.json`,

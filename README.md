@@ -131,7 +131,8 @@ secret/                           *.p8
 
 ## 라이선스
 
-공개 저장소(2026-10-16 공개)이지만 아직 LICENSE 파일이 없다. 별도 명시 전까지
-코드·문구·아이콘·스토어 자산 모두 all rights reserved. pub.dev에는 배포하지 않는다
-(`publish_to: none`).
+소스 코드는 [GPL-3.0](LICENSE)이다. 이 코드로 앱을 만들어 배포하면 그 소스도 같은 조건으로
+공개해야 한다. 다음은 GPL 대상이 **아니며** 모든 권리를 보유한다: 앱 이름 '파이어덤'/'Firedom',
+아이콘·브랜드 자산(`assets/icon/`), 스토어 제출 자산(`store_assets/`, `docs/marketing/`),
+스토어 등록 문구. pub.dev에는 배포하지 않는다 (`publish_to: none`).
 © 2026 Pink Spider
