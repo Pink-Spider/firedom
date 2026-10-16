@@ -7,17 +7,21 @@
 목표 설계 → 시뮬레이션(계획 궤도) → 월 1회 자산 스냅샷 → 계획 vs 실제 비교
 ```
 
+<p>
+  <a href="https://apps.apple.com/kr/app/%ED%8C%8C%EC%9D%B4%EC%96%B4%EB%8D%A4-firedom/id6790997319"><img src="docs/marketing/app-store-badge-ko-kr-black.svg" alt="App Store에서 다운로드" height="40" align="middle"></a>
+  <a href="https://play.google.com/store/apps/details?id=app.firedom.firedom"><img src="https://play.google.com/intl/ko/badges/static/images/badges/ko_badge_web_generic.png" alt="Google Play에서 다운로드" height="60" align="middle"></a>
+</p>
+
 - **플랫폼**: Flutter (iOS / Android), 번들ID `app.firedom.firedom`
 - **아키텍처**: 로컬 우선, 서버리스 — 재무 데이터는 기기에만 저장되고 전송되지 않는다
-- **릴리스 상태**: v1.0 양대 스토어 게시 완료 (App Store 빌드 8 / Google Play 버전 6).
-  현재 `pubspec.yaml`은 `1.0.0+10`(다국어·다통화 빌드, 미제출). 빌드 9는 Play 내부 테스트 트랙에만 있다
+- **릴리스 상태**: v1.0.0 (`1.0.0+10`, 다국어·다통화) 양대 스토어 출시 완료 (2026-10)
 - **최소 지원 OS**: iOS 15.0 / Android 7.0 (API 24 — Flutter 3.44 기본값)
 - **언어·통화**: 한국어·영어·일본어 (기기 언어 또는 설정), KRW·USD·JPY (온보딩에서 선택)
-- **배포 지역**: 스토어 게시본은 아직 대한민국만. 다국어 빌드 심사 후 영어권·일본으로 확장
-  (`docs/guide/TestFlight_배포_가이드.md` §14)
-- **App Store**: https://apps.apple.com/kr/app/%ED%8C%8C%EC%9D%B4%EC%96%B4%EB%8D%A4-firedom/id6790997319
-  (국가 코드 `kr` 필수 — 한국 단일 배포라 `/us/` 등 다른 스토어프론트 링크는 404).
-  단축 링크·공식 배지는 `docs/스토어_등록_문구.md` '공용 URL' 참조
+- **배포 지역**: App Store 8곳(한국·미국·캐나다·영국·호주·뉴질랜드·싱가포르·일본), Google Play도 콘솔에서
+  확장. 해외 앱 이름은 `Firedom`, 한국은 `파이어덤`
+- **스토어 링크**: App Store https://apps.apple.com/kr/app/%ED%8C%8C%EC%9D%B4%EC%96%B4%EB%8D%A4-firedom/id6790997319
+  (단축 https://apple.co/4hjZhqd) · Google Play https://play.google.com/store/apps/details?id=app.firedom.firedom.
+  공식 배지는 `docs/스토어_등록_문구.md` '공용 URL' 참조
 - **구독**: `firedom_39000_1y`(₩39,000/년) · `firedom_4900_1m`(₩4,900/월), 각 7일 무료 체험
 
 ## 기능
@@ -65,7 +69,7 @@ fvm flutter run
 
 ```bash
 fvm flutter analyze   # 통과 필수
-fvm flutter test      # 통과 필수 (188개)
+fvm flutter test      # 통과 필수 (191개)
 fvm flutter test test/engine                               # 엔진 골든 테스트만
 fvm flutter test test/snapshot_flow_test.dart              # 파일 하나
 fvm flutter test test/engine/deterministic_golden_test.dart --plain-name "G1"   # 테스트 하나

@@ -10,7 +10,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 스택 / 명령어
 
-- Flutter (fvm으로 버전 고정 — `.fvmrc`의 3.44.5, 항상 `fvm flutter ...` 사용)
+- Flutter (fvm으로 버전 고정 — `.fvmrc`의 3.44.5, 항상 `fvm flutter ...` 사용). 에뮬레이터·실기기 실행은
+  `docs/guide/로컬_실행_가이드.md`
 - 로컬 DB: SQLite(Drift). 서버 없음(MVP는 완전 로컬, 계정 없음)
 - 상태 관리 `flutter_riverpod` 3 / 라우팅 `go_router` / 차트 `fl_chart`
 - 언어 ko·en·ja (`lib/l10n/`, ko가 템플릿) / 통화 KRW·USD·JPY (`lib/core/currency.dart`)
@@ -27,7 +28,10 @@ fvm flutter test test/engine/deterministic_golden_test.dart --plain-name "G1"   
 fvm dart run build_runner build --delete-conflicting-outputs   # Drift 코드젠 (database.g.dart는 산출물 — 직접 수정 금지)
 fvm dart run flutter_launcher_icons      # 앱 아이콘 재생성 (원본 assets/icon/*.svg → png 변환 후)
 python3 tool/merge_l10n.py && fvm flutter gen-l10n   # 문구 변경 후: parts/*.json → arb → app_localizations*.dart
+tool/screenshots.sh [ko|en|ja]           # 스토어 스크린샷 촬영 (iOS 시뮬레이터, 아래 '스크린샷 파이프라인')
 ```
+
+`integration_test/`·`test_driver/`는 스크린샷 촬영 전용이며 `fvm flutter test`에 포함되지 않는다.
 
 ### 빌드 플래그 (`--dart-define`)
 
@@ -89,6 +93,18 @@ DB 행과 오가게 하며, features는 Riverpod provider로만 data를 본다.
 - **라우팅** — `lib/app/router.dart`. 각 화면은 `static const path`를 갖고, 홈·시뮬레이션·자산은
   `ShellRoute`(하단 탭), 기록·설정·온보딩은 push. 활성 계획이 없으면 온보딩이 initialLocation.
   `bootstrapApp`이 기동 시 레거시 SharedPreferences 계획을 DB로 이관한다
+- **`lib/data/`의 부가 서비스** — 모두 "실패해도 본 흐름(기록·시뮬레이션)을 막지 않는다"가 원칙이다
+  - `backup_service.dart`: 7개 테이블 JSON 전체 덤프 → PBKDF2(600k) + AES-256-GCM. 파일 헤더
+    레이아웃(magic|ver|iter|salt|nonce|mac)은 엔진명세 B4. **복원은 전체 치환**(merge 아님, 기기 이전 용도)
+  - `home_widget_sync.dart`: iOS App Group ID는 Xcode 위젯 타겟과 일치해야 한다. 위젯 페이로드는
+    D-day·진행률·편차 배지뿐 — **금액은 절대 넣지 않는다**. 스냅샷 저장·계획 변경·기동 시 호출
+  - `reminders.dart` + `notifications/reminder_scheduler.dart`: 로컬 알림만(푸시 서버 없음). 이미 기록한
+    달은 건너뛴다. Android 알림 채널 ID를 바꾸면 사용자의 기존 채널 설정이 분리되므로 고정
+  - `lib/app/app_upgrade.dart`: `upgrader` 소프트 안내, release 빌드에서만. 스토어 공개 버전 조회 외
+    네트워크 없음(로컬 우선 원칙 유지)
+  - `lib/features/lock/`: `local_auth` 생체인증 앱 잠금. 기동 시점 잠금 설정은 provider override로 주입
+  - `milestone_service.dart`(판정은 엔진, 결과만 저장) / `plan_input_json.dart`(시나리오 `params_json`
+    직렬화, 선택적 `portfolio` 필드 포함)
 - **몬테카를로** — `monteCarloRunnerProvider`가 `compute()`로 isolate 실행. 테스트는 동기 함수로 override
 - **다국어** — 화면은 `context.l10n.<key>`(`lib/l10n/l10n.dart`), 컨텍스트가 없는 알림·위젯은
   `l10nFromSettings(store)`. 언어는 `localeProvider`(설정, null=기기 언어). 키는 그룹 접두어
@@ -104,7 +120,13 @@ DB 행과 오가게 하며, features는 Riverpod provider로만 data를 본다.
 - **테스트 인프라** — `test/helpers.dart`의 `appTest` + `pumpApp`이 in-memory Drift DB와 mock prefs로
   앱 전체를 띄운다(`seed` 콜백으로 계획/스냅샷 선삽입, `overrides`로 provider 교체). 위젯 테스트는
   반드시 `appTest`를 쓸 것 — drift 스트림 정리 타이머 때문에 `testWidgets`로 직접 쓰면 "Timer is still
-  pending"으로 깨진다
+  pending"으로 깨진다. 위젯 동기화·알림 스케줄러처럼 플랫폼 채널을 타는 서비스는 추상화돼 있고
+  테스트에서 no-op/fake로 override한다 — mock되지 않은 채널은 Future가 끝나지 않아 흐름이 멈춘다
+- **스크린샷 파이프라인** — `integration_test/screenshots_test.dart`가 in-memory DB에 시연 데이터를 심고
+  `SHOT_LOCALE`/`SHOT_CURRENCY`에 따라 화면마다 8초 머문다. 그 사이 `tool/screenshots.sh`가
+  `xcrun simctl io screenshot`으로 `store_assets/screenshots/<prefix>/<locale>/`에 캡처한다
+  (integration_test의 takeScreenshot은 iOS에서 멈추는 일이 있어 쓰지 않는다). 업로드는
+  `tool/upload_screenshots.py --push`
 
 ## 제품 원칙 (기능 구현 시 판단 기준)
 
@@ -143,20 +165,21 @@ App Store 지침 **3.1.2(c)**: 구독을 파는 앱은 이용약관(EULA)과 개
   `UrlLauncherPlatform`을 페이크로 갈아끼워 탭 → `launchUrl(url)` 호출까지 검증한다
 - 스토어 설명 마지막 두 줄에도 같은 링크를 유지할 것 (`docs/스토어_등록_문구.md`)
 
-## 릴리스 상태 (2026-09-23 기준)
+## 릴리스 상태 (2026-10-16 기준)
 
 - **v1.0.0 다국어·다통화 배포 (2026-10-02).** `pubspec.yaml`은 `1.0.0+10`.
   - **Google Play: 프로덕션 출시 완료** (버전코드 10, 등록정보·출시노트 ko·en·ja)
-  - **App Store: 심사 대기**(WAITING_FOR_REVIEW, 2026-10-02 제출). 승인 즉시 자동 출시 설정.
+  - **App Store: 1.0.0 출시 완료**(READY_FOR_SALE, 2026-10-02 제출 → 2026-10-16 읽기 API로 확인).
     스크린샷은 언어별 iPhone 6.5" 5장 + iPad 12.9" 5장
   - 그 이전: App Store 빌드 8(0.1.0+8), Play 버전 6(0.1.0), 빌드 9는 Play 내부 테스트에만
   - 설정 화면 앱 버전은 `package_info_plus`로 읽는다
 - **iOS 업로드는 CLI로 한다.** `xcrun altool --upload-app --type ios -f build/ios/ipa/firedom.ipa
   --apiKey 8FZTAA3T77 --apiIssuer <Issuer ID>` (키는 `~/.appstoreconnect/private_keys/`, Issuer ID는
   메모리 `store-submission-setup`). 내부 그룹 '알파테스터'는 모든 빌드 자동 접근이라 처리 완료 즉시 뜬다
-- **App Store 링크는 반드시 `kr` 스토어프론트로.** ASC 공유 버튼이 주는 `/us/` 링크는
-  한국 단일 배포라 404가 난다. 공식 링크·단축 링크·배지는 `docs/스토어_등록_문구.md`
-  '공용 URL'과 `docs/marketing/`에 있다
+- **App Store 공식 링크는 `kr` 스토어프론트**(`apps.apple.com/kr/app/…/id6790997319`, 단축
+  `apple.co/4hjZhqd`). 8개 지역 판매 후에는 `/us/` 링크도 열린다(2026-10-16 확인 — 한국 단일 배포
+  시절의 '/us/는 404' 주의는 해제). Google Play는 `play.google.com/store/apps/details?id=app.firedom.firedom`.
+  배지는 `docs/스토어_등록_문구.md` '공용 URL'과 `docs/marketing/`에 있다
 - **Play 내부 테스트 배포는 API로 한다.** `secret/`의 서비스 계정에 테스트 트랙 출시
   권한이 있어 edits → bundles 업로드 → tracks/internal → commit이 통과한다.
   내부 테스터 이메일 목록만 콘솔에서 직접 관리한다(API는 Google 그룹만 지원)
@@ -194,7 +217,8 @@ App Store 지침 **3.1.2(c)**: 구독을 파는 앱은 이용약관(EULA)과 개
 
 ## 이 저장소의 Claude Code 설정
 
-- `.claude/hooks/engine-tests.sh` — Edit/Write 후 엔진 골든 테스트 자동 실행
+- `.claude/hooks/engine-tests.sh` — Edit/Write 후 엔진 골든 테스트 자동 실행 (`jq` 필요 — 없으면
+  파일 경로를 못 읽어 **조용히 건너뛴다**)
 - `.claude/agents/compliance-reviewer.md` — 사용자 노출 문구 수정 후 커밋 전 실행
   (행동 지시 표현, 투자자문 오인 용어, 면책 누락, 금액 가림 미지원 검사)
 - `.claude/skills/drift-migration/SKILL.md` — Drift 스키마 변경 절차
@@ -202,7 +226,7 @@ App Store 지침 **3.1.2(c)**: 구독을 파는 앱은 이용약관(EULA)과 개
 ## 커밋 전 체크
 
 - `fvm flutter analyze` 통과
-- `fvm flutter test` 통과 (188개, 특히 engine 골든 테스트와 `l10n_smoke_test`)
+- `fvm flutter test` 통과 (191개, 특히 engine 골든 테스트와 `l10n_smoke_test`)
 - `lib/l10n/parts/*.json`을 고쳤다면 `python3 tool/merge_l10n.py && fvm flutter gen-l10n`을 돌려
   생성 파일까지 함께 커밋
 - `lib/features/` 또는 `lib/l10n/parts/`의 사용자 노출 문구를 건드렸다면 `compliance-reviewer` 에이전트 실행 (ko·en·ja)
